@@ -408,6 +408,19 @@ export const tr: Dictionary = {
     description: 'Bağlantı eski olabilir veya işaret ettiği gönderi kaldırılmış olabilir.',
     backToDashboard: 'Panele dön',
   },
+  notificationsPage: {
+    title: 'Bildirimler',
+    description: 'Onay bekleyenler ve son yayınının nasıl gittiği.',
+    markAllRead: 'Tümünü okundu işaretle',
+    markRead: 'Okundu işaretle',
+    emptyTitle: 'Henüz bildirim yok',
+    emptyDescription: 'Onay istekleri ve yayın sonuçları burada görünecek.',
+    type: {
+      APPROVAL_REQUIRED: 'Onay gerekiyor',
+      PUBLISH_SUCCEEDED: 'Yayınlandı',
+      PUBLISH_FAILED: 'Yayınlama başarısız',
+    },
+  },
   signIn: {
     title: "Apex Social AI'a giriş yap",
     subtitle: 'Devam etmek için Google hesabını kullan.',

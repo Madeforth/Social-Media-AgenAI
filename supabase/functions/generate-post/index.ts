@@ -318,5 +318,23 @@ Deno.serve(async (req) => {
     serviceClient.from('ai_generations').update({ post_id: postId }).eq('id', generationRow.id),
   ]);
 
+  if (postStatus === 'READY') {
+    const { data: members } = await serviceClient
+      .from('organization_members')
+      .select('user_id')
+      .eq('organization_id', brand.organization_id);
+    if (members && members.length > 0) {
+      await serviceClient.from('notifications').insert(
+        members.map((member) => ({
+          user_id: member.user_id,
+          type: 'APPROVAL_REQUIRED' as const,
+          title: `"${proposal.concept_title}" is ready for review`,
+          body: proposal.objective,
+          payload: { post_id: postId },
+        })),
+      );
+    }
+  }
+
   return json(200, { post_id: postId, status: postStatus, forbidden_hits: forbiddenHits });
 });

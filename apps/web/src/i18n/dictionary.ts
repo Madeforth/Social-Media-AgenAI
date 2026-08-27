@@ -1,4 +1,4 @@
-import type { BrandAssetType, PostStatus, VisualFormat } from '@apex/types';
+import type { BrandAssetType, NotificationType, PostStatus, VisualFormat } from '@apex/types';
 
 export interface Dictionary {
   meta: {
@@ -311,6 +311,15 @@ export interface Dictionary {
     title: string;
     description: string;
     backToDashboard: string;
+  };
+  notificationsPage: {
+    title: string;
+    description: string;
+    markAllRead: string;
+    markRead: string;
+    emptyTitle: string;
+    emptyDescription: string;
+    type: Record<NotificationType, string>;
   };
   signIn: {
     title: string;

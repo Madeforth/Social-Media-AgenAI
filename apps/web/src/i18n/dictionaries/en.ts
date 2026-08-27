@@ -403,6 +403,19 @@ export const en: Dictionary = {
     description: 'The link may be stale, or the post it pointed at was removed.',
     backToDashboard: 'Back to dashboard',
   },
+  notificationsPage: {
+    title: 'Notifications',
+    description: 'Approvals waiting on you, and how your last publish went.',
+    markAllRead: 'Mark all read',
+    markRead: 'Mark read',
+    emptyTitle: 'No notifications yet',
+    emptyDescription: 'Approval requests and publish results will show up here.',
+    type: {
+      APPROVAL_REQUIRED: 'Approval required',
+      PUBLISH_SUCCEEDED: 'Published',
+      PUBLISH_FAILED: 'Publish failed',
+    },
+  },
   signIn: {
     title: 'Sign in to Apex Social AI',
     subtitle: 'Use your Google account to continue.',

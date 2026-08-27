@@ -530,3 +530,29 @@ export async function syncMetrics(formData: FormData): Promise<void> {
   revalidatePath(`/${locale}/posts/${postId}`);
   revalidatePath(`/${locale}/analytics`, 'layout');
 }
+
+export async function markNotificationRead(formData: FormData): Promise<void> {
+  const locale = targetLocale(formData);
+  const notificationId = String(formData.get('notificationId') ?? '');
+  if (!notificationId) return;
+
+  const supabase = await getServerSupabase();
+  await supabase
+    .from('notifications')
+    .update({ read_at: new Date().toISOString() })
+    .eq('id', notificationId);
+
+  revalidatePath(`/${locale}`, 'layout');
+}
+
+export async function markAllNotificationsRead(formData: FormData): Promise<void> {
+  const locale = targetLocale(formData);
+
+  const supabase = await getServerSupabase();
+  await supabase
+    .from('notifications')
+    .update({ read_at: new Date().toISOString() })
+    .is('read_at', null);
+
+  revalidatePath(`/${locale}`, 'layout');
+}

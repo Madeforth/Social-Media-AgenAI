@@ -83,19 +83,26 @@
   PUBLISHED) calls `sync-post-metrics`; the Analytics page distinguishes three real states: no
   account connected, connected but nothing synced yet, and real numbers.
 
+- Notifications: `generate-post` inserts one `APPROVAL_REQUIRED` row per organization member when a
+  proposal reaches `READY` (both the create-new-post and regenerate-in-place paths);
+  `publish-instagram-post` inserts `PUBLISH_SUCCEEDED`/`PUBLISH_FAILED` on every outcome, success or
+  failure. The topbar bell is now a real link to `/notifications` with an unread-count dot (read
+  server-side in the workspace layout, `getUnreadNotificationCount()`); the page lists all
+  notifications, links straight to the post when one is attached, and can mark one or all read.
+
 ## In Progress
 
-- None. All nine numbered milestones plus basic analytics are done. Notifications (the
-  `notifications` table exists with RLS from Milestone 9's migration, but nothing writes rows or
-  renders a UI for it yet) is the one remaining unscheduled item from CLAUDE.md's "Not Started"
-  list.
+- None. All nine numbered milestones, basic analytics and notifications are done — everything in
+  CLAUDE.md's V1 screen list and product principles now has a real (if not always fully verified
+  live, see `memory-bank/userActionsNeeded.md`) implementation behind it.
 
 ## Not Started
 
-- Notifications: no writer, no UI. Would need something to call `insert` on `public.notifications`
-  (an Edge Function is the natural place, e.g. on generation completing or a publish failing) and
-  a topbar/inbox surface to read and mark them read — `notifications_select`/`notifications_update`
-  policies already exist and are scoped to the caller's own `user_id`.
+- Nothing scoped and unbuilt remains from CLAUDE.md. What's left is verification blocked on the
+  project owner's actions (Gemini/Meta credentials, native mobile testing) — see
+  `memory-bank/userActionsNeeded.md` — plus the deliberate, documented scope cuts already recorded
+  in this file and `docs/SECURITY.md` (cron-triggered auto-publish, Meta token refresh, upload
+  content inspection, per-user approval audit, penetration testing).
 
 ## Verification — Milestone 1, monorepo
 

@@ -16,9 +16,10 @@ interface TopbarProps {
   brandName: string | null;
   userEmail: string | null;
   labels: Pick<Dictionary, 'nav' | 'topbar' | 'localeSwitcher'>;
+  unreadNotificationCount: number;
 }
 
-export function Topbar({ brandName, userEmail, labels }: TopbarProps) {
+export function Topbar({ brandName, userEmail, labels, unreadNotificationCount }: TopbarProps) {
   const pathname = usePathname();
 
   return (
@@ -33,13 +34,19 @@ export function Topbar({ brandName, userEmail, labels }: TopbarProps) {
 
         <div className="flex items-center gap-2">
           <LocaleSwitcher labels={labels.localeSwitcher} />
-          <button
-            type="button"
+          <LocaleLink
+            href="/notifications"
             aria-label={labels.topbar.notifications}
             className="relative flex h-9 w-9 items-center justify-center rounded-md text-text-secondary transition-colors duration-150 hover:bg-surface-raised hover:text-text-primary"
           >
             <BellIcon className="h-4.5 w-4.5" />
-          </button>
+            {unreadNotificationCount > 0 ? (
+              <span
+                aria-hidden="true"
+                className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-accent"
+              />
+            ) : null}
+          </LocaleLink>
           <span
             aria-hidden="true"
             className="flex h-9 w-9 items-center justify-center rounded-full border border-border-strong bg-surface-raised text-xs font-medium text-text-secondary"

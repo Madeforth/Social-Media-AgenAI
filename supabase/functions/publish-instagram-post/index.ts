@@ -100,6 +100,23 @@ Deno.serve(async (req) => {
     return json(400, { error: 'no connected Instagram account for this brand' });
   }
 
+  const notifyMembers = async (type: 'PUBLISH_SUCCEEDED' | 'PUBLISH_FAILED', body: string) => {
+    const { data: members } = await serviceClient
+      .from('organization_members')
+      .select('user_id')
+      .eq('organization_id', brand.organization_id);
+    if (!members || members.length === 0) return;
+    await serviceClient.from('notifications').insert(
+      members.map((member) => ({
+        user_id: member.user_id,
+        type,
+        title: type === 'PUBLISH_SUCCEEDED' ? 'Post published to Instagram' : 'Publishing failed',
+        body,
+        payload: { post_id: postId },
+      })),
+    );
+  };
+
   const recordFailure = async (message: string) => {
     await Promise.all([
       serviceClient.from('posts').update({ status: 'FAILED' }).eq('id', postId),
@@ -111,6 +128,7 @@ Deno.serve(async (req) => {
         attempt_count: 1,
         last_error: message,
       }),
+      notifyMembers('PUBLISH_FAILED', message),
     ]);
   };
 
@@ -199,6 +217,7 @@ Deno.serve(async (req) => {
         attempt_count: 1,
         external_post_id: publishPayload.id,
       }),
+      notifyMembers('PUBLISH_SUCCEEDED', `Instagram media id ${publishPayload.id}`),
     ]);
 
     return json(200, { post_id: postId, instagram_post_id: publishPayload.id });

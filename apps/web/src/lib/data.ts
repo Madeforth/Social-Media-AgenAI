@@ -1,4 +1,5 @@
 import type {
+  AppNotification,
   Brand,
   BrandAsset,
   BrandGuidelines,
@@ -230,4 +231,23 @@ export async function listApprovalQueue(): Promise<PostWithVersion[]> {
   return posts
     .filter((post) => post.status === 'READY')
     .sort((a, b) => b.created_at.localeCompare(a.created_at));
+}
+
+export async function listNotifications(): Promise<AppNotification[]> {
+  const supabase = await getServerSupabase();
+  const { data } = await supabase
+    .from('notifications')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(50);
+  return (data as unknown as AppNotification[]) ?? [];
+}
+
+export async function getUnreadNotificationCount(): Promise<number> {
+  const supabase = await getServerSupabase();
+  const { count } = await supabase
+    .from('notifications')
+    .select('id', { count: 'exact', head: true })
+    .is('read_at', null);
+  return count ?? 0;
 }

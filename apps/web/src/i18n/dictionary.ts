@@ -101,7 +101,7 @@ export interface Dictionary {
       language: string;
     };
     languages: { english: string; turkish: string };
-    disabledNotice: string;
+    fieldsNotice: string;
     generateButton: string;
     generatingButton: string;
     errors: {
@@ -279,8 +279,10 @@ export interface Dictionary {
     brand: {
       title: string;
       noDescriptionYet: string;
-      manage: string;
-      addBrand: string;
+      save: string;
+      editNameLabel: string;
+      editDescriptionLabel: string;
+      editDescriptionPlaceholder: string;
       createFirstBrand: string;
       multiBrandNotice: string;
       newBrand: string;
@@ -296,7 +298,8 @@ export interface Dictionary {
       title: string;
       approvalRequired: { title: string; description: string };
       publishFailures: { title: string; description: string };
-      notConfigured: string;
+      alwaysOn: string;
+      viewAll: string;
     };
   };
   inbox: {

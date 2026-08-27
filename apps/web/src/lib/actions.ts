@@ -68,6 +68,23 @@ export async function createOrganizationAndBrand(formData: FormData): Promise<vo
   revalidatePath(`/${hasLocale(locale) ? locale : defaultLocale}`, 'layout');
 }
 
+/** Edits an existing brand's name/description in place — no version history, unlike posts. */
+export async function updateBrand(formData: FormData): Promise<void> {
+  const locale = targetLocale(formData);
+  const brandId = String(formData.get('brandId') ?? '');
+  const name = String(formData.get('name') ?? '').trim();
+  if (!brandId || !name) redirect(`/${locale}/settings`);
+
+  const supabase = await getServerSupabase();
+  await supabase
+    .from('brands')
+    .update({ name, description: String(formData.get('description') ?? '').trim() || null })
+    .eq('id', brandId);
+
+  revalidatePath(`/${locale}`, 'layout');
+  redirect(`/${locale}/settings`);
+}
+
 export async function signOutAction(formData: FormData): Promise<void> {
   const locale = String(formData.get('locale') ?? defaultLocale);
   const supabase = await getServerSupabase();
@@ -182,6 +199,10 @@ export async function generatePost(formData: FormData): Promise<void> {
   if (!session) redirect(`/${locale}/sign-in`);
 
   const brief = String(formData.get('brief') ?? '').trim();
+  const forcedContentPillar = String(formData.get('contentPillar') ?? '').trim();
+  const forcedVisualFormat = String(formData.get('visualFormat') ?? '').trim();
+  const language = String(formData.get('language') ?? '').trim();
+  const publishDate = String(formData.get('publishDate') ?? '').trim();
 
   let postId: string | null = null;
   let errorCode = 'failed';
@@ -195,7 +216,13 @@ export async function generatePost(formData: FormData): Promise<void> {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ brand_id: brand.id, brief: brief || undefined }),
+        body: JSON.stringify({
+          brand_id: brand.id,
+          brief: brief || undefined,
+          forced_content_pillar: forcedContentPillar || undefined,
+          forced_visual_format: forcedVisualFormat || undefined,
+          language: language === 'tr' ? 'Turkish' : language === 'en' ? 'English' : undefined,
+        }),
       },
     );
     const result = (await response.json()) as { post_id?: string; error?: string };
@@ -211,6 +238,15 @@ export async function generatePost(formData: FormData): Promise<void> {
   }
 
   if (postId) {
+    if (publishDate) {
+      const scheduledAt = new Date(`${publishDate}T09:00:00`);
+      if (!Number.isNaN(scheduledAt.getTime())) {
+        await supabase
+          .from('posts')
+          .update({ scheduled_at: scheduledAt.toISOString() })
+          .eq('id', postId);
+      }
+    }
     revalidatePath(`/${locale}/library`, 'layout');
     redirect(`/${locale}/posts/${postId}`);
   }

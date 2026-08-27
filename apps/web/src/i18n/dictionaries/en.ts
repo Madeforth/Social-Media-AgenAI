@@ -140,8 +140,7 @@ export const en: Dictionary = {
       language: 'Language',
     },
     languages: { english: 'English', turkish: 'Türkçe' },
-    disabledNotice:
-      'Publish date, content pillar, visual format and language are decided by the AI for now.',
+    fieldsNotice: 'Leave a field on "let the AI decide" to skip it.',
     generateButton: 'Generate content',
     generatingButton: 'Generating…',
     errors: {
@@ -359,8 +358,10 @@ export const en: Dictionary = {
     brand: {
       title: 'Brand',
       noDescriptionYet: 'No description yet.',
-      manage: 'Manage',
-      addBrand: 'Add a brand',
+      save: 'Save',
+      editNameLabel: 'Name',
+      editDescriptionLabel: 'Description',
+      editDescriptionPlaceholder: 'What does this brand do?',
       createFirstBrand: 'Create your first brand',
       multiBrandNotice: 'The data model is multi-brand from the start.',
       newBrand: 'New brand',
@@ -382,7 +383,8 @@ export const en: Dictionary = {
         title: 'Publish failures',
         description: 'Alert when a scheduled post fails to publish.',
       },
-      notConfigured: 'Not configured',
+      alwaysOn: 'Always on',
+      viewAll: 'View notifications',
     },
   },
   inbox: {

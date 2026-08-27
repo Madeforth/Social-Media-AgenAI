@@ -142,8 +142,7 @@ export const tr: Dictionary = {
       language: 'Dil',
     },
     languages: { english: 'İngilizce', turkish: 'Türkçe' },
-    disabledNotice:
-      'Yayın tarihi, içerik pillar’ı, görsel format ve dile şimdilik yapay zeka karar veriyor.',
+    fieldsNotice: 'Bir alanı "Yapay zeka karar versin" olarak bırakmak onu atlar.',
     generateButton: 'İçerik oluştur',
     generatingButton: 'Oluşturuluyor…',
     errors: {
@@ -364,8 +363,10 @@ export const tr: Dictionary = {
     brand: {
       title: 'Marka',
       noDescriptionYet: 'Henüz açıklama yok.',
-      manage: 'Yönet',
-      addBrand: 'Marka ekle',
+      save: 'Kaydet',
+      editNameLabel: 'Ad',
+      editDescriptionLabel: 'Açıklama',
+      editDescriptionPlaceholder: 'Bu marka ne yapıyor?',
       createFirstBrand: 'İlk markanı oluştur',
       multiBrandNotice: 'Veri modeli en baştan çok-markalı.',
       newBrand: 'Yeni marka',
@@ -387,7 +388,8 @@ export const tr: Dictionary = {
         title: 'Yayınlama hataları',
         description: 'Zamanlanmış bir gönderi yayınlanamadığında uyar.',
       },
-      notConfigured: 'Yapılandırılmadı',
+      alwaysOn: 'Her zaman açık',
+      viewAll: 'Bildirimleri görüntüle',
     },
   },
   inbox: {

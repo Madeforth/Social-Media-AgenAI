@@ -144,28 +144,32 @@ export default async function CreatePage({
                 label={copy.fields.contentPillar}
                 hint={pillars.length === 0 ? copy.fields.noneDefinedYet : copy.brief.optional}
               >
-                <select disabled className={INPUT_CLASS}>
-                  <option>{copy.fields.letAiDecide}</option>
+                <select name="contentPillar" defaultValue="" className={INPUT_CLASS}>
+                  <option value="">{copy.fields.letAiDecide}</option>
                   {pillars.map((pillar) => (
-                    <option key={pillar.key}>{pillar.name}</option>
+                    <option key={pillar.key} value={pillar.name}>
+                      {pillar.name}
+                    </option>
                   ))}
                 </select>
               </FieldShell>
               <FieldShell label={copy.fields.visualFormat} hint={copy.brief.optional}>
-                <select disabled className={INPUT_CLASS}>
-                  <option>{copy.fields.letAiDecide}</option>
+                <select name="visualFormat" defaultValue="" className={INPUT_CLASS}>
+                  <option value="">{copy.fields.letAiDecide}</option>
                   {VISUAL_FORMATS.map((format) => (
-                    <option key={format}>{dictionary.visualFormat[format]}</option>
+                    <option key={format} value={format}>
+                      {dictionary.visualFormat[format]}
+                    </option>
                   ))}
                 </select>
               </FieldShell>
               <FieldShell label={copy.fields.publishDate} hint={copy.brief.optional}>
-                <input type="date" disabled className={INPUT_CLASS} />
+                <input type="date" name="publishDate" className={INPUT_CLASS} />
               </FieldShell>
               <FieldShell label={copy.fields.language}>
-                <select disabled className={INPUT_CLASS}>
-                  <option>{copy.languages.english}</option>
-                  <option>{copy.languages.turkish}</option>
+                <select name="language" defaultValue={locale} className={INPUT_CLASS}>
+                  <option value="en">{copy.languages.english}</option>
+                  <option value="tr">{copy.languages.turkish}</option>
                 </select>
               </FieldShell>
             </div>
@@ -173,7 +177,7 @@ export default async function CreatePage({
 
           <CardDivider />
           <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-            <p className="text-xs text-text-muted">{copy.disabledNotice}</p>
+            <p className="text-xs text-text-muted">{copy.fieldsNotice}</p>
             <Button type="submit" variant="primary">
               <SparkIcon className="h-4 w-4" />
               {copy.generateButton}

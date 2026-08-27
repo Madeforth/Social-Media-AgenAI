@@ -21,6 +21,7 @@ import {
   resolveGeminiApiKey,
   sanitizeUserText,
   validateContentProposal,
+  VISUAL_FORMATS,
   type UntrustedBlock,
 } from '../_shared/ai.ts';
 
@@ -53,13 +54,30 @@ Deno.serve(async (req) => {
   const { data: userData, error: userError } = await userClient.auth.getUser();
   if (userError || !userData.user) return json(401, { error: 'not authenticated' });
 
-  let body: { brand_id?: unknown; brief?: unknown; post_id?: unknown };
+  let body: {
+    brand_id?: unknown;
+    brief?: unknown;
+    post_id?: unknown;
+    forced_content_pillar?: unknown;
+    forced_visual_format?: unknown;
+    language?: unknown;
+  };
   try {
     body = await req.json();
   } catch {
     return json(400, { error: 'invalid JSON body' });
   }
   const regeneratingPostId = typeof body.post_id === 'string' ? body.post_id : null;
+  const forcedContentPillar =
+    typeof body.forced_content_pillar === 'string' && body.forced_content_pillar.trim()
+      ? body.forced_content_pillar.trim().slice(0, 200)
+      : null;
+  const forcedVisualFormat =
+    typeof body.forced_visual_format === 'string' &&
+    (VISUAL_FORMATS as readonly string[]).includes(body.forced_visual_format)
+      ? body.forced_visual_format
+      : null;
+  const language = typeof body.language === 'string' ? body.language.trim().slice(0, 40) : '';
 
   // 2. Re-check authorization server-side. The service role bypasses RLS, so a
   // brand_id (or post_id) in the request body is an assertion by the client,
@@ -161,7 +179,20 @@ Deno.serve(async (req) => {
     return json(400, { error: error instanceof Error ? error.message : 'input too large' });
   }
 
-  const userPrompt = renderUntrusted(untrustedBlocks);
+  // Operator directives, constrained to known-good values (a fixed enum for
+  // format, the brand's own defined pillar names) — trusted instructions, not
+  // untrusted data, so they sit outside the renderUntrusted boundary.
+  const directives: string[] = [];
+  if (forcedContentPillar)
+    directives.push(`The content pillar MUST be exactly: ${forcedContentPillar}`);
+  if (forcedVisualFormat)
+    directives.push(`The visual_format MUST be exactly: ${forcedVisualFormat}`);
+  if (language)
+    directives.push(
+      `Write every copy field (headline, supporting_copy, caption, cta) in ${language}.`,
+    );
+
+  const userPrompt = [renderUntrusted(untrustedBlocks), ...directives].join('\n\n');
 
   // 5. Write the ai_generations row so the call is counted whether or not it
   // succeeds — an uncounted failure is a free retry for an attacker.
@@ -231,6 +262,12 @@ Deno.serve(async (req) => {
   }
 
   const proposal = validation.value;
+  // Guarantee the operator's own selections rather than merely hoping the
+  // model followed the directive above — both are already known-good values.
+  if (forcedContentPillar) proposal.content_pillar = forcedContentPillar;
+  if (forcedVisualFormat)
+    proposal.visual_format = forcedVisualFormat as typeof proposal.visual_format;
+
   const forbiddenHits = findForbiddenClaims(
     proposal,
     Array.isArray(guidelines?.forbidden_claims) ? (guidelines.forbidden_claims as string[]) : [],

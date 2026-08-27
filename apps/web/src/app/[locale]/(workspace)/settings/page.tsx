@@ -1,4 +1,5 @@
 import { PlugIcon } from '@/components/icons';
+import { LocaleLink } from '@/components/locale-link';
 import { Button } from '@/components/ui/button';
 import { Card, CardDivider, CardHeader } from '@/components/ui/card';
 import { FieldLabel, Input } from '@/components/ui/field';
@@ -8,6 +9,7 @@ import {
   connectInstagram,
   createOrganizationAndBrand,
   signOutAction,
+  updateBrand,
 } from '@/lib/actions';
 import { getCurrentUser } from '@/lib/auth';
 import { getCurrentBrand, getGeminiKeyConnected, getSocialAccount } from '@/lib/data';
@@ -179,11 +181,25 @@ export default async function SettingsPage({ params, searchParams }: PageParams)
         <CardDivider />
         <div className="divide-y divide-border-subtle">
           {brand ? (
-            <Row
-              title={brand.name}
-              description={brand.description ?? copy.brand.noDescriptionYet}
-              action={<Button>{copy.brand.manage}</Button>}
-            />
+            <form action={updateBrand} className="flex flex-wrap items-end gap-3 px-5 py-4">
+              <input type="hidden" name="locale" value={locale} />
+              <input type="hidden" name="brandId" value={brand.id} />
+              <FieldLabel label={copy.brand.editNameLabel}>
+                <Input name="name" defaultValue={brand.name} required />
+              </FieldLabel>
+              <div className="min-w-0 flex-1">
+                <FieldLabel label={copy.brand.editDescriptionLabel}>
+                  <Input
+                    name="description"
+                    defaultValue={brand.description ?? ''}
+                    placeholder={copy.brand.editDescriptionPlaceholder}
+                  />
+                </FieldLabel>
+              </div>
+              <Button type="submit" variant="primary">
+                {copy.brand.save}
+              </Button>
+            </form>
           ) : (
             <form
               action={createOrganizationAndBrand}
@@ -211,22 +227,25 @@ export default async function SettingsPage({ params, searchParams }: PageParams)
       </Card>
 
       <Card>
-        <CardHeader title={copy.notifications.title} />
+        <CardHeader
+          title={copy.notifications.title}
+          action={
+            <LocaleLink href="/notifications" className="text-xs text-accent hover:underline">
+              {copy.notifications.viewAll}
+            </LocaleLink>
+          }
+        />
         <CardDivider />
         <div className="divide-y divide-border-subtle">
           <Row
             title={copy.notifications.approvalRequired.title}
             description={copy.notifications.approvalRequired.description}
-            action={
-              <span className="text-xs text-text-muted">{copy.notifications.notConfigured}</span>
-            }
+            action={<span className="text-xs text-accent">{copy.notifications.alwaysOn}</span>}
           />
           <Row
             title={copy.notifications.publishFailures.title}
             description={copy.notifications.publishFailures.description}
-            action={
-              <span className="text-xs text-text-muted">{copy.notifications.notConfigured}</span>
-            }
+            action={<span className="text-xs text-accent">{copy.notifications.alwaysOn}</span>}
           />
         </div>
       </Card>

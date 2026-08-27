@@ -34,7 +34,11 @@ target finish 2026-08-28 08:00. Check items off as done; add a date when complet
       once and complete a Google sign-in through the deep link, since this has never been
       exercised outside react-native-web.
 - [ ] Native mobile layout: view every screen on a real device/simulator — react-native-web
-      verification does not exercise native layout engines.
+      verification does not exercise native layout engines. This now matters more:
+      2026-08-28 added five new screens and wired every previously-dead button (Create's
+      Generate, post detail's Revise/Approve/Regenerate/Edit/Schedule/Publish/Sync, More's
+      Brand Brain/Assets/Instagram/Gemini/Notifications rows) — `expo export` proves it all
+      bundles, but none of the actual on-device interaction has been tried.
 - [ ] Brand creation / sign-out / RLS isolation through the real UI with two real Google
       accounts (was only proved earlier via direct DB scripts, not the browser).
 - [ ] Decide and confirm: is `Apex Flow` the first real brand's exact name/handle for the

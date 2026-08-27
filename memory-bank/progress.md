@@ -21,7 +21,9 @@
 
 ## In Progress
 
-- Nothing. Milestones 1–3 are closed.
+- Web TR/EN i18n (unscheduled, web-only, not a numbered milestone). Route restructure to
+  `app/[locale]`, middleware locale negotiation, and the dictionary infrastructure are committed;
+  wiring pages/shell components to the dictionaries is not done — see `activeContext.md`.
 
 ## Not Started
 

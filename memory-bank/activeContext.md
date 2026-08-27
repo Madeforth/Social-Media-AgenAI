@@ -84,6 +84,47 @@ Two things to remember when writing those queries:
 - Nothing in the app has ever rendered a populated list, because no data source has existed. The
   first real read is also the first test of every list, card and detail layout with content in it.
 
+## In Progress — Web TR/EN i18n (unscheduled, web-only)
+
+The user asked for a Turkish/English toggle on the web app mid-session. Not a numbered milestone;
+being done alongside Milestone 4 work. Scope is `apps/web` only — `apps/mobile` and
+`packages/ui`'s English label maps in `status.ts` are untouched.
+
+Decided approach (plan file was `joyful-wiggling-meerkat.md`): Next.js's own `app/[locale]` +
+dictionary pattern, no new dependency (`next-intl` was considered and rejected — CLAUDE.md's
+guardrail against adding a framework when the stack already solves it). Locale lives in the URL
+(`/tr/...`, `/en/...`), default locale is Turkish, negotiated in `apps/web/src/middleware.ts` from
+a `NEXT_LOCALE` cookie, then `Accept-Language`, then the default — merged into the same middleware
+function that issues the CSP nonce (Next only runs one middleware).
+
+Done so far:
+
+- Every route moved under `apps/web/src/app/[locale]/` (the `(workspace)` group and the root
+  layout, which now reads `params.locale` and sets `<html lang>`).
+- `apps/web/src/middleware.ts` redirects any unprefixed path to `/${locale}${pathname}`.
+- `apps/web/src/i18n/`: `config.ts` (locales/defaultLocale/hasLocale), `dictionary.ts` (the
+  `Dictionary` type every screen's strings must satisfy), `dictionaries/{en,tr}.ts`,
+  `get-dictionary.ts`.
+- `apps/web/src/components/locale-link.tsx`: a `next/link` wrapper that reads the locale from
+  `useParams()` and prefixes `href` — the intended replacement for `next/link` in every internal
+  link.
+
+Not done yet — this is why the app still renders English:
+
+- No `page.tsx`/`layout.tsx` reads `getDictionary()` yet; every screen still has its English
+  strings as literals.
+- `components/shell/sidebar.tsx` and `topbar.tsx` are not dictionary-driven, and there is no
+  locale switcher UI yet.
+- `apps/web/src/lib/nav.ts` still hardcodes English labels; `isNavItemActive` does not yet strip
+  the locale prefix before comparing.
+- `next/link` usages across pages/shell are not yet swapped for `LocaleLink`.
+- `apps/web/src/lib/format.ts` date formatters are hardcoded to `en-GB` — need a locale parameter
+  so Turkish renders Turkish month/weekday names.
+- Not typechecked, not built, not browser-verified since the route move.
+
+Full plan detail (file-by-file) lives in the plan file referenced above if the session that wrote
+it has ended; otherwise it's in that session's context.
+
 ## Standing Rule — No Mock Data
 
 CLAUDE.md principle 11: never add mock data of any kind, including temporarily. Screens read

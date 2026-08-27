@@ -29,6 +29,14 @@ next.
 - `supabase/migrations/`: seven migrations, all applied.
 - `scripts/`: `generate-database-types.mjs` and `check-client-bundle.mjs`.
 
+## Custom domain
+
+Production is served from `https://socialai.madeforth.net` (Vercel project
+`social-media-agen-ai-web`). DNS is a CNAME at Cloudflare (`socialai` → Vercel's assigned target,
+proxy disabled/DNS-only — required, an orange-clouded/proxied record breaks Vercel's TLS
+provisioning). Site-wide basic auth (`SITE_BASIC_AUTH_USER`/`SITE_BASIC_AUTH_PASS`, prior commit)
+applies on every domain automatically since it's request-level, not domain-level.
+
 ## Supabase
 
 Project `Apex Social AI`, ref `dxdbqikzbytenmdrkkgo`, region `eu-central-1`, PostgreSQL 17.
@@ -51,13 +59,11 @@ The repo is linked; `supabase/.temp/project-ref` holds the ref.
 - The Auth admin API still requires the legacy `service_role` JWT; the new `sb_secret_...` key is
   rejected with "Invalid API key".
 - There is no data in the project: zero users, zero rows, zero storage objects.
-- **Google OAuth is not yet enabled in the Supabase dashboard** — sign-in reaches
-  `/auth/v1/authorize` correctly (verified) but Supabase returns `provider is not enabled`. Needs a
-  Google Cloud OAuth 2.0 Client ID (redirect URI
-  `https://dxdbqikzbytenmdrkkgo.supabase.co/auth/v1/callback`), pasted into Authentication →
-  Providers → Google, plus `apexsocial://auth-callback` and the web `/auth/callback` origins added
-  under Authentication → URL Configuration → Redirect URLs. This is a dashboard/Google Cloud step
-  only the project owner can do.
+- Google OAuth is enabled and verified end to end in production, on the real custom domain
+  (`https://socialai.madeforth.net`, see "Custom domain" below): sign-in, Supabase callback and
+  session all completed with no error. Supabase Authentication → URL Configuration Site
+  URL/Redirect URLs were updated to the production domain (were still pointing at `localhost:3000`,
+  which is what caused the first attempt's Turbopack runtime error on the client bundle).
 
 ## Commands
 
@@ -150,9 +156,9 @@ Verification:
   `/auth/v1/authorize` with the correct PKCE challenge and redirect — it currently returns
   `provider is not enabled`, which is expected until the dashboard step above is done; `/auth/callback`
   with no `code` redirects to sign-in instead of crashing.
-- **Not yet verified**: an actual completed Google sign-in, brand creation, sign-out, and RLS
-  isolation between two real accounts — all blocked on the pending Google provider setup. Native
-  mobile OAuth (the deep-link round trip) has never run on a device or simulator either.
+- Completed Google sign-in on the production domain is now verified. **Still not verified**: brand
+  creation, sign-out and RLS isolation between two real accounts through the UI, and native mobile
+  OAuth (the deep-link round trip), which has never run on a device or simulator.
 
 ## Completed — Web and Mobile TR/EN i18n
 

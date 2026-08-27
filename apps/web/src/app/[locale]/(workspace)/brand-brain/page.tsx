@@ -1,5 +1,5 @@
 import { BrainIcon, PencilIcon } from '@/components/icons';
-import { Button } from '@/components/ui/button';
+import { ButtonLink } from '@/components/ui/button';
 import { Card, CardDivider, CardHeader } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { PageHeader } from '@/components/ui/page-header';
@@ -85,6 +85,14 @@ export default async function BrandBrainPage({ params }: PageParams) {
             icon={<BrainIcon className="h-5 w-5" />}
             title={copy.emptyTitle}
             description={copy.emptyDescription}
+            action={
+              brand ? (
+                <ButtonLink href="/brand-brain/edit" variant="primary">
+                  <PencilIcon className="h-4 w-4" />
+                  {copy.edit}
+                </ButtonLink>
+              ) : undefined
+            }
           />
         </Card>
       </div>
@@ -97,10 +105,10 @@ export default async function BrandBrainPage({ params }: PageParams) {
         title={copy.title}
         description={copy.description(brand?.name ?? copy.yourBrand)}
         action={
-          <Button>
+          <ButtonLink href="/brand-brain/edit">
             <PencilIcon className="h-4 w-4" />
             {copy.edit}
-          </Button>
+          </ButtonLink>
         }
       />
 

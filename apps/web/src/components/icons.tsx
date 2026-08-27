@@ -141,6 +141,19 @@ export const RefreshIcon = (props: IconProps) => (
   </Icon>
 );
 
+export const TrashIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M5 7h14M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2m-9 0 1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13" />
+  </Icon>
+);
+
+export const UploadIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M12 16V4m0 0 4 4m-4-4-4 4" />
+    <path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />
+  </Icon>
+);
+
 export const PlugIcon = (props: IconProps) => (
   <Icon {...props}>
     <path d="M9 3v6M15 3v6" />

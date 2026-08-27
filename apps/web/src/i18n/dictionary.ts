@@ -176,6 +176,32 @@ export interface Dictionary {
     };
     visualRules: { title: string; palette: string; typography: string; avoid: string };
     forbiddenClaims: { title: string; notice: string; claims: string };
+    editForm: {
+      title: string;
+      save: string;
+      cancel: string;
+      listHint: string;
+      pillarsHint: string;
+      fields: {
+        mission: string;
+        vision: string;
+        positioning: string;
+        targetAudience: string;
+        toneAttributes: string;
+        toneDo: string;
+        toneDont: string;
+        palette: string;
+        typography: string;
+        composition: string;
+        visualAvoid: string;
+        copyLanguage: string;
+        readingLevel: string;
+        copyDo: string;
+        copyDont: string;
+        forbiddenClaims: string;
+        contentPillars: string;
+      };
+    };
   };
   assets: {
     title: string;
@@ -184,6 +210,9 @@ export interface Dictionary {
     trustedNotice: string;
     emptyTitle: string;
     emptyDescription: string;
+    uploadForm: { name: string; type: string; file: string; submit: string };
+    remove: string;
+    removeConfirm: string;
   };
   analytics: {
     title: string;

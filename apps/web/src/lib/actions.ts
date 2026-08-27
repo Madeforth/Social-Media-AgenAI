@@ -1,12 +1,27 @@
 'use server';
 
+import { BRAND_ASSET_TYPES, type BrandAssetType } from '@apex/types';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
 import { defaultLocale, hasLocale } from '@/i18n/config';
 
 import { getCurrentUser } from './auth';
+import { getCurrentBrand } from './data';
 import { getServerSupabase } from './supabase-server';
+
+function targetLocale(formData: FormData): string {
+  const locale = String(formData.get('locale') ?? defaultLocale);
+  return hasLocale(locale) ? locale : defaultLocale;
+}
+
+/** Splits a textarea into trimmed, non-empty lines — the list-editing convention this page uses. */
+function lines(formData: FormData, key: string): string[] {
+  return String(formData.get(key) ?? '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
 
 const COMBINING_DIACRITICS = /[̀-ͯ]/g;
 
@@ -58,4 +73,108 @@ export async function signOutAction(formData: FormData): Promise<void> {
   const supabase = await getServerSupabase();
   await supabase.auth.signOut();
   redirect(`/${hasLocale(locale) ? locale : defaultLocale}/sign-in`);
+}
+
+/**
+ * Writes the Brand Brain form. List-shaped fields are one item per line in
+ * their textarea; content pillars are `name | description | share%` per line
+ * so the form stays a set of plain textareas rather than a repeating widget.
+ */
+export async function updateBrandGuidelines(formData: FormData): Promise<void> {
+  const locale = targetLocale(formData);
+  const brand = await getCurrentBrand();
+  if (!brand) redirect(`/${locale}/brand-brain`);
+
+  const supabase = await getServerSupabase();
+
+  const contentPillars = lines(formData, 'contentPillars').map((line) => {
+    const [name = '', description = '', share = ''] = line.split('|').map((part) => part.trim());
+    return {
+      key: slugify(name) || 'pillar',
+      name,
+      description,
+      target_share: Math.max(0, Math.min(1, (Number(share.replace('%', '')) || 0) / 100)),
+    };
+  });
+
+  const text = (key: string) => String(formData.get(key) ?? '').trim() || null;
+
+  await supabase.from('brand_guidelines').upsert(
+    {
+      brand_id: brand.id,
+      mission: text('mission'),
+      vision: text('vision'),
+      positioning: text('positioning'),
+      target_audience: text('targetAudience'),
+      tone_of_voice: {
+        attributes: lines(formData, 'toneAttributes'),
+        do: lines(formData, 'toneDo'),
+        dont: lines(formData, 'toneDont'),
+      },
+      visual_rules: {
+        palette: lines(formData, 'palette'),
+        typography: lines(formData, 'typography'),
+        composition: lines(formData, 'composition'),
+        avoid: lines(formData, 'visualAvoid'),
+      },
+      copy_rules: {
+        language: text('copyLanguage') ?? locale,
+        reading_level: text('readingLevel') ?? 'general',
+        do: lines(formData, 'copyDo'),
+        dont: lines(formData, 'copyDont'),
+      },
+      forbidden_claims: lines(formData, 'forbiddenClaims'),
+      content_pillars: contentPillars,
+    },
+    { onConflict: 'brand_id' },
+  );
+
+  revalidatePath(`/${locale}/brand-brain`, 'layout');
+  redirect(`/${locale}/brand-brain`);
+}
+
+/** Uploads one file into the private `brand-assets` bucket and records its row. */
+export async function uploadBrandAsset(formData: FormData): Promise<void> {
+  const locale = targetLocale(formData);
+  const brand = await getCurrentBrand();
+  if (!brand) redirect(`/${locale}/assets`);
+
+  const file = formData.get('file');
+  const name = String(formData.get('name') ?? '').trim();
+  const assetType = String(formData.get('assetType') ?? '');
+
+  if (!(file instanceof File) || file.size === 0 || !name) redirect(`/${locale}/assets`);
+  if (!BRAND_ASSET_TYPES.includes(assetType as BrandAssetType)) redirect(`/${locale}/assets`);
+
+  const supabase = await getServerSupabase();
+  const extension = file.name.includes('.') ? file.name.split('.').pop() : undefined;
+  const path = `${brand.id}/${crypto.randomUUID()}${extension ? `.${extension}` : ''}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from('brand-assets')
+    .upload(path, file, { contentType: file.type || undefined });
+  if (uploadError) redirect(`/${locale}/assets`);
+
+  await supabase.from('brand_assets').insert({
+    brand_id: brand.id,
+    asset_type: assetType as BrandAssetType,
+    name,
+    storage_path: path,
+  });
+
+  revalidatePath(`/${locale}/assets`);
+}
+
+/** Removes both the storage object and its row. Only ADMIN/OWNER can — RLS enforces it. */
+export async function deleteBrandAsset(formData: FormData): Promise<void> {
+  const locale = targetLocale(formData);
+  const assetId = String(formData.get('assetId') ?? '');
+  const storagePath = String(formData.get('storagePath') ?? '');
+  if (!assetId) return;
+
+  const supabase = await getServerSupabase();
+  await supabase.from('brand_assets').delete().eq('id', assetId);
+  if (storagePath) await supabase.storage.from('brand-assets').remove([storagePath]);
+
+  revalidatePath(`/${locale}/assets`);
 }

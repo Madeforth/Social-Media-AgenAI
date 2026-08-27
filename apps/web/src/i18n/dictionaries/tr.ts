@@ -236,6 +236,33 @@ export const tr: Dictionary = {
       notice: 'Brief ne derse desin, yapay zekaya bunları asla söylememesi öğretilir.',
       claims: 'İddialar',
     },
+    editForm: {
+      title: 'Marka Beynini Düzenle',
+      save: 'Kaydet',
+      cancel: 'Vazgeç',
+      listHint: 'Her satıra bir tane.',
+      pillarsHint:
+        'Her satıra bir tane: isim | açıklama | pay% — örn. "Yaşam tarzı | Sürücü hikayeleri | 40"',
+      fields: {
+        mission: 'Misyon',
+        vision: 'Vizyon',
+        positioning: 'Konumlandırma',
+        targetAudience: 'Hedef kitle',
+        toneAttributes: 'Ton nitelikleri',
+        toneDo: 'Ton — her zaman',
+        toneDont: 'Ton — asla',
+        palette: 'Palet',
+        typography: 'Tipografi',
+        composition: 'Kompozisyon',
+        visualAvoid: 'Görsel olarak kaçınılacaklar',
+        copyLanguage: 'Metin dili',
+        readingLevel: 'Okuma seviyesi',
+        copyDo: 'Metin — her zaman',
+        copyDont: 'Metin — asla',
+        forbiddenClaims: 'Yasaklı iddialar',
+        contentPillars: 'İçerik pillar’ları',
+      },
+    },
   },
   assets: {
     title: 'Varlık Kitaplığı',
@@ -247,6 +274,9 @@ export const tr: Dictionary = {
     emptyTitle: 'Henüz varlık yok',
     emptyDescription:
       'Logo, ürün ekran görüntüsü ve referans görsel yükle. Dosyalar özel bir Supabase bucket’ında saklanır; veritabanında sadece dosya yolu tutulur.',
+    uploadForm: { name: 'Ad', type: 'Tür', file: 'Dosya', submit: 'Yükle' },
+    remove: 'Kaldır',
+    removeConfirm: 'Bu varlık kaldırılsın mı? Bu işlem geri alınamaz.',
   },
   analytics: {
     title: 'Analitik',

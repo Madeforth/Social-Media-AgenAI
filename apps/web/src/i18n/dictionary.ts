@@ -103,6 +103,13 @@ export interface Dictionary {
     languages: { english: string; turkish: string };
     disabledNotice: string;
     generateButton: string;
+    generatingButton: string;
+    errors: {
+      quota: string;
+      not_configured: string;
+      network: string;
+      failed: string;
+    };
   };
   calendar: {
     title: string;

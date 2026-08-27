@@ -165,6 +165,59 @@ export async function uploadBrandAsset(formData: FormData): Promise<void> {
   revalidatePath(`/${locale}/assets`);
 }
 
+/**
+ * Calls the `generate-post` Edge Function (docs/SECURITY.md's Milestone 6 gate)
+ * with the caller's own access token, so the function re-verifies authorization
+ * itself rather than trusting this server action's judgment.
+ */
+export async function generatePost(formData: FormData): Promise<void> {
+  const locale = targetLocale(formData);
+  const brand = await getCurrentBrand();
+  if (!brand) redirect(`/${locale}/create`);
+
+  const supabase = await getServerSupabase();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session) redirect(`/${locale}/sign-in`);
+
+  const brief = String(formData.get('brief') ?? '').trim();
+
+  let postId: string | null = null;
+  let errorCode = 'failed';
+
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/generate-post`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ brand_id: brand.id, brief: brief || undefined }),
+      },
+    );
+    const result = (await response.json()) as { post_id?: string; error?: string };
+    if (response.ok && result.post_id) {
+      postId = result.post_id;
+    } else if (response.status === 429) {
+      errorCode = 'quota';
+    } else if (response.status === 503) {
+      errorCode = 'not_configured';
+    }
+  } catch {
+    errorCode = 'network';
+  }
+
+  if (postId) {
+    revalidatePath(`/${locale}/library`, 'layout');
+    redirect(`/${locale}/posts/${postId}`);
+  }
+
+  redirect(`/${locale}/create?error=${errorCode}`);
+}
+
 /** Removes both the storage object and its row. Only ADMIN/OWNER can — RLS enforces it. */
 export async function deleteBrandAsset(formData: FormData): Promise<void> {
   const locale = targetLocale(formData);

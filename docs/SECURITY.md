@@ -127,31 +127,48 @@ npx supabase secrets set GEMINI_API_KEY=...
 publishable key, and both files are gitignored. Never log a token, and never
 log a full prompt containing brand data at info level.
 
-## What is planned, and who owns it
+## The Edge Function gate — Milestone 6, enforced
 
-### The Edge Function gate — Milestone 6
+`supabase/functions/generate-post/index.ts`, deployed to the linked project.
+Runs all six checks below, in order, before it calls Gemini:
 
-No Edge Function exists yet. When `generate-post` is written, it must do all of
-the following before it calls Gemini, in this order:
-
-1. **Verify the JWT.** Reject an unauthenticated request outright.
-2. **Re-check authorization server-side.** The service role bypasses RLS, so the
-   function must call `private.can_write_brand` logic explicitly for the caller.
-   A `brand_id` in the request body is an assertion by the client, not a fact.
-3. **Check the allowance.** Call `public.ai_allowance(brand_id)` and refuse with
-   429 when `allowed` is false, returning the used and limit values so the UI
-   can explain the refusal.
+1. **Verify the JWT.** Reject an unauthenticated request outright. (The
+   Supabase Functions gateway also enforces this ahead of the function's own
+   code — verified: an unauthenticated call is refused with
+   `UNAUTHORIZED_NO_AUTH_HEADER` before the function body runs at all.)
+2. **Re-check authorization server-side.** The service role bypasses RLS, so
+   the function re-checks membership and role against the caller's own
+   session (a second Supabase client built from the caller's JWT, not the
+   service role) rather than trusting the `brand_id` in the request body.
+3. **Check the allowance.** Calls `public.ai_allowance(brand_id)` through the
+   service-role client and refuses with 429 when `allowed` is false,
+   returning the used/limit values so the UI can explain the refusal.
 4. **Validate and sanitize input** with `sanitizeUserText` and
    `assertUntrustedSize` before it is rendered into a prompt.
-5. **Write the `ai_generations` row** so the call is counted whether or not it
-   succeeds. A failure that is not counted is a free retry for an attacker.
-6. **Validate the response** with `validateContentProposal` and screen it with
-   `findForbiddenClaims` before persisting anything.
+5. **Writes the `ai_generations` row before calling Gemini**, then updates it
+   with the outcome (success or failure) — a failed call is still counted, so
+   it isn't a free retry.
+6. **Validates the response** with `validateContentProposal`, screens it with
+   `findForbiddenClaims`, then persists a `posts` row (`READY`, or `REVISION`
+   if a forbidden claim was found) and its first `post_versions` row.
 
-Note that step 3 is advisory in isolation — a caller with the service role key
+The function's logic is a self-contained Deno copy in
+`supabase/functions/_shared/ai.ts`, not a real import of `packages/ai/src` —
+Supabase's non-Docker deploy path (`--use-api`, the only option without a
+local Docker daemon) does not walk multi-hop relative imports across package
+boundaries, so a real cross-package import fails at deploy time. See that
+file's header comment; keep the two in sync by hand if `packages/ai/src`
+changes.
+
+**Deployed but not yet exercised end to end**: `GEMINI_API_KEY` is not yet set
+as a project secret (`npx supabase secrets set GEMINI_API_KEY=...` — see
+`memory-bank/userActionsNeeded.md`), so no real Gemini call has been made. The
+function returns 503 without crashing when the key is absent, verified.
+
+Note step 3 is advisory in isolation — a caller with the service role key
 could skip it. The key never leaves the server, which is what makes it hold.
 
-### Not yet addressed
+## What is still planned
 
 - **Instagram webhook signature verification** — Milestone 9. Any payload from
   Meta must be verified against the app secret before it is parsed.

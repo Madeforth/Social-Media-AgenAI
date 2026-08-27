@@ -26,15 +26,26 @@
   brand-per-organization creation flow on both, and the data-access seam now runs real
   RLS-scoped Supabase reads instead of stubs.
 
+- Brand Brain and Asset Library writes (Milestone 5): a real edit form for `brand_guidelines`
+  (upsert), and upload/delete for `brand_assets` into the private `brand-assets` Storage bucket.
+  All writes run through the caller's own session, gated by the existing RLS policies — no
+  service-role path added.
+
+- The Edge Function security gate and Gemini integration (Milestone 6): `generate-post` deployed
+  to the linked Supabase project, running all six checks from `docs/SECURITY.md` in order —
+  verified that an unauthenticated call is refused before the function body runs. The web
+  "Create with AI" page's brief field and generate button are wired to it through a new
+  `generatePost` server action. **Not yet exercised with a real Gemini call** — `GEMINI_API_KEY`
+  is not set as a project secret yet, a step only the project owner can do (see
+  `memory-bank/userActionsNeeded.md`); the function returns 503 without crashing when the key is
+  absent, which was verified.
+
 ## In Progress
 
-- None. Milestone 5 is the next action.
+- None. Milestone 7 is the next action.
 
 ## Not Started
 
-- Brand Brain and Asset Library writes (Milestone 5)
-- The Edge Function security gate and Gemini integration (Milestone 6 — contract in
-  `docs/SECURITY.md`)
 - Image generation and storage workflows (Milestone 7)
 - Approval, revision and scheduling (Milestone 8)
 - Meta integration and publishing (Milestone 9)

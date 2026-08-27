@@ -142,9 +142,15 @@ export const tr: Dictionary = {
       language: 'Dil',
     },
     languages: { english: 'İngilizce', turkish: 'Türkçe' },
-    disabledNotice:
-      'Oluşturma özelliği sonraki bir aşamada devreye alınacak — Gemini Edge Function hazır olana kadar form devre dışı.',
+    disabledNotice: 'Yayın tarihi, içerik pillar’ı, görsel format ve dile şimdilik yapay zeka karar veriyor.',
     generateButton: 'İçerik oluştur',
+    generatingButton: 'Oluşturuluyor…',
+    errors: {
+      quota: 'Bu markanın yapay zeka üretim kotası doldu — daha sonra tekrar dene.',
+      not_configured: 'Gemini bu projede henüz yapılandırılmadı.',
+      network: 'Üretim servisine ulaşılamadı. Bağlantını kontrol edip tekrar dene.',
+      failed: 'Üretim başarısız oldu. Tekrar dene veya brief’i değiştir.',
+    },
   },
   calendar: {
     title: 'Takvim',

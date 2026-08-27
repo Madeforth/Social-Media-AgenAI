@@ -140,9 +140,15 @@ export const en: Dictionary = {
       language: 'Language',
     },
     languages: { english: 'English', turkish: 'Türkçe' },
-    disabledNotice:
-      'Generation is wired up in a later milestone — the form is disabled until the Gemini Edge Function exists.',
+    disabledNotice: 'Publish date, content pillar, visual format and language are decided by the AI for now.',
     generateButton: 'Generate content',
+    generatingButton: 'Generating…',
+    errors: {
+      quota: 'This brand has used its AI generation allowance for now — try again later.',
+      not_configured: 'Gemini is not configured on this project yet.',
+      network: 'Could not reach the generation service. Check your connection and try again.',
+      failed: 'Generation failed. Try again, or adjust the brief.',
+    },
   },
   calendar: {
     title: 'Calendar',

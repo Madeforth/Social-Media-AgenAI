@@ -6,8 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardDivider, CardHeader } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
 import { getI18n } from '@/i18n/get-dictionary';
+import { generatePost } from '@/lib/actions';
 import { cn } from '@/lib/cn';
 import { getBrandGuidelines } from '@/lib/data';
+
+export const maxDuration = 60;
 
 type Mode = 'ai_suggestion' | 'custom_brief';
 
@@ -49,9 +52,9 @@ export default async function CreatePage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ mode?: string }>;
+  searchParams: Promise<{ mode?: string; error?: string }>;
 }) {
-  const [{ mode }, { locale }, guidelines] = await Promise.all([
+  const [{ mode, error }, { locale }, guidelines] = await Promise.all([
     searchParams,
     params,
     getBrandGuidelines(),
@@ -59,6 +62,8 @@ export default async function CreatePage({
   const { dictionary } = await getI18n(locale);
   const copy = dictionary.create;
   const activeMode: Mode = mode === 'custom_brief' ? 'custom_brief' : 'ai_suggestion';
+  const errorMessage =
+    error && error in copy.errors ? copy.errors[error as keyof typeof copy.errors] : null;
   const pillars = guidelines?.content_pillars ?? [];
   const modes: Array<{ id: Mode; title: string; description: string }> = [
     { id: 'ai_suggestion', ...copy.modes.aiSuggestion },
@@ -68,6 +73,12 @@ export default async function CreatePage({
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6">
       <PageHeader title={copy.title} description={copy.description} />
+
+      {errorMessage ? (
+        <p className="rounded-md border border-red-900/50 bg-red-950/30 px-4 py-3 text-sm text-red-300">
+          {errorMessage}
+        </p>
+      ) : null}
 
       <div className="grid gap-3 sm:grid-cols-2">
         {modes.map((option) => {
@@ -109,61 +120,66 @@ export default async function CreatePage({
       <Card>
         <CardHeader title={copy.brief.title} />
         <CardDivider />
-        <div className="flex flex-col gap-5 p-5">
-          {activeMode === 'custom_brief' ? (
-            <FieldShell label={copy.brief.whatShouldThisBeAbout} hint={copy.brief.optional}>
-              <textarea
-                rows={4}
-                disabled
-                placeholder={copy.brief.placeholder}
-                className={cn(INPUT_CLASS, 'resize-none')}
-              />
-            </FieldShell>
-          ) : (
-            <p className="rounded-md border border-border-subtle bg-surface-raised px-3 py-2.5 text-sm text-text-secondary">
-              {copy.brief.aiDecidesDescription}
-            </p>
-          )}
+        <form action={generatePost} className="flex flex-col">
+          <input type="hidden" name="locale" value={locale} />
+          <div className="flex flex-col gap-5 p-5">
+            {activeMode === 'custom_brief' ? (
+              <FieldShell label={copy.brief.whatShouldThisBeAbout} hint={copy.brief.optional}>
+                <textarea
+                  name="brief"
+                  rows={4}
+                  maxLength={2000}
+                  placeholder={copy.brief.placeholder}
+                  className={cn(INPUT_CLASS, 'resize-none')}
+                />
+              </FieldShell>
+            ) : (
+              <p className="rounded-md border border-border-subtle bg-surface-raised px-3 py-2.5 text-sm text-text-secondary">
+                {copy.brief.aiDecidesDescription}
+              </p>
+            )}
 
-          <div className="grid gap-5 sm:grid-cols-2">
-            <FieldShell
-              label={copy.fields.contentPillar}
-              hint={pillars.length === 0 ? copy.fields.noneDefinedYet : copy.brief.optional}
-            >
-              <select disabled className={INPUT_CLASS}>
-                <option>{copy.fields.letAiDecide}</option>
-                {pillars.map((pillar) => (
-                  <option key={pillar.key}>{pillar.name}</option>
-                ))}
-              </select>
-            </FieldShell>
-            <FieldShell label={copy.fields.visualFormat} hint={copy.brief.optional}>
-              <select disabled className={INPUT_CLASS}>
-                <option>{copy.fields.letAiDecide}</option>
-                {VISUAL_FORMATS.map((format) => (
-                  <option key={format}>{dictionary.visualFormat[format]}</option>
-                ))}
-              </select>
-            </FieldShell>
-            <FieldShell label={copy.fields.publishDate} hint={copy.brief.optional}>
-              <input type="date" disabled className={INPUT_CLASS} />
-            </FieldShell>
-            <FieldShell label={copy.fields.language}>
-              <select disabled className={INPUT_CLASS}>
-                <option>{copy.languages.english}</option>
-                <option>{copy.languages.turkish}</option>
-              </select>
-            </FieldShell>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <FieldShell
+                label={copy.fields.contentPillar}
+                hint={pillars.length === 0 ? copy.fields.noneDefinedYet : copy.brief.optional}
+              >
+                <select disabled className={INPUT_CLASS}>
+                  <option>{copy.fields.letAiDecide}</option>
+                  {pillars.map((pillar) => (
+                    <option key={pillar.key}>{pillar.name}</option>
+                  ))}
+                </select>
+              </FieldShell>
+              <FieldShell label={copy.fields.visualFormat} hint={copy.brief.optional}>
+                <select disabled className={INPUT_CLASS}>
+                  <option>{copy.fields.letAiDecide}</option>
+                  {VISUAL_FORMATS.map((format) => (
+                    <option key={format}>{dictionary.visualFormat[format]}</option>
+                  ))}
+                </select>
+              </FieldShell>
+              <FieldShell label={copy.fields.publishDate} hint={copy.brief.optional}>
+                <input type="date" disabled className={INPUT_CLASS} />
+              </FieldShell>
+              <FieldShell label={copy.fields.language}>
+                <select disabled className={INPUT_CLASS}>
+                  <option>{copy.languages.english}</option>
+                  <option>{copy.languages.turkish}</option>
+                </select>
+              </FieldShell>
+            </div>
           </div>
-        </div>
-        <CardDivider />
-        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-          <p className="text-xs text-text-muted">{copy.disabledNotice}</p>
-          <Button variant="primary" disabled>
-            <SparkIcon className="h-4 w-4" />
-            {copy.generateButton}
-          </Button>
-        </div>
+
+          <CardDivider />
+          <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+            <p className="text-xs text-text-muted">{copy.disabledNotice}</p>
+            <Button type="submit" variant="primary">
+              <SparkIcon className="h-4 w-4" />
+              {copy.generateButton}
+            </Button>
+          </div>
+        </form>
       </Card>
     </div>
   );

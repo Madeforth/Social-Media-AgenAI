@@ -271,3 +271,150 @@ export async function deleteBrandAsset(formData: FormData): Promise<void> {
 
   revalidatePath(`/${locale}/assets`);
 }
+
+/**
+ * Calls `generate-post` again with `post_id` set, so it appends a new version
+ * to the existing post (Milestone 8's "Regenerate") instead of creating one.
+ */
+export async function regeneratePost(formData: FormData): Promise<void> {
+  const locale = targetLocale(formData);
+  const postId = String(formData.get('postId') ?? '');
+  if (!postId) redirect(`/${locale}/library`);
+
+  const supabase = await getServerSupabase();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session) redirect(`/${locale}/sign-in`);
+
+  const brief = String(formData.get('brief') ?? '').trim();
+  let errorCode: string | null = null;
+
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/generate-post`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ post_id: postId, brief: brief || undefined }),
+      },
+    );
+    if (!response.ok) {
+      errorCode =
+        response.status === 429 ? 'quota' : response.status === 503 ? 'not_configured' : 'failed';
+    }
+  } catch {
+    errorCode = 'network';
+  }
+
+  revalidatePath(`/${locale}/posts/${postId}`);
+  revalidatePath(`/${locale}/library`, 'layout');
+  redirect(
+    errorCode ? `/${locale}/posts/${postId}?genError=${errorCode}` : `/${locale}/posts/${postId}`,
+  );
+}
+
+/** Sets a post's status directly. Every transition here is still gated by the posts RLS policy. */
+async function setPostStatus(
+  postId: string,
+  status: 'APPROVED' | 'REVISION' | 'CANCELLED',
+): Promise<void> {
+  const supabase = await getServerSupabase();
+  await supabase.from('posts').update({ status }).eq('id', postId);
+}
+
+export async function approvePost(formData: FormData): Promise<void> {
+  const locale = targetLocale(formData);
+  const postId = String(formData.get('postId') ?? '');
+  if (!postId) return;
+  await setPostStatus(postId, 'APPROVED');
+  revalidatePath(`/${locale}/posts/${postId}`);
+  revalidatePath(`/${locale}/library`, 'layout');
+}
+
+export async function requestRevision(formData: FormData): Promise<void> {
+  const locale = targetLocale(formData);
+  const postId = String(formData.get('postId') ?? '');
+  if (!postId) return;
+  await setPostStatus(postId, 'REVISION');
+  revalidatePath(`/${locale}/posts/${postId}`);
+  revalidatePath(`/${locale}/library`, 'layout');
+}
+
+/** `scheduledAt` is a `datetime-local` value (no timezone) — treated as the brand's local time. */
+export async function schedulePost(formData: FormData): Promise<void> {
+  const locale = targetLocale(formData);
+  const postId = String(formData.get('postId') ?? '');
+  const scheduledAt = String(formData.get('scheduledAt') ?? '');
+  if (!postId || !scheduledAt) return;
+
+  const at = new Date(scheduledAt);
+  if (Number.isNaN(at.getTime())) return;
+
+  const supabase = await getServerSupabase();
+  await supabase
+    .from('posts')
+    .update({ status: 'SCHEDULED', scheduled_at: at.toISOString() })
+    .eq('id', postId);
+
+  revalidatePath(`/${locale}/posts/${postId}`);
+  revalidatePath(`/${locale}/calendar`, 'layout');
+  revalidatePath(`/${locale}/library`, 'layout');
+}
+
+/**
+ * A human edit never overwrites a version in place — it appends a new one
+ * (`created_by: 'USER'`) and moves `current_version_id`, carrying over the
+ * image and creative direction from the version being edited.
+ */
+export async function editPostVersion(formData: FormData): Promise<void> {
+  const locale = targetLocale(formData);
+  const postId = String(formData.get('postId') ?? '');
+  if (!postId) redirect(`/${locale}/library`);
+
+  const supabase = await getServerSupabase();
+
+  const { data: post } = await supabase
+    .from('posts')
+    .select('id, current_version_id')
+    .eq('id', postId)
+    .maybeSingle();
+  if (!post) redirect(`/${locale}/library`);
+
+  const { data: currentVersion } = await supabase
+    .from('post_versions')
+    .select('version_number, creative_direction, generation_prompt, image_storage_path')
+    .eq('id', post.current_version_id ?? '')
+    .maybeSingle();
+
+  const { data: inserted, error: insertError } = await supabase
+    .from('post_versions')
+    .insert({
+      post_id: postId,
+      version_number: (currentVersion?.version_number ?? 0) + 1,
+      headline: String(formData.get('headline') ?? '').trim(),
+      supporting_copy: String(formData.get('supportingCopy') ?? '').trim(),
+      caption: String(formData.get('caption') ?? '').trim(),
+      cta: String(formData.get('cta') ?? '').trim(),
+      hashtags: lines(formData, 'hashtags'),
+      creative_direction: currentVersion?.creative_direction ?? '',
+      generation_prompt: currentVersion?.generation_prompt ?? '',
+      image_storage_path: currentVersion?.image_storage_path ?? null,
+      created_by: 'USER',
+    })
+    .select('id')
+    .single();
+  if (insertError || !inserted) redirect(`/${locale}/posts/${postId}`);
+
+  await supabase
+    .from('posts')
+    .update({ current_version_id: inserted.id, status: 'READY' })
+    .eq('id', postId);
+
+  revalidatePath(`/${locale}/posts/${postId}`);
+  revalidatePath(`/${locale}/library`, 'layout');
+  redirect(`/${locale}/posts/${postId}`);
+}

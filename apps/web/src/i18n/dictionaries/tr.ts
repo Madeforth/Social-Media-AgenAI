@@ -142,7 +142,8 @@ export const tr: Dictionary = {
       language: 'Dil',
     },
     languages: { english: 'İngilizce', turkish: 'Türkçe' },
-    disabledNotice: 'Yayın tarihi, içerik pillar’ı, görsel format ve dile şimdilik yapay zeka karar veriyor.',
+    disabledNotice:
+      'Yayın tarihi, içerik pillar’ı, görsel format ve dile şimdilik yapay zeka karar veriyor.',
     generateButton: 'İçerik oluştur',
     generatingButton: 'Oluşturuluyor…',
     errors: {
@@ -176,6 +177,7 @@ export const tr: Dictionary = {
     regenerate: 'Yeniden oluştur',
     edit: 'Düzenle',
     approve: 'Onayla',
+    requestRevision: 'Revizyon iste',
     uiAssetNotice:
       'Bu konsept gerçek bir ürün ekran görüntüsü kullanıyor. Varlık olduğu gibi yerleştirilir, asla yeniden çizilmez.',
     generateImage: 'Görsel oluştur',
@@ -186,6 +188,15 @@ export const tr: Dictionary = {
       network: 'Üretim servisine ulaşılamadı. Bağlantını kontrol edip tekrar dene.',
       failed: 'Görsel oluşturma başarısız oldu. Tekrar dene.',
     },
+    genErrors: {
+      quota: 'Bu markanın yapay zeka üretim kotası doldu — daha sonra tekrar dene.',
+      not_configured: 'Gemini bu projede henüz yapılandırılmadı.',
+      network: 'Üretim servisine ulaşılamadı. Bağlantını kontrol edip tekrar dene.',
+      failed: 'Yeniden oluşturma başarısız oldu. Tekrar dene.',
+    },
+    revisionNoteLabel: 'Ne değişmeli?',
+    revisionNotePlaceholder:
+      'Opsiyonel — yeniden oluşturmadan önce yapay zekaya neyi düzelteceğini söyle.',
     strategy: {
       title: 'Strateji',
       objective: 'Amaç',
@@ -208,6 +219,8 @@ export const tr: Dictionary = {
       instagram: 'Instagram',
       account: 'Hesap',
       connect: 'Bağla',
+      scheduleButton: 'Zamanla',
+      rescheduleButton: 'Yeniden zamanla',
     },
   },
   brandBrain: {
@@ -381,6 +394,6 @@ export const tr: Dictionary = {
   signIn: {
     title: "Apex Social AI'a giriş yap",
     subtitle: 'Devam etmek için Google hesabını kullan.',
-    continueWithGoogle: "Google ile devam et",
+    continueWithGoogle: 'Google ile devam et',
   },
 };

@@ -14,7 +14,13 @@ import { Card, CardDivider, CardHeader } from '@/components/ui/card';
 import { CreativePreview } from '@/components/ui/creative-preview';
 import { StatusChip } from '@/components/ui/status-chip';
 import { getI18n } from '@/i18n/get-dictionary';
-import { generateImage } from '@/lib/actions';
+import {
+  approvePost,
+  generateImage,
+  regeneratePost,
+  requestRevision,
+  schedulePost,
+} from '@/lib/actions';
 import { getPost, getPostImageUrl } from '@/lib/data';
 import { formatDate, formatTime } from '@/lib/format';
 
@@ -22,7 +28,7 @@ export const maxDuration = 60;
 
 interface PageParams {
   params: Promise<{ locale: string; postId: string }>;
-  searchParams: Promise<{ imageError?: string }>;
+  searchParams: Promise<{ imageError?: string; genError?: string }>;
 }
 
 export async function generateMetadata({ params }: PageParams) {
@@ -57,7 +63,7 @@ function Field({
 
 export default async function PostDetailPage({ params, searchParams }: PageParams) {
   const { locale: requestedLocale, postId } = await params;
-  const { imageError } = await searchParams;
+  const { imageError, genError } = await searchParams;
   const [post, i18n] = await Promise.all([getPost(postId), getI18n(requestedLocale)]);
 
   if (!post) {
@@ -70,6 +76,13 @@ export default async function PostDetailPage({ params, searchParams }: PageParam
     imageError && imageError in copy.imageErrors
       ? copy.imageErrors[imageError as keyof typeof copy.imageErrors]
       : null;
+  const genErrorMessage =
+    genError && genError in copy.genErrors
+      ? copy.genErrors[genError as keyof typeof copy.genErrors]
+      : null;
+  const canApprove = post.status === 'READY' || post.status === 'REVISION';
+  const canRequestRevision = post.status === 'READY';
+  const canSchedule = post.status === 'APPROVED' || post.status === 'SCHEDULED';
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6">
@@ -99,18 +112,29 @@ export default async function PostDetailPage({ params, searchParams }: PageParam
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button size="md">
-            <RefreshIcon className="h-4 w-4" />
-            {copy.regenerate}
-          </Button>
-          <Button size="md">
+          <ButtonLink href={`/posts/${post.id}/edit`} size="md">
             <PencilIcon className="h-4 w-4" />
             {copy.edit}
-          </Button>
-          <Button variant="primary" size="md">
-            <CheckIcon className="h-4 w-4" />
-            {copy.approve}
-          </Button>
+          </ButtonLink>
+          {canRequestRevision ? (
+            <form action={requestRevision}>
+              <input type="hidden" name="locale" value={locale} />
+              <input type="hidden" name="postId" value={post.id} />
+              <Button type="submit" size="md">
+                {copy.requestRevision}
+              </Button>
+            </form>
+          ) : null}
+          {canApprove ? (
+            <form action={approvePost}>
+              <input type="hidden" name="locale" value={locale} />
+              <input type="hidden" name="postId" value={post.id} />
+              <Button type="submit" variant="primary" size="md">
+                <CheckIcon className="h-4 w-4" />
+                {copy.approve}
+              </Button>
+            </form>
+          ) : null}
         </div>
       </header>
 
@@ -119,6 +143,37 @@ export default async function PostDetailPage({ params, searchParams }: PageParam
           {imageErrorMessage}
         </p>
       ) : null}
+
+      {genErrorMessage ? (
+        <p className="rounded-md border border-red-900/50 bg-red-950/30 px-4 py-3 text-sm text-red-300">
+          {genErrorMessage}
+        </p>
+      ) : null}
+
+      <Card>
+        <CardHeader title={copy.regenerate} />
+        <CardDivider />
+        <form action={regeneratePost} className="flex flex-col gap-3 p-5 sm:flex-row sm:items-end">
+          <input type="hidden" name="locale" value={locale} />
+          <input type="hidden" name="postId" value={post.id} />
+          <label className="flex-1">
+            <span className="text-[11px] uppercase tracking-[0.12em] text-text-muted">
+              {copy.revisionNoteLabel}
+            </span>
+            <textarea
+              name="brief"
+              rows={2}
+              maxLength={2000}
+              placeholder={copy.revisionNotePlaceholder}
+              className="mt-1.5 w-full resize-none rounded-md border border-border-subtle bg-surface-raised px-3 py-2 text-sm text-text-primary outline-none placeholder:text-text-muted focus:border-accent"
+            />
+          </label>
+          <Button type="submit" size="md">
+            <RefreshIcon className="h-4 w-4" />
+            {copy.regenerate}
+          </Button>
+        </form>
+      </Card>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,420px)_1fr]">
         <div className="flex flex-col gap-4">
@@ -240,6 +295,24 @@ export default async function PostDetailPage({ params, searchParams }: PageParam
                   {copy.schedule.connect}
                 </ButtonLink>
               </div>
+              {canSchedule ? (
+                <form action={schedulePost} className="flex items-center gap-2 pt-1">
+                  <input type="hidden" name="locale" value={locale} />
+                  <input type="hidden" name="postId" value={post.id} />
+                  <input
+                    type="datetime-local"
+                    name="scheduledAt"
+                    required
+                    defaultValue={post.scheduled_at ? post.scheduled_at.slice(0, 16) : undefined}
+                    className="h-9 flex-1 rounded-md border border-border-subtle bg-surface-raised px-2.5 text-xs text-text-primary outline-none focus:border-accent"
+                  />
+                  <Button type="submit" size="sm" variant="primary">
+                    {post.status === 'SCHEDULED'
+                      ? copy.schedule.rescheduleButton
+                      : copy.schedule.scheduleButton}
+                  </Button>
+                </form>
+              ) : null}
             </div>
           </Card>
         </div>

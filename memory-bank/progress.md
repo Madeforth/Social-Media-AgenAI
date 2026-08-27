@@ -49,13 +49,24 @@
   calendar, dashboard cards were not changed), plus a Generate/Regenerate image button. Same
   not-yet-exercised caveat as Milestone 6: needs `GEMINI_API_KEY` set.
 
+- Approval, revision and scheduling (Milestone 8): `approvePost`/`requestRevision`/`schedulePost`
+  server actions (direct RLS-gated `posts` updates — no Edge Function needed, these are just
+  status/timestamp writes, not privileged calls). A human edit never overwrites a version in
+  place — `editPostVersion` and the new `/posts/[id]/edit` page append a `created_by: 'USER'`
+  version and move `current_version_id`, carrying over the image and creative direction. Extended
+  `generate-post` to accept an optional `post_id`: when present it appends a new AI version to
+  that post (the "Regenerate" button, with an optional revision-note textarea) instead of creating
+  a new post — same six-step gate, redeployed. The post detail page's header buttons and the
+  Schedule card are now functional instead of placeholders; the calendar page already read real
+  `scheduled_at`/`published_at` data from Milestone 3, so scheduled posts appear there with no
+  further change needed.
+
 ## In Progress
 
-- None. Milestone 8 is the next action.
+- None. Milestone 9 is the next action.
 
 ## Not Started
 
-- Approval, revision and scheduling (Milestone 8)
 - Meta integration and publishing (Milestone 9)
 - Notifications
 - Analytics

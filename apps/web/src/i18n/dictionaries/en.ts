@@ -140,7 +140,8 @@ export const en: Dictionary = {
       language: 'Language',
     },
     languages: { english: 'English', turkish: 'Türkçe' },
-    disabledNotice: 'Publish date, content pillar, visual format and language are decided by the AI for now.',
+    disabledNotice:
+      'Publish date, content pillar, visual format and language are decided by the AI for now.',
     generateButton: 'Generate content',
     generatingButton: 'Generating…',
     errors: {
@@ -174,6 +175,7 @@ export const en: Dictionary = {
     regenerate: 'Regenerate',
     edit: 'Edit',
     approve: 'Approve',
+    requestRevision: 'Request revision',
     uiAssetNotice:
       'This concept uses a real product screenshot. The asset is placed as supplied and is never redrawn.',
     generateImage: 'Generate image',
@@ -184,6 +186,14 @@ export const en: Dictionary = {
       network: 'Could not reach the generation service. Check your connection and try again.',
       failed: 'Image generation failed. Try again.',
     },
+    genErrors: {
+      quota: 'This brand has used its AI generation allowance for now — try again later.',
+      not_configured: 'Gemini is not configured on this project yet.',
+      network: 'Could not reach the generation service. Check your connection and try again.',
+      failed: 'Regeneration failed. Try again.',
+    },
+    revisionNoteLabel: 'What should change?',
+    revisionNotePlaceholder: 'Optional — tell the AI what to fix before it regenerates.',
     strategy: {
       title: 'Strategy',
       objective: 'Objective',
@@ -206,6 +216,8 @@ export const en: Dictionary = {
       instagram: 'Instagram',
       account: 'Account',
       connect: 'Connect',
+      scheduleButton: 'Schedule',
+      rescheduleButton: 'Reschedule',
     },
   },
   brandBrain: {
@@ -253,7 +265,8 @@ export const en: Dictionary = {
       save: 'Save',
       cancel: 'Cancel',
       listHint: 'One per line.',
-      pillarsHint: 'One per line: name | description | share% — e.g. "Lifestyle | Rider stories | 40"',
+      pillarsHint:
+        'One per line: name | description | share% — e.g. "Lifestyle | Rider stories | 40"',
       fields: {
         mission: 'Mission',
         vision: 'Vision',

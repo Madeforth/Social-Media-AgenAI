@@ -1,6 +1,8 @@
 // `generate-post`: the Edge Function gate described in docs/SECURITY.md §"The
 // Edge Function gate — Milestone 6". Runs the six checks in the documented
-// order, then calls Gemini and persists a DRAFT post + its first version.
+// order, then calls Gemini and persists a post + its first version — or, when
+// `post_id` is given (Milestone 8's "Regenerate"), appends a new version to
+// that existing post instead of creating a new one.
 //
 // Imports from ../_shared/ai.ts, a self-contained Deno copy of
 // packages/ai/src — see that file's header comment for why it isn't a real
@@ -51,18 +53,32 @@ Deno.serve(async (req) => {
   const { data: userData, error: userError } = await userClient.auth.getUser();
   if (userError || !userData.user) return json(401, { error: 'not authenticated' });
 
-  let body: { brand_id?: unknown; brief?: unknown };
+  let body: { brand_id?: unknown; brief?: unknown; post_id?: unknown };
   try {
     body = await req.json();
   } catch {
     return json(400, { error: 'invalid JSON body' });
   }
-  const brandId = typeof body.brand_id === 'string' ? body.brand_id : null;
-  if (!brandId) return json(400, { error: 'brand_id is required' });
+  const regeneratingPostId = typeof body.post_id === 'string' ? body.post_id : null;
 
   // 2. Re-check authorization server-side. The service role bypasses RLS, so a
-  // brand_id in the request body is an assertion by the client, not a fact —
-  // this check runs against the caller's own session, not the service role.
+  // brand_id (or post_id) in the request body is an assertion by the client,
+  // not a fact — this check runs against the caller's own session, never the
+  // service role.
+  let brandId: string | null = null;
+  if (regeneratingPostId) {
+    const { data: existingPost } = await userClient
+      .from('posts')
+      .select('brand_id')
+      .eq('id', regeneratingPostId)
+      .maybeSingle();
+    if (!existingPost) return json(404, { error: 'post not found' });
+    brandId = existingPost.brand_id;
+  } else {
+    brandId = typeof body.brand_id === 'string' ? body.brand_id : null;
+  }
+  if (!brandId) return json(400, { error: 'brand_id is required' });
+
   const { data: brand } = await userClient
     .from('brands')
     .select('id, organization_id, name')
@@ -157,7 +173,7 @@ Deno.serve(async (req) => {
       generation_type: 'POST_PROPOSAL',
       provider: AI_PROVIDER,
       model: GEMINI_TEXT_MODEL,
-      input_json: { brief: brief.text },
+      input_json: { brief: brief.text, regenerating_post_id: regeneratingPostId },
     })
     .select('id')
     .single();
@@ -229,26 +245,55 @@ Deno.serve(async (req) => {
 
   const postStatus = forbiddenHits.length > 0 ? 'REVISION' : 'READY';
 
-  const { data: post, error: postError } = await serviceClient
-    .from('posts')
-    .insert({
-      brand_id: brandId,
-      status: postStatus,
-      content_pillar: proposal.content_pillar,
-      objective: proposal.objective,
-      concept_title: proposal.concept_title,
-      visual_format: proposal.visual_format,
-      ui_asset_required: proposal.ui_asset_required,
-    })
-    .select('id')
-    .single();
-  if (postError || !post) return json(500, { error: 'failed to create the post' });
+  let postId: string;
+  let nextVersionNumber = 1;
+
+  if (regeneratingPostId) {
+    const { data: latestVersion } = await serviceClient
+      .from('post_versions')
+      .select('version_number')
+      .eq('post_id', regeneratingPostId)
+      .order('version_number', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    nextVersionNumber = (latestVersion?.version_number ?? 0) + 1;
+
+    const { error: postUpdateError } = await serviceClient
+      .from('posts')
+      .update({
+        status: postStatus,
+        content_pillar: proposal.content_pillar,
+        objective: proposal.objective,
+        concept_title: proposal.concept_title,
+        visual_format: proposal.visual_format,
+        ui_asset_required: proposal.ui_asset_required,
+      })
+      .eq('id', regeneratingPostId);
+    if (postUpdateError) return json(500, { error: 'failed to update the post' });
+    postId = regeneratingPostId;
+  } else {
+    const { data: post, error: postError } = await serviceClient
+      .from('posts')
+      .insert({
+        brand_id: brandId,
+        status: postStatus,
+        content_pillar: proposal.content_pillar,
+        objective: proposal.objective,
+        concept_title: proposal.concept_title,
+        visual_format: proposal.visual_format,
+        ui_asset_required: proposal.ui_asset_required,
+      })
+      .select('id')
+      .single();
+    if (postError || !post) return json(500, { error: 'failed to create the post' });
+    postId = post.id;
+  }
 
   const { data: version, error: versionError } = await serviceClient
     .from('post_versions')
     .insert({
-      post_id: post.id,
-      version_number: 1,
+      post_id: postId,
+      version_number: nextVersionNumber,
       headline: proposal.headline,
       supporting_copy: proposal.supporting_copy,
       caption: proposal.caption,
@@ -269,9 +314,9 @@ Deno.serve(async (req) => {
   if (versionError || !version) return json(500, { error: 'failed to create the post version' });
 
   await Promise.all([
-    serviceClient.from('posts').update({ current_version_id: version.id }).eq('id', post.id),
-    serviceClient.from('ai_generations').update({ post_id: post.id }).eq('id', generationRow.id),
+    serviceClient.from('posts').update({ current_version_id: version.id }).eq('id', postId),
+    serviceClient.from('ai_generations').update({ post_id: postId }).eq('id', generationRow.id),
   ]);
 
-  return json(200, { post_id: post.id, status: postStatus, forbidden_hits: forbiddenHits });
+  return json(200, { post_id: postId, status: postStatus, forbidden_hits: forbiddenHits });
 });

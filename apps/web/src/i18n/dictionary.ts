@@ -133,10 +133,14 @@ export interface Dictionary {
     regenerate: string;
     edit: string;
     approve: string;
+    requestRevision: string;
     uiAssetNotice: string;
     generateImage: string;
     regenerateImage: string;
     imageErrors: { quota: string; not_configured: string; network: string; failed: string };
+    genErrors: { quota: string; not_configured: string; network: string; failed: string };
+    revisionNoteLabel: string;
+    revisionNotePlaceholder: string;
     strategy: {
       title: string;
       objective: string;
@@ -159,6 +163,8 @@ export interface Dictionary {
       instagram: string;
       account: string;
       connect: string;
+      scheduleButton: string;
+      rescheduleButton: string;
     };
   };
   brandBrain: {

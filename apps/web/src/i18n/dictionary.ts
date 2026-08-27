@@ -141,6 +141,8 @@ export interface Dictionary {
     genErrors: { quota: string; not_configured: string; network: string; failed: string };
     revisionNoteLabel: string;
     revisionNotePlaceholder: string;
+    publishNow: string;
+    publishErrorBanner: string;
     strategy: {
       title: string;
       objective: string;
@@ -244,7 +246,20 @@ export interface Dictionary {
     description: string;
     integrations: {
       title: string;
-      instagram: { title: string; description: string; connect: string };
+      instagram: {
+        title: string;
+        description: string;
+        connect: string;
+        connected: (username: string) => string;
+        formAccountName: string;
+        formExternalId: string;
+        formExternalIdHint: string;
+        formAccessToken: string;
+        formAccessTokenHint: string;
+        formSubmit: string;
+        connectedBanner: string;
+        errorBanner: string;
+      };
       gemini: { title: string; description: string; serverSide: string };
     };
     brand: {

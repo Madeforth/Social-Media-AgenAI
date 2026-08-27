@@ -168,11 +168,34 @@ function returns 503 without crashing when the key is absent, verified.
 Note step 3 is advisory in isolation — a caller with the service role key
 could skip it. The key never leaves the server, which is what makes it hold.
 
+## Provider tokens and publishing — Milestone 9, enforced
+
+- **Instagram webhook signature verification is enforced.**
+  `supabase/functions/meta-webhook` verifies `X-Hub-Signature-256` against
+  `META_APP_SECRET` with a timing-safe comparison before the payload is
+  parsed at all; an unsigned or mis-signed request is rejected with 401.
+  Deployed with `--no-verify-jwt` since Meta cannot send a Supabase session.
+  Verified: an unsigned POST is rejected. Comment ingestion into an Inbox
+  feature is a separate, not-yet-built feature — this function's job ends at
+  "prove Meta sent this."
+- **No provider token is stored in a table.** `social_accounts.token_secret_ref`
+  points at a Supabase Vault secret
+  (`supabase/migrations/20260827150000_provider_secrets.sql`);
+  `store_provider_secret`/`read_provider_secret` are `service_role`-only
+  wrappers, same shape as `ai_allowance`.
+- **`connect-instagram`, `publish-instagram-post`, `sync-post-metrics`** all
+  run the same gate shape as `generate-post` — deployed, verified to return
+  401 without a session.
+- **Publishing is manually triggered ("Publish now"), not cron-scheduled.**
+  Building `pg_cron`/`pg_net` automation blind, with no live Meta credentials
+  to test against, was judged too risky for an unattended session — see
+  `memory-bank/userActionsNeeded.md`. A human clicks Publish at or after the
+  scheduled time; this is a deliberate scope cut, not an oversight.
+- **Meta token refresh and rotation is not implemented.** Long-lived tokens
+  (~60 days) are stored with a computed expiry; nothing refreshes them yet.
+
 ## What is still planned
 
-- **Instagram webhook signature verification** — Milestone 9. Any payload from
-  Meta must be verified against the app secret before it is parsed.
-- **Meta token refresh and rotation** — Milestone 9.
 - **Upload content inspection.** Bucket-level MIME and size limits are set
   (25 MB, image types only), but an uploaded file's actual bytes are not
   inspected. `nosniff` and private buckets limit the impact.

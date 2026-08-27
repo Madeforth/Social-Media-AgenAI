@@ -17,6 +17,7 @@ import { getI18n } from '@/i18n/get-dictionary';
 import {
   approvePost,
   generateImage,
+  publishPost,
   regeneratePost,
   requestRevision,
   schedulePost,
@@ -28,7 +29,7 @@ export const maxDuration = 60;
 
 interface PageParams {
   params: Promise<{ locale: string; postId: string }>;
-  searchParams: Promise<{ imageError?: string; genError?: string }>;
+  searchParams: Promise<{ imageError?: string; genError?: string; publishError?: string }>;
 }
 
 export async function generateMetadata({ params }: PageParams) {
@@ -63,7 +64,7 @@ function Field({
 
 export default async function PostDetailPage({ params, searchParams }: PageParams) {
   const { locale: requestedLocale, postId } = await params;
-  const { imageError, genError } = await searchParams;
+  const { imageError, genError, publishError } = await searchParams;
   const [post, i18n] = await Promise.all([getPost(postId), getI18n(requestedLocale)]);
 
   if (!post) {
@@ -83,6 +84,7 @@ export default async function PostDetailPage({ params, searchParams }: PageParam
   const canApprove = post.status === 'READY' || post.status === 'REVISION';
   const canRequestRevision = post.status === 'READY';
   const canSchedule = post.status === 'APPROVED' || post.status === 'SCHEDULED';
+  const canPublish = post.status === 'APPROVED' || post.status === 'SCHEDULED';
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6">
@@ -135,6 +137,15 @@ export default async function PostDetailPage({ params, searchParams }: PageParam
               </Button>
             </form>
           ) : null}
+          {canPublish ? (
+            <form action={publishPost}>
+              <input type="hidden" name="locale" value={locale} />
+              <input type="hidden" name="postId" value={post.id} />
+              <Button type="submit" variant="primary" size="md">
+                {copy.publishNow}
+              </Button>
+            </form>
+          ) : null}
         </div>
       </header>
 
@@ -147,6 +158,12 @@ export default async function PostDetailPage({ params, searchParams }: PageParam
       {genErrorMessage ? (
         <p className="rounded-md border border-red-900/50 bg-red-950/30 px-4 py-3 text-sm text-red-300">
           {genErrorMessage}
+        </p>
+      ) : null}
+
+      {publishError ? (
+        <p className="rounded-md border border-red-900/50 bg-red-950/30 px-4 py-3 text-sm text-red-300">
+          {copy.publishErrorBanner}
         </p>
       ) : null}
 

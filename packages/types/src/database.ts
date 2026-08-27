@@ -712,6 +712,11 @@ export type Database = {
           monthly_used: number
         }[]
       }
+      read_provider_secret: { Args: { p_secret_id: string }; Returns: string }
+      store_provider_secret: {
+        Args: { p_name: string; p_secret: string }
+        Returns: string
+      }
     }
     Enums: {
       brand_asset_type:

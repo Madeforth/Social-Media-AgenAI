@@ -418,3 +418,86 @@ export async function editPostVersion(formData: FormData): Promise<void> {
   revalidatePath(`/${locale}/library`, 'layout');
   redirect(`/${locale}/posts/${postId}`);
 }
+
+/** Validates and stores a pasted long-lived Instagram access token (Milestone 9, V1 connect flow). */
+export async function connectInstagram(formData: FormData): Promise<void> {
+  const locale = targetLocale(formData);
+  const brand = await getCurrentBrand();
+  if (!brand) redirect(`/${locale}/settings`);
+
+  const supabase = await getServerSupabase();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session) redirect(`/${locale}/sign-in`);
+
+  let errorCode: string | null = null;
+
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/connect-instagram`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          brand_id: brand.id,
+          account_name: String(formData.get('accountName') ?? '').trim(),
+          external_account_id: String(formData.get('externalAccountId') ?? '').trim(),
+          access_token: String(formData.get('accessToken') ?? '').trim(),
+        }),
+      },
+    );
+    if (!response.ok) errorCode = 'failed';
+  } catch {
+    errorCode = 'network';
+  }
+
+  revalidatePath(`/${locale}/settings`);
+  redirect(
+    errorCode ? `/${locale}/settings?igError=${errorCode}` : `/${locale}/settings?igConnected=1`,
+  );
+}
+
+/** Calls `publish-instagram-post` for an approved/scheduled post ("Publish now"). */
+export async function publishPost(formData: FormData): Promise<void> {
+  const locale = targetLocale(formData);
+  const postId = String(formData.get('postId') ?? '');
+  if (!postId) return;
+
+  const supabase = await getServerSupabase();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session) redirect(`/${locale}/sign-in`);
+
+  let errorCode: string | null = null;
+
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/publish-instagram-post`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ post_id: postId }),
+      },
+    );
+    if (!response.ok) errorCode = 'failed';
+  } catch {
+    errorCode = 'network';
+  }
+
+  revalidatePath(`/${locale}/posts/${postId}`);
+  revalidatePath(`/${locale}/library`, 'layout');
+  revalidatePath(`/${locale}/calendar`, 'layout');
+  redirect(
+    errorCode
+      ? `/${locale}/posts/${postId}?publishError=${errorCode}`
+      : `/${locale}/posts/${postId}`,
+  );
+}

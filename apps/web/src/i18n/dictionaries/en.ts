@@ -194,6 +194,8 @@ export const en: Dictionary = {
     },
     revisionNoteLabel: 'What should change?',
     revisionNotePlaceholder: 'Optional — tell the AI what to fix before it regenerates.',
+    publishNow: 'Publish now',
+    publishErrorBanner: 'Publishing failed. Check the connected account and try again.',
     strategy: {
       title: 'Strategy',
       objective: 'Objective',
@@ -326,6 +328,15 @@ export const en: Dictionary = {
         description:
           'Publishing and metrics run through the Meta Graph API. Tokens are stored server-side and never reach this browser.',
         connect: 'Connect',
+        connected: (username) => `Connected as @${username}`,
+        formAccountName: 'Label',
+        formExternalId: 'Instagram Business Account ID',
+        formExternalIdHint: 'From Meta Business Suite or the Graph API Explorer.',
+        formAccessToken: 'Access token',
+        formAccessTokenHint: 'A long-lived token. Verified against the Graph API before saving.',
+        formSubmit: 'Connect',
+        connectedBanner: 'Instagram account connected.',
+        errorBanner: 'Could not verify or save that token. Double-check the account ID and token.',
       },
       gemini: {
         title: 'Gemini',

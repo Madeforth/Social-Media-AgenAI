@@ -197,6 +197,8 @@ export const tr: Dictionary = {
     revisionNoteLabel: 'Ne değişmeli?',
     revisionNotePlaceholder:
       'Opsiyonel — yeniden oluşturmadan önce yapay zekaya neyi düzelteceğini söyle.',
+    publishNow: 'Şimdi yayınla',
+    publishErrorBanner: 'Yayınlama başarısız oldu. Bağlı hesabı kontrol edip tekrar dene.',
     strategy: {
       title: 'Strateji',
       objective: 'Amaç',
@@ -330,6 +332,16 @@ export const tr: Dictionary = {
         description:
           'Yayınlama ve metrikler Meta Graph API üzerinden çalışır. Token’lar sunucu tarafında saklanır ve bu tarayıcıya asla ulaşmaz.',
         connect: 'Bağla',
+        connected: (username) => `@${username} olarak bağlandı`,
+        formAccountName: 'Etiket',
+        formExternalId: 'Instagram İşletme Hesabı ID',
+        formExternalIdHint: 'Meta Business Suite veya Graph API Explorer’dan.',
+        formAccessToken: 'Erişim tokenı',
+        formAccessTokenHint:
+          'Uzun ömürlü bir token. Kaydetmeden önce Graph API’ye karşı doğrulanır.',
+        formSubmit: 'Bağla',
+        connectedBanner: 'Instagram hesabı bağlandı.',
+        errorBanner: 'Token doğrulanamadı veya kaydedilemedi. Hesap ID ve tokenı kontrol et.',
       },
       gemini: {
         title: 'Gemini',

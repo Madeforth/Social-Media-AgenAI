@@ -5,6 +5,7 @@ import type {
   PostStatus,
   PostVersion,
   PostWithVersion,
+  SocialAccount,
 } from '@apex/types';
 
 import { getServerSupabase } from './supabase-server';
@@ -64,6 +65,24 @@ export async function getBrandGuidelines(): Promise<BrandGuidelines | null> {
     .maybeSingle();
 
   return (data as unknown as BrandGuidelines) ?? null;
+}
+
+/** The brand's connected Instagram account, if any. Never selects `token_secret_ref`. */
+export async function getSocialAccount(): Promise<SocialAccount | null> {
+  const brand = await getCurrentBrand();
+  if (!brand) return null;
+
+  const supabase = await getServerSupabase();
+  const { data } = await supabase
+    .from('social_accounts')
+    .select(
+      'id, brand_id, platform, account_name, external_account_id, status, token_expires_at, created_at, updated_at',
+    )
+    .eq('brand_id', brand.id)
+    .eq('platform', 'INSTAGRAM')
+    .maybeSingle();
+
+  return (data as SocialAccount) ?? null;
 }
 
 /** Signed URL into the private `generated-images` bucket, or null if there is no image yet. */

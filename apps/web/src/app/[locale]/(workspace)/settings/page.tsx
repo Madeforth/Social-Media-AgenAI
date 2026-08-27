@@ -1,14 +1,16 @@
 import { PlugIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Card, CardDivider, CardHeader } from '@/components/ui/card';
+import { FieldLabel, Input } from '@/components/ui/field';
 import { PageHeader } from '@/components/ui/page-header';
-import { createOrganizationAndBrand, signOutAction } from '@/lib/actions';
+import { connectInstagram, createOrganizationAndBrand, signOutAction } from '@/lib/actions';
 import { getCurrentUser } from '@/lib/auth';
-import { getCurrentBrand } from '@/lib/data';
+import { getCurrentBrand, getSocialAccount } from '@/lib/data';
 import { getI18n } from '@/i18n/get-dictionary';
 
 interface PageParams {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ igConnected?: string; igError?: string }>;
 }
 
 export async function generateMetadata({ params }: PageParams) {
@@ -37,14 +39,17 @@ function Row({
   );
 }
 
-export default async function SettingsPage({ params }: PageParams) {
+export default async function SettingsPage({ params, searchParams }: PageParams) {
   const { locale } = await params;
-  const [brand, user, { dictionary }] = await Promise.all([
+  const { igConnected, igError } = await searchParams;
+  const [brand, user, socialAccount, { dictionary }] = await Promise.all([
     getCurrentBrand(),
     getCurrentUser(),
+    getSocialAccount(),
     getI18n(locale),
   ]);
   const copy = dictionary.settings;
+  const igCopy = copy.integrations.instagram;
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6">
@@ -78,11 +83,47 @@ export default async function SettingsPage({ params }: PageParams) {
         />
         <CardDivider />
         <div className="divide-y divide-border-subtle">
-          <Row
-            title={copy.integrations.instagram.title}
-            description={copy.integrations.instagram.description}
-            action={<Button variant="primary">{copy.integrations.instagram.connect}</Button>}
-          />
+          {igConnected ? (
+            <p className="mx-5 mt-4 rounded-md border border-accent/30 bg-accent-soft px-3 py-2 text-xs text-accent">
+              {igCopy.connectedBanner}
+            </p>
+          ) : null}
+          {igError ? (
+            <p className="mx-5 mt-4 rounded-md border border-red-900/50 bg-red-950/30 px-3 py-2 text-xs text-red-300">
+              {igCopy.errorBanner}
+            </p>
+          ) : null}
+          {socialAccount?.status === 'CONNECTED' ? (
+            <Row
+              title={igCopy.title}
+              description={igCopy.connected(socialAccount.account_name)}
+              action={<span className="text-xs text-text-muted">{copy.account.signedInAs}</span>}
+            />
+          ) : (
+            <div className="px-5 py-4">
+              <p className="text-sm text-text-primary">{igCopy.title}</p>
+              <p className="mt-0.5 text-xs text-text-secondary">{igCopy.description}</p>
+              {brand ? (
+                <form action={connectInstagram} className="mt-4 grid gap-3 sm:grid-cols-3">
+                  <input type="hidden" name="locale" value={locale} />
+                  <FieldLabel label={igCopy.formAccountName}>
+                    <Input name="accountName" required />
+                  </FieldLabel>
+                  <FieldLabel label={igCopy.formExternalId} hint={igCopy.formExternalIdHint}>
+                    <Input name="externalAccountId" required />
+                  </FieldLabel>
+                  <FieldLabel label={igCopy.formAccessToken} hint={igCopy.formAccessTokenHint}>
+                    <Input name="accessToken" type="password" required />
+                  </FieldLabel>
+                  <div className="sm:col-span-3">
+                    <Button type="submit" variant="primary">
+                      {igCopy.formSubmit}
+                    </Button>
+                  </div>
+                </form>
+              ) : null}
+            </div>
+          )}
           <Row
             title={copy.integrations.gemini.title}
             description={copy.integrations.gemini.description}

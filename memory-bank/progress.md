@@ -61,15 +61,28 @@
   `scheduled_at`/`published_at` data from Milestone 3, so scheduled posts appear there with no
   further change needed.
 
+- Meta integration and publishing (Milestone 9): a Vault-backed secret store (new migration —
+  `store_provider_secret`/`read_provider_secret`, `service_role`-only, mirrors the `ai_allowance`
+  wrapper pattern), four new Edge Functions (`connect-instagram`, `publish-instagram-post`,
+  `sync-post-metrics`, `meta-webhook`), all deployed and verified to fail closed. Settings gained a
+  real Instagram connect form (V1 is a pasted long-lived token, verified against the Graph API
+  before it's stored — not a full Meta OAuth consent screen, which needs a reviewed Meta app the
+  project owner has to create). The post detail page gained a "Publish now" button for
+  APPROVED/SCHEDULED posts.
+  **Deliberately not built**: cron-triggered auto-publish at `scheduled_at` — building
+  `pg_cron`/`pg_net` blind, with no live Meta credentials to test against, was judged too risky for
+  an unattended session. V1 publishing is the manual button. See
+  `memory-bank/userActionsNeeded.md` for the Meta app setup this all still needs before it can be
+  exercised for real.
+
 ## In Progress
 
-- None. Milestone 9 is the next action.
+- None. Milestone 9 was the last numbered milestone; Notifications and Analytics remain.
 
 ## Not Started
 
-- Meta integration and publishing (Milestone 9)
 - Notifications
-- Analytics
+- Analytics (beyond the dashboard/analytics page's existing empty state)
 
 ## Verification — Milestone 1, monorepo
 

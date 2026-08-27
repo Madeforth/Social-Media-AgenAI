@@ -60,10 +60,14 @@ Decision: policies call `is_organization_member`, `has_organization_role`, `can_
 Decision: `ai_generations`, `publication_jobs` and `post_metrics` have no client write policy; Edge Functions write them with the service role. `social_accounts.token_secret_ref` is excluded from the `authenticated` column grant so no client can read it.
 
 ## 2026-08-27 — Types Derived From The Database Contract
-Decision: `packages/types/src/database.ts` holds the row shapes, and the domain modules derive from it with narrowed jsonb types. Exported `*_ENUM_MATCHES` constants fail the build if a runtime constant drifts from its database enum. The file is hand-maintained until a Supabase project exists, then regenerated with `supabase gen types typescript`.
+Decision: `packages/types/src/database.ts` holds the row shapes, and the domain modules derive from it with narrowed jsonb types. Exported `*_ENUM_MATCHES` constants fail the build if a runtime constant drifts from its database enum.
 
-## 2026-08-27 — Migrations Not Yet Executed
-Decision: Milestone 2 ships migrations verified only by parsing them with libpg_query, because neither Docker nor a local PostgreSQL is available on this machine and no Supabase project is provisioned. They must be applied against a real database before Milestone 3 depends on them.
+Update, same day: the file is now generated from the live schema, so those guards check against the real database enums rather than a hand-written copy. Regenerate with `npm run types:generate`, which preserves the do-not-edit header that a bare CLI redirect would drop.
+
+## 2026-08-27 — Migrations Verified By Parsing Only
+Decision: Milestone 2 shipped migrations verified only by parsing them with libpg_query, because neither Docker nor a local PostgreSQL is available on this machine.
+
+Resolved, same day: a Supabase project was provisioned and all migrations were applied. Parsing turned out not to be enough — see "Migration Ordering Caught Only By Executing" below. Treat a parse pass as evidence of syntax and nothing more.
 
 ## 2026-08-27 — No Fabricated Metrics In The UI
 Decision: impressions, reach, engagement and profile visits are rendered as unavailable until an Instagram account is connected, and dashboard counters are derived from the posts themselves. CLAUDE.md forbids fabricating metrics, and a placeholder number would be indistinguishable from a real one once the account is live.
@@ -115,3 +119,6 @@ Decision: Vitest is the test runner. The repo had no test infrastructure, which 
 
 ## 2026-08-27 — No Unverified Edge Function Security Code
 Decision: the Edge Function auth/authorization/rate-limit gate was specified in `docs/SECURITY.md` as the contract Milestone 6 must implement, rather than written now. There is no Deno runtime on this machine and no function to exercise it, and security code that people trust without it having been run is worse than an explicit gap.
+
+## 2026-08-27 — Amend-And-Reset Only While The Database Is Empty
+Decision: while the Supabase project holds no rows, a defect found in a freshly pushed migration is fixed in the migration itself and the schema rebuilt with `supabase db reset --linked`, rather than layered with a corrective migration. This was used twice and kept the migration history readable. The row count is checked first every time, and the moment there is real data the rule inverts: every correction becomes a new migration.

@@ -1,0 +1,28 @@
+{
+  "name": "apex-social-ai",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Serverless-first AI social media operating system for web, iOS and Android.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "web": "npm run dev --workspace @apex/web",
+    "mobile": "npm run start --workspace @apex/mobile",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
+    "supabase": "supabase"
+  },
+  "devDependencies": {
+    "prettier": "^3.4.2",
+    "supabase": "^2.2.1",
+    "typescript": "^5.7.3"
+  }
+}

@@ -1,0 +1,54 @@
+@import 'tailwindcss';
+@import '@apex/ui/tokens.css';
+
+/*
+ * The product is dark by design (see docs/DESIGN_SYSTEM.md). There is no light
+ * theme — surfaces stay near-black so generated creative reads accurately.
+ */
+@theme inline {
+  --color-bg: var(--apex-bg);
+  --color-surface: var(--apex-surface);
+  --color-surface-raised: var(--apex-surface-raised);
+  --color-surface-overlay: var(--apex-surface-overlay);
+
+  --color-border-subtle: var(--apex-border);
+  --color-border-strong: var(--apex-border-strong);
+
+  --color-text-primary: var(--apex-text-primary);
+  --color-text-secondary: var(--apex-text-secondary);
+  --color-text-muted: var(--apex-text-muted);
+
+  --color-accent: var(--apex-accent);
+  --color-accent-strong: var(--apex-accent-strong);
+  --color-accent-soft: var(--apex-accent-soft);
+  --color-secondary: var(--apex-secondary);
+  --color-secondary-soft: var(--apex-secondary-soft);
+
+  --color-success: var(--apex-success);
+  --color-warning: var(--apex-warning);
+  --color-danger: var(--apex-danger);
+  --color-info: var(--apex-info);
+
+  --radius-sm: var(--apex-radius-sm);
+  --radius-md: var(--apex-radius-md);
+  --radius-lg: var(--apex-radius-lg);
+  --radius-xl: var(--apex-radius-xl);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+html,
+body {
+  background: var(--apex-bg);
+  color: var(--apex-text-primary);
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--apex-accent-soft);
+  color: var(--apex-text-primary);
+}

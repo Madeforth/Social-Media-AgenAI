@@ -1,0 +1,14 @@
+node_modules
+.next
+dist
+build
+.expo
+coverage
+package-lock.json
+
+# Spec documents are authored by hand — keep their formatting untouched.
+CLAUDE.md
+README.md
+docs
+memory-bank
+next-env.d.ts

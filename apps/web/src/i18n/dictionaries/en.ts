@@ -106,6 +106,8 @@ export const en: Dictionary = {
       emptyDescription:
         'Connect an Instagram account to pull impressions, reach and profile visits into this panel.',
       connectInstagram: 'Connect Instagram',
+      viewAnalytics: 'View analytics',
+      noSyncTitle: 'No metrics synced yet',
     },
   },
   create: {

@@ -108,6 +108,8 @@ export const tr: Dictionary = {
       emptyDescription:
         'Bu panele gösterim, erişim ve profil ziyareti verilerini getirmek için bir Instagram hesabı bağla.',
       connectInstagram: "Instagram'ı bağla",
+      viewAnalytics: 'Analitiği görüntüle',
+      noSyncTitle: 'Henüz senkronize edilmiş metrik yok',
     },
   },
   create: {

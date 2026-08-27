@@ -76,6 +76,8 @@ export interface Dictionary {
       emptyTitle: string;
       emptyDescription: string;
       connectInstagram: string;
+      viewAnalytics: string;
+      noSyncTitle: string;
     };
   };
   create: {

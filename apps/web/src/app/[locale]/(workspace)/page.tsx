@@ -16,7 +16,12 @@ import { StatCard } from '@/components/ui/stat-card';
 import { StatusChip } from '@/components/ui/status-chip';
 import type { Dictionary } from '@/i18n/dictionary';
 import { getI18n } from '@/i18n/get-dictionary';
-import { getDashboardSummary, listApprovalQueue, listUpcomingPosts } from '@/lib/data';
+import {
+  getAnalyticsSummary,
+  getDashboardSummary,
+  listApprovalQueue,
+  listUpcomingPosts,
+} from '@/lib/data';
 import { formatDayOfMonth, formatTime, formatWeekday } from '@/lib/format';
 import type { PostWithVersion } from '@apex/types';
 
@@ -104,10 +109,11 @@ function ApprovalCard({ post, dictionary }: { post: PostWithVersion; dictionary:
 
 export default async function DashboardPage({ params }: PageParams) {
   const { locale: requestedLocale } = await params;
-  const [summary, upcoming, approvals, i18n] = await Promise.all([
+  const [summary, upcoming, approvals, performance, i18n] = await Promise.all([
     getDashboardSummary(),
     listUpcomingPosts(),
     listApprovalQueue(),
+    getAnalyticsSummary(),
     getI18n(requestedLocale),
   ]);
   const { locale, dictionary } = i18n;
@@ -250,18 +256,55 @@ export default async function DashboardPage({ params }: PageParams) {
         </Card>
 
         <Card className="flex flex-col">
-          <CardHeader title={copy.performance.title} />
-          <CardDivider />
-          {/*
-            Impressions, reach and engagement can only come from Instagram, so
-            this panel stays empty until an account is connected.
-          */}
-          <EmptyState
-            icon={<AnalyticsIcon className="h-5 w-5" />}
-            title={copy.performance.emptyTitle}
-            description={copy.performance.emptyDescription}
-            action={<ButtonLink href="/settings">{copy.performance.connectInstagram}</ButtonLink>}
+          <CardHeader
+            title={copy.performance.title}
+            action={
+              performance.hasMetrics ? (
+                <LocaleLink
+                  href="/analytics"
+                  className="inline-flex items-center gap-1 text-xs text-text-secondary transition-colors duration-150 hover:text-accent"
+                >
+                  {copy.performance.viewAnalytics}
+                  <ChevronRightIcon className="h-3.5 w-3.5" />
+                </LocaleLink>
+              ) : undefined
+            }
           />
+          <CardDivider />
+          {/* Impressions, reach and engagement can only come from Instagram. */}
+          {performance.hasMetrics ? (
+            <div className="grid grid-cols-3 gap-4 p-5">
+              {(
+                [
+                  [dictionary.analytics.metrics.impressions, performance.impressions],
+                  [dictionary.analytics.metrics.reach, performance.reach],
+                  [dictionary.analytics.metrics.engagement, performance.engagement],
+                ] as const
+              ).map(([label, value]) => (
+                <div key={label}>
+                  <p className="text-xs text-text-secondary">{label}</p>
+                  <p className="mt-1 text-xl font-semibold text-text-primary">
+                    {value.toLocaleString(locale)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              icon={<AnalyticsIcon className="h-5 w-5" />}
+              title={
+                performance.connected ? copy.performance.noSyncTitle : copy.performance.emptyTitle
+              }
+              description={copy.performance.emptyDescription}
+              action={
+                <ButtonLink href={performance.connected ? '/analytics' : '/settings'}>
+                  {performance.connected
+                    ? copy.performance.viewAnalytics
+                    : copy.performance.connectInstagram}
+                </ButtonLink>
+              }
+            />
+          )}
         </Card>
       </div>
     </div>

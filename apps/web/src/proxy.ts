@@ -6,6 +6,33 @@ import { buildContentSecurityPolicy } from '@/lib/security-headers';
 
 const LOCALE_COOKIE = 'NEXT_LOCALE';
 
+/**
+ * Site-wide gate in front of everything, including `/sign-in` itself. The app
+ * is not a public product yet — only someone who already has the shared
+ * credential should ever reach the Google sign-in button.
+ */
+function isAuthorizedBySiteBasicAuth(request: NextRequest): boolean {
+  const user = process.env.SITE_BASIC_AUTH_USER;
+  const pass = process.env.SITE_BASIC_AUTH_PASS;
+  if (!user || !pass) return true;
+
+  const header = request.headers.get('authorization');
+  if (!header?.startsWith('Basic ')) return false;
+
+  const decoded = atob(header.slice('Basic '.length));
+  const separatorIndex = decoded.indexOf(':');
+  if (separatorIndex === -1) return false;
+
+  return decoded.slice(0, separatorIndex) === user && decoded.slice(separatorIndex + 1) === pass;
+}
+
+function siteBasicAuthChallenge(): NextResponse {
+  return new NextResponse('Authentication required', {
+    status: 401,
+    headers: { 'www-authenticate': 'Basic realm="Apex Social AI"' },
+  });
+}
+
 /** First path segment as a `Locale`, if the request already carries one. */
 function localeFromPathname(pathname: string): Locale | null {
   const [, segment] = pathname.split('/');
@@ -36,6 +63,10 @@ function negotiateLocale(request: NextRequest): Locale {
  * matching nonce and everything else inline is refused by the browser.
  */
 export async function proxy(request: NextRequest) {
+  if (!isAuthorizedBySiteBasicAuth(request)) {
+    return siteBasicAuthChallenge();
+  }
+
   const { pathname, search } = request.nextUrl;
 
   // The OAuth callback is deliberately outside `[locale]` — it's a machine

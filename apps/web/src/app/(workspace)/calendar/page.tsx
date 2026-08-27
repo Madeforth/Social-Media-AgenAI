@@ -1,27 +1,27 @@
-import { MOCK_NOW, MOCK_POSTS, type MockPost } from '@apex/mocks';
+import type { PostWithVersion } from '@apex/types';
 import { POST_STATUS_PRESENTATION } from '@apex/ui';
 import Link from 'next/link';
 
 import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
 import { cn } from '@/lib/cn';
+import { listPosts } from '@/lib/data';
 import { formatMonthYear } from '@/lib/format';
 
 export const metadata = { title: 'Calendar · Apex Social AI' };
 
+// The grid is anchored to the current month, so it must not be baked at build time.
+export const dynamic = 'force-dynamic';
+
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 /** The date a post occupies on the calendar: when it published, else when it is due. */
-function calendarDate(post: MockPost): string | null {
+function calendarDate(post: PostWithVersion): string | null {
   return post.published_at ?? post.scheduled_at;
 }
 
-function toDayKey(iso: string): string {
-  return iso.slice(0, 10);
-}
-
 /**
- * Days of the month that contains `MOCK_NOW`, padded to whole Monday-start weeks.
+ * Days of the month containing `reference`, padded to whole Monday-start weeks.
  * Everything is computed in UTC so the grid matches the UTC-pinned formatters.
  */
 function buildMonthGrid(reference: string): Array<{ key: string; inMonth: boolean }> {
@@ -35,22 +35,23 @@ function buildMonthGrid(reference: string): Array<{ key: string; inMonth: boolea
 
   return Array.from({ length: 42 }, (_, index) => {
     const day = new Date(start.getTime() + index * 86400000);
-    return {
-      key: day.toISOString().slice(0, 10),
-      inMonth: day.getUTCMonth() === month,
-    };
+    return { key: day.toISOString().slice(0, 10), inMonth: day.getUTCMonth() === month };
   });
 }
 
-export default function CalendarPage() {
-  const grid = buildMonthGrid(MOCK_NOW);
-  const todayKey = toDayKey(MOCK_NOW);
+export default async function CalendarPage() {
+  const posts = await listPosts();
 
-  const byDay = new Map<string, MockPost[]>();
-  for (const post of MOCK_POSTS) {
+  // The current month is a render-time fact, not stored data.
+  const reference = new Date().toISOString();
+  const grid = buildMonthGrid(reference);
+  const todayKey = reference.slice(0, 10);
+
+  const byDay = new Map<string, PostWithVersion[]>();
+  for (const post of posts) {
     const at = calendarDate(post);
     if (!at) continue;
-    const key = toDayKey(at);
+    const key = at.slice(0, 10);
     byDay.set(key, [...(byDay.get(key) ?? []), post]);
   }
 
@@ -58,7 +59,7 @@ export default function CalendarPage() {
     <div className="mx-auto flex max-w-7xl flex-col gap-6">
       <PageHeader
         title="Calendar"
-        description={`${formatMonthYear(MOCK_NOW)} · scheduled and published content`}
+        description={`${formatMonthYear(reference)} · scheduled and published content`}
       />
 
       <Card className="overflow-hidden">
@@ -74,7 +75,7 @@ export default function CalendarPage() {
         </div>
         <div className="grid grid-cols-7">
           {grid.map(({ key, inMonth }) => {
-            const posts = byDay.get(key) ?? [];
+            const dayPosts = byDay.get(key) ?? [];
             const isToday = key === todayKey;
             return (
               <div
@@ -97,7 +98,7 @@ export default function CalendarPage() {
                   {Number(key.slice(8, 10))}
                 </span>
                 <div className="mt-1.5 flex flex-col gap-1">
-                  {posts.map((post) => {
+                  {dayPosts.map((post) => {
                     const { tint, surface } = POST_STATUS_PRESENTATION[post.status];
                     return (
                       <Link
@@ -117,17 +118,12 @@ export default function CalendarPage() {
         </div>
       </Card>
 
-      <div className="flex flex-wrap gap-3 text-xs text-text-muted">
-        {(['SCHEDULED', 'PUBLISHED', 'FAILED'] as const).map((status) => (
-          <span key={status} className="inline-flex items-center gap-1.5">
-            <span
-              className="h-2 w-2 rounded-full"
-              style={{ backgroundColor: POST_STATUS_PRESENTATION[status].tint }}
-            />
-            {POST_STATUS_PRESENTATION[status].label}
-          </span>
-        ))}
-      </div>
+      {posts.length === 0 ? (
+        <p className="text-center text-sm text-text-secondary">
+          Nothing is scheduled yet. Approved posts appear on this grid once they have a publish
+          time.
+        </p>
+      ) : null}
     </div>
   );
 }

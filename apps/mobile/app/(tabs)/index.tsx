@@ -1,4 +1,3 @@
-import { MOCK_NOW, mockApprovalQueue, mockDashboardSummary, mockUpcomingPosts } from '@apex/mocks';
 import { tokens } from '@apex/ui';
 import { Link } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -7,14 +6,18 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CreativePreview } from '@/components/creative-preview';
 import { ApexMarkIcon, ChevronRightIcon, ClockIcon } from '@/components/icons';
 import { StatusChip } from '@/components/status-chip';
-import { Button, Card, SectionHeader } from '@/components/ui';
+import { Button, Card, EmptyState, SectionHeader } from '@/components/ui';
+import { approvalQueue, summarise, upcoming, useCurrentBrand, usePosts } from '@/lib/data';
 import { formatDayOfMonth, formatTime, formatWeekday } from '@/lib/format';
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
-  const summary = mockDashboardSummary();
-  const approvals = mockApprovalQueue();
-  const upcoming = mockUpcomingPosts();
+  const brand = useCurrentBrand();
+  const posts = usePosts();
+
+  const summary = summarise(posts.data);
+  const approvals = approvalQueue(posts.data);
+  const scheduled = upcoming(posts.data);
 
   return (
     <ScrollView
@@ -27,113 +30,136 @@ export default function HomeScreen() {
       <View style={styles.header}>
         <View style={styles.brand}>
           <ApexMarkIcon color={tokens.color.accent} size={20} />
-          <Text style={styles.brandName}>Apex Flow</Text>
+          <Text style={styles.brandName}>{brand.data?.name ?? 'Apex Social AI'}</Text>
         </View>
-        <Text style={styles.demoBadge}>Demo data</Text>
       </View>
 
-      <Card style={styles.weekCard}>
-        <Text style={styles.weekLabel}>This week</Text>
-        <View style={styles.weekRow}>
-          <Text style={styles.weekValue}>{summary.plannedThisWeek}</Text>
-          <Text style={styles.weekUnit}>posts planned</Text>
-        </View>
-        <View style={styles.weekStats}>
-          <View style={styles.weekStat}>
-            <Text style={styles.weekStatValue}>{summary.readyToApprove}</Text>
-            <Text style={styles.weekStatLabel}>Ready</Text>
-          </View>
-          <View style={styles.weekStatDivider} />
-          <View style={styles.weekStat}>
-            <Text style={styles.weekStatValue}>{summary.scheduled}</Text>
-            <Text style={styles.weekStatLabel}>Scheduled</Text>
-          </View>
-          <View style={styles.weekStatDivider} />
-          <View style={styles.weekStat}>
-            <Text style={styles.weekStatValue}>{summary.publishedThisMonth}</Text>
-            <Text style={styles.weekStatLabel}>Published</Text>
-          </View>
-        </View>
-      </Card>
-
-      <View style={styles.section}>
-        <SectionHeader
-          title={`Ready for approval${approvals.length > 0 ? ` (${approvals.length})` : ''}`}
-        />
-        {approvals.length > 0 ? (
-          approvals.map((post) => (
-            <Card key={post.id} style={styles.approvalCard}>
-              <View style={styles.approvalPreview}>
-                <CreativePreview post={post} />
-              </View>
-              <View style={styles.approvalBody}>
-                <Text style={styles.approvalPillar}>{post.content_pillar}</Text>
-                <Text style={styles.approvalHeadline}>{post.version.headline}</Text>
-                <View style={styles.approvalActions}>
-                  <Link href={`/posts/${post.id}`} asChild>
-                    <Button label="Review" variant="primary" style={styles.flexButton} />
-                  </Link>
-                  <Link href={`/posts/${post.id}`} asChild>
-                    <Button label="Edit" style={styles.flexButton} />
-                  </Link>
-                </View>
-              </View>
-            </Card>
-          ))
-        ) : (
-          <Card>
-            <Text style={styles.clearText}>Approval queue is clear.</Text>
-          </Card>
-        )}
-      </View>
-
-      <View style={styles.section}>
-        <SectionHeader
-          title="Upcoming"
-          action={
-            <Link href="/calendar" asChild>
-              <Pressable style={styles.linkRow}>
-                <Text style={styles.linkText}>View calendar</Text>
-                <ChevronRightIcon color={tokens.color.textSecondary} size={14} />
-              </Pressable>
-            </Link>
-          }
-        />
+      {posts.loading ? (
         <Card>
-          {upcoming.map((post, index) => (
-            <Link key={post.id} href={`/posts/${post.id}`} asChild>
-              <Pressable
-                style={StyleSheet.flatten([styles.upcomingRow, index > 0 && styles.rowDivider])}
-              >
-                <View style={styles.upcomingDate}>
-                  <Text style={styles.upcomingWeekday}>
-                    {post.scheduled_at ? formatWeekday(post.scheduled_at) : '—'}
-                  </Text>
-                  <Text style={styles.upcomingDay}>
-                    {post.scheduled_at ? formatDayOfMonth(post.scheduled_at) : '--'}
-                  </Text>
-                </View>
-                <View style={styles.upcomingBody}>
-                  <Text style={styles.upcomingHeadline} numberOfLines={2}>
-                    {post.version.headline || post.concept_title}
-                  </Text>
-                  <View style={styles.upcomingMeta}>
-                    <ClockIcon color={tokens.color.textMuted} size={13} />
-                    <Text style={styles.upcomingTime}>
-                      {post.scheduled_at ? formatTime(post.scheduled_at) : 'Not scheduled'}
-                    </Text>
-                  </View>
-                </View>
-                <StatusChip status={post.status} />
-              </Pressable>
-            </Link>
-          ))}
+          <Text style={styles.stateText}>Loading…</Text>
         </Card>
-      </View>
+      ) : posts.error ? (
+        <Card>
+          <EmptyState
+            title="Could not load your content"
+            description="Check the connection and pull to try again."
+          />
+        </Card>
+      ) : (
+        <>
+          <Card style={styles.weekCard}>
+            <Text style={styles.weekLabel}>This week</Text>
+            <View style={styles.weekRow}>
+              <Text style={styles.weekValue}>{summary.plannedThisWeek}</Text>
+              <Text style={styles.weekUnit}>posts planned</Text>
+            </View>
+            <View style={styles.weekStats}>
+              <View style={styles.weekStat}>
+                <Text style={styles.weekStatValue}>{summary.readyToApprove}</Text>
+                <Text style={styles.weekStatLabel}>Ready</Text>
+              </View>
+              <View style={styles.weekStatDivider} />
+              <View style={styles.weekStat}>
+                <Text style={styles.weekStatValue}>{summary.scheduled}</Text>
+                <Text style={styles.weekStatLabel}>Scheduled</Text>
+              </View>
+              <View style={styles.weekStatDivider} />
+              <View style={styles.weekStat}>
+                <Text style={styles.weekStatValue}>{summary.publishedThisMonth}</Text>
+                <Text style={styles.weekStatLabel}>Published</Text>
+              </View>
+            </View>
+          </Card>
 
-      <Text style={styles.footnote}>
-        Fixtures are dated from {formatDayOfMonth(MOCK_NOW)} August.
-      </Text>
+          <View style={styles.section}>
+            <SectionHeader
+              title={`Ready for approval${approvals.length > 0 ? ` (${approvals.length})` : ''}`}
+            />
+            {approvals.length > 0 ? (
+              approvals.map((post) => (
+                <Card key={post.id} style={styles.approvalCard}>
+                  <View style={styles.approvalPreview}>
+                    <CreativePreview post={post} />
+                  </View>
+                  <View style={styles.approvalBody}>
+                    <Text style={styles.approvalPillar}>{post.content_pillar}</Text>
+                    <Text style={styles.approvalHeadline}>{post.version.headline}</Text>
+                    <View style={styles.approvalActions}>
+                      <Link href={`/posts/${post.id}`} asChild>
+                        <Button label="Review" variant="primary" style={styles.flexButton} />
+                      </Link>
+                      <Link href={`/posts/${post.id}`} asChild>
+                        <Button label="Edit" style={styles.flexButton} />
+                      </Link>
+                    </View>
+                  </View>
+                </Card>
+              ))
+            ) : (
+              <Card>
+                <EmptyState
+                  title="Approval queue is clear"
+                  description="Generated posts land here for review before they can be scheduled."
+                />
+              </Card>
+            )}
+          </View>
+
+          <View style={styles.section}>
+            <SectionHeader
+              title="Upcoming"
+              action={
+                <Link href="/calendar" asChild>
+                  <Pressable style={styles.linkRow}>
+                    <Text style={styles.linkText}>View calendar</Text>
+                    <ChevronRightIcon color={tokens.color.textSecondary} size={14} />
+                  </Pressable>
+                </Link>
+              }
+            />
+            <Card>
+              {scheduled.length > 0 ? (
+                scheduled.map((post, index) => (
+                  <Link key={post.id} href={`/posts/${post.id}`} asChild>
+                    <Pressable
+                      style={StyleSheet.flatten([
+                        styles.upcomingRow,
+                        index > 0 && styles.rowDivider,
+                      ])}
+                    >
+                      <View style={styles.upcomingDate}>
+                        <Text style={styles.upcomingWeekday}>
+                          {post.scheduled_at ? formatWeekday(post.scheduled_at) : '—'}
+                        </Text>
+                        <Text style={styles.upcomingDay}>
+                          {post.scheduled_at ? formatDayOfMonth(post.scheduled_at) : '--'}
+                        </Text>
+                      </View>
+                      <View style={styles.upcomingBody}>
+                        <Text style={styles.upcomingHeadline} numberOfLines={2}>
+                          {post.version.headline || post.concept_title}
+                        </Text>
+                        <View style={styles.upcomingMeta}>
+                          <ClockIcon color={tokens.color.textMuted} size={13} />
+                          <Text style={styles.upcomingTime}>
+                            {post.scheduled_at ? formatTime(post.scheduled_at) : 'Not scheduled'}
+                          </Text>
+                        </View>
+                      </View>
+                      <StatusChip status={post.status} />
+                    </Pressable>
+                  </Link>
+                ))
+              ) : (
+                <EmptyState
+                  title="Nothing scheduled"
+                  description="Approved posts appear here once they have a publish time."
+                />
+              )}
+            </Card>
+          </View>
+        </>
+      )}
     </ScrollView>
   );
 }
@@ -148,14 +174,11 @@ const styles = StyleSheet.create({
     fontSize: tokens.fontSize.lg,
     fontWeight: tokens.fontWeight.semibold,
   },
-  demoBadge: {
-    color: tokens.color.textMuted,
-    fontSize: tokens.fontSize.xs,
-    borderWidth: 1,
-    borderColor: tokens.color.border,
-    borderRadius: tokens.radius.pill,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+  stateText: {
+    color: tokens.color.textSecondary,
+    fontSize: tokens.fontSize.sm,
+    padding: tokens.space.lg,
+    textAlign: 'center',
   },
   weekCard: { padding: tokens.space.lg },
   weekLabel: { color: tokens.color.textSecondary, fontSize: tokens.fontSize.sm },
@@ -193,12 +216,6 @@ const styles = StyleSheet.create({
   },
   approvalActions: { flexDirection: 'row', gap: tokens.space.sm, marginTop: tokens.space.sm },
   flexButton: { flex: 1 },
-  clearText: {
-    color: tokens.color.textSecondary,
-    fontSize: tokens.fontSize.sm,
-    padding: tokens.space.lg,
-    textAlign: 'center',
-  },
   linkRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   linkText: { color: tokens.color.textSecondary, fontSize: tokens.fontSize.xs },
   upcomingRow: {
@@ -219,9 +236,4 @@ const styles = StyleSheet.create({
   upcomingHeadline: { color: tokens.color.textPrimary, fontSize: tokens.fontSize.sm },
   upcomingMeta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   upcomingTime: { color: tokens.color.textMuted, fontSize: tokens.fontSize.xs },
-  footnote: {
-    color: tokens.color.textMuted,
-    fontSize: tokens.fontSize.xs,
-    textAlign: 'center',
-  },
 });

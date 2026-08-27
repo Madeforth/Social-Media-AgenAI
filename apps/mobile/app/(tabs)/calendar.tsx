@@ -1,4 +1,4 @@
-import { MOCK_POSTS, type MockPost } from '@apex/mocks';
+import type { PostWithVersion } from '@apex/types';
 import { POST_STATUS_PRESENTATION, tokens } from '@apex/ui';
 import { Link } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -6,19 +6,21 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { StatusChip } from '@/components/status-chip';
 import { Card, EmptyState, ScreenTitle } from '@/components/ui';
+import { calendarDate, usePosts } from '@/lib/data';
 import { formatDayMonth, formatTime, formatWeekday } from '@/lib/format';
 
-/** Mobile shows a compact agenda rather than a month grid — a 7×6 grid of tap
+/** Mobile shows a compact agenda rather than a month grid — a 7x6 grid of tap
  *  targets does not survive a phone width at a usable size. */
-function agendaPosts(): MockPost[] {
-  return MOCK_POSTS.filter((post) => post.scheduled_at ?? post.published_at).sort((a, b) =>
-    (a.scheduled_at ?? a.published_at ?? '').localeCompare(b.scheduled_at ?? b.published_at ?? ''),
-  );
+function agenda(all: PostWithVersion[]): PostWithVersion[] {
+  return all
+    .filter((post) => calendarDate(post) !== null)
+    .sort((a, b) => (calendarDate(a) ?? '').localeCompare(calendarDate(b) ?? ''));
 }
 
 export default function CalendarScreen() {
   const insets = useSafeAreaInsets();
-  const posts = agendaPosts();
+  const query = usePosts();
+  const posts = agenda(query.data);
 
   return (
     <ScrollView
@@ -33,7 +35,7 @@ export default function CalendarScreen() {
       {posts.length > 0 ? (
         <Card>
           {posts.map((post, index) => {
-            const at = post.scheduled_at ?? post.published_at ?? '';
+            const at = calendarDate(post) ?? '';
             const { tint } = POST_STATUS_PRESENTATION[post.status];
             return (
               <Link key={post.id} href={`/posts/${post.id}`} asChild>

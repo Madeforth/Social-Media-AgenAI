@@ -1,10 +1,10 @@
-import { MOCK_BRAND, MOCK_BRAND_ASSETS, MOCK_BRAND_GUIDELINES } from '@apex/mocks';
 import { tokens } from '@apex/ui';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ChevronRightIcon } from '@/components/icons';
 import { Card, ScreenTitle, SectionHeader } from '@/components/ui';
+import { useBrandAssets, useBrandGuidelines, useCurrentBrand } from '@/lib/data';
 
 interface Entry {
   title: string;
@@ -13,19 +13,33 @@ interface Entry {
 
 export default function MoreScreen() {
   const insets = useSafeAreaInsets();
+  const brand = useCurrentBrand();
+  const guidelines = useBrandGuidelines();
+  const assets = useBrandAssets();
 
-  const brandBrain: Entry[] = [
+  const pillarCount = guidelines.data?.content_pillars.length ?? 0;
+
+  const brandEntries: Entry[] = [
     {
       title: 'Brand Brain',
-      detail: `${MOCK_BRAND_GUIDELINES.content_pillars.length} content pillars defined`,
+      detail:
+        pillarCount === 0
+          ? 'Not defined yet'
+          : `${pillarCount} content ${pillarCount === 1 ? 'pillar' : 'pillars'}`,
     },
-    { title: 'Assets', detail: `${MOCK_BRAND_ASSETS.length} assets` },
+    {
+      title: 'Assets',
+      detail:
+        assets.data.length === 0
+          ? 'No assets yet'
+          : `${assets.data.length} ${assets.data.length === 1 ? 'asset' : 'assets'}`,
+    },
   ];
 
-  const settings: Entry[] = [
+  const settingsEntries: Entry[] = [
     { title: 'Instagram', detail: 'Not connected' },
     { title: 'Notifications', detail: 'Not configured' },
-    { title: 'Account', detail: MOCK_BRAND.name },
+    { title: 'Account', detail: brand.data?.name ?? 'No brand yet' },
   ];
 
   return (
@@ -41,7 +55,7 @@ export default function MoreScreen() {
       <View style={styles.section}>
         <SectionHeader title="Brand" />
         <Card>
-          {brandBrain.map((entry, index) => (
+          {brandEntries.map((entry, index) => (
             <Row key={entry.title} entry={entry} divided={index > 0} />
           ))}
         </Card>
@@ -50,15 +64,11 @@ export default function MoreScreen() {
       <View style={styles.section}>
         <SectionHeader title="Settings" />
         <Card>
-          {settings.map((entry, index) => (
+          {settingsEntries.map((entry, index) => (
             <Row key={entry.title} entry={entry} divided={index > 0} />
           ))}
         </Card>
       </View>
-
-      <Text style={styles.note}>
-        These screens are navigation placeholders. They are wired to Supabase in a later milestone.
-      </Text>
     </ScrollView>
   );
 }
@@ -89,10 +99,4 @@ const styles = StyleSheet.create({
   rowBody: { flex: 1, gap: 2 },
   rowTitle: { color: tokens.color.textPrimary, fontSize: tokens.fontSize.base },
   rowDetail: { color: tokens.color.textMuted, fontSize: tokens.fontSize.xs },
-  note: {
-    color: tokens.color.textMuted,
-    fontSize: tokens.fontSize.xs,
-    lineHeight: 17,
-    textAlign: 'center',
-  },
 });

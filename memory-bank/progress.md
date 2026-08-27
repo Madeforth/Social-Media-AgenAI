@@ -12,7 +12,8 @@
 - Schema migrations and RLS policies written (Milestone 2), plus the TypeScript database
   contract and derived domain types.
 - Design system shell on web and mobile (Milestone 3): sidebar workspace with every V1 route,
-  five-tab mobile navigation, shared tokens and status presentation, deterministic fixtures.
+  five-tab mobile navigation, shared tokens and status presentation, and a data-access seam per
+  app that currently returns empty results.
 
 ## In Progress
 - Milestone 2 is written but unverified: the migrations have never been applied to a database.
@@ -44,13 +45,15 @@
 ## Verification Run At Milestone 3
 - `npm run build --workspace @apex/web` builds all 12 routes.
 - Every web route returns 200 and an unknown post id returns 404, checked against the production
-  server.
+  server, both before and after the fixture package was removed.
 - Web renders with zero console errors or warnings, so there is no hydration mismatch.
 - `npx expo export --platform ios` bundles, and every mobile route was rendered through
   `expo start --web` with zero console errors.
 - `npm run typecheck --workspaces` and `npm run lint --workspace @apex/web` pass.
 - NOT verified: the mobile app has never run on a real iOS or Android device or simulator.
   Rendering was checked through react-native-web, which does not exercise native layout.
+- NOT verified: no screen has been seen rendering a populated list, because there is no data
+  source. Only the empty states have actually been exercised.
 
 ## Validation Criteria for MVP
 - Same account works on web/iOS/Android.

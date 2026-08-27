@@ -1,10 +1,3 @@
-import {
-  MOCK_NOW,
-  mockApprovalQueue,
-  mockDashboardSummary,
-  mockUpcomingPosts,
-  type MockPost,
-} from '@apex/mocks';
 import Link from 'next/link';
 
 import {
@@ -22,11 +15,13 @@ import { CreativePreview } from '@/components/ui/creative-preview';
 import { EmptyState } from '@/components/ui/empty-state';
 import { StatCard } from '@/components/ui/stat-card';
 import { StatusChip } from '@/components/ui/status-chip';
-import { formatDayOfMonth, formatRelative, formatTime, formatWeekday } from '@/lib/format';
+import { getDashboardSummary, listApprovalQueue, listUpcomingPosts } from '@/lib/data';
+import { formatDayOfMonth, formatTime, formatWeekday } from '@/lib/format';
+import type { PostWithVersion } from '@apex/types';
 
 export const metadata = { title: 'Dashboard · Apex Social AI' };
 
-function UpcomingRow({ post }: { post: MockPost }) {
+function UpcomingRow({ post }: { post: PostWithVersion }) {
   return (
     <Link
       href={`/posts/${post.id}`}
@@ -55,16 +50,13 @@ function UpcomingRow({ post }: { post: MockPost }) {
   );
 }
 
-function ApprovalCard({ post }: { post: MockPost }) {
+function ApprovalCard({ post }: { post: PostWithVersion }) {
   return (
     <div className="flex gap-4 rounded-md border border-border-subtle bg-surface-raised p-3">
       <CreativePreview post={post} ratio="feed" size="sm" className="w-24 shrink-0" />
       <div className="flex min-w-0 flex-1 flex-col">
         <p className="text-sm font-medium text-text-primary">{post.version.headline}</p>
         <p className="mt-0.5 text-xs text-text-muted">{post.content_pillar}</p>
-        <p className="mt-1 text-xs text-text-muted">
-          Created {formatRelative(post.created_at, MOCK_NOW)} · v{post.version.version_number}
-        </p>
         <div className="mt-auto flex gap-2 pt-3">
           <ButtonLink href={`/posts/${post.id}`} variant="primary" size="sm" className="flex-1">
             Review
@@ -79,17 +71,17 @@ function ApprovalCard({ post }: { post: MockPost }) {
   );
 }
 
-export default function DashboardPage() {
-  const summary = mockDashboardSummary();
-  const upcoming = mockUpcomingPosts();
-  const approvals = mockApprovalQueue();
+export default async function DashboardPage() {
+  const [summary, upcoming, approvals] = await Promise.all([
+    getDashboardSummary(),
+    listUpcomingPosts(),
+    listApprovalQueue(),
+  ]);
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight text-text-primary">
-          Good morning, Muhammed
-        </h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-text-primary">Dashboard</h1>
         <p className="mt-1 text-sm text-text-secondary">
           Here&rsquo;s what&rsquo;s happening with your content.
         </p>
@@ -228,9 +220,8 @@ export default function DashboardPage() {
           <CardHeader title="Performance overview" />
           <CardDivider />
           {/*
-            Impressions, reach and engagement can only come from Instagram.
-            Rendering invented figures here would be indistinguishable from real
-            data once the account is connected, so the panel stays empty.
+            Impressions, reach and engagement can only come from Instagram, so
+            this panel stays empty until an account is connected.
           */}
           <EmptyState
             icon={<AnalyticsIcon className="h-5 w-5" />}

@@ -9,7 +9,7 @@ import { isNavItemActive, PRIMARY_NAV, SECONDARY_NAV } from '@/lib/nav';
 
 const ALL_NAV = [...PRIMARY_NAV, ...SECONDARY_NAV];
 
-export function Topbar() {
+export function Topbar({ brandName }: { brandName: string | null }) {
   const pathname = usePathname();
 
   return (
@@ -17,15 +17,17 @@ export function Topbar() {
       <div className="flex items-center justify-between gap-4 px-5 py-3.5 lg:px-8">
         <div className="flex items-center gap-2.5 lg:hidden">
           <ApexMarkIcon className="h-5 w-5 text-accent" />
-          <span className="text-sm font-semibold tracking-wide text-text-primary">APEX FLOW</span>
+          <span className="text-sm font-semibold tracking-wide text-text-primary">
+            {brandName ?? 'APEX SOCIAL AI'}
+          </span>
         </div>
 
         {/*
-          The fixtures make this a demonstration surface. Labelling it prevents
-          anyone reading the screen as live account data.
+          Stated plainly rather than hidden: nothing on these screens is real
+          until the Supabase project exists.
         */}
         <span className="hidden rounded-full border border-border-subtle px-2.5 py-1 text-[11px] text-text-muted lg:inline-flex">
-          Demo data — not connected to Supabase
+          Not connected to Supabase
         </span>
 
         <div className="flex items-center gap-2">

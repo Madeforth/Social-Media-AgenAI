@@ -1,9 +1,9 @@
-import { MOCK_BRAND, MOCK_BRAND_GUIDELINES } from '@apex/mocks';
-
 import { BrainIcon, PencilIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Card, CardDivider, CardHeader } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
 import { PageHeader } from '@/components/ui/page-header';
+import { getBrandGuidelines, getCurrentBrand } from '@/lib/data';
 
 export const metadata = { title: 'Brand Brain · Apex Social AI' };
 
@@ -44,14 +44,29 @@ function ListBlock({ label, values }: { label: string; values: string[] }) {
   );
 }
 
-export default function BrandBrainPage() {
-  const guidelines = MOCK_BRAND_GUIDELINES;
+export default async function BrandBrainPage() {
+  const [brand, guidelines] = await Promise.all([getCurrentBrand(), getBrandGuidelines()]);
+
+  if (!guidelines) {
+    return (
+      <div className="mx-auto flex max-w-5xl flex-col gap-6">
+        <PageHeader title="Brand Brain" description="Everything the AI knows about your brand." />
+        <Card>
+          <EmptyState
+            icon={<BrainIcon className="h-5 w-5" />}
+            title="No brand defined yet"
+            description="Mission, positioning, tone, visual rules and content pillars are entered here. The AI reads all of it before it writes anything."
+          />
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6">
       <PageHeader
         title="Brand Brain"
-        description={`Everything the AI knows about ${MOCK_BRAND.name}.`}
+        description={`Everything the AI knows about ${brand?.name ?? 'your brand'}.`}
         action={
           <Button>
             <PencilIcon className="h-4 w-4" />
@@ -81,19 +96,26 @@ export default function BrandBrainPage() {
       <Card>
         <CardHeader title="Content pillars" />
         <CardDivider />
-        <div className="flex flex-col divide-y divide-border-subtle">
-          {guidelines.content_pillars.map((pillar) => (
-            <div key={pillar.key} className="flex items-start justify-between gap-4 px-5 py-4">
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-text-primary">{pillar.name}</p>
-                <p className="mt-0.5 text-xs text-text-secondary">{pillar.description}</p>
+        {guidelines.content_pillars.length > 0 ? (
+          <div className="flex flex-col divide-y divide-border-subtle">
+            {guidelines.content_pillars.map((pillar) => (
+              <div key={pillar.key} className="flex items-start justify-between gap-4 px-5 py-4">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-text-primary">{pillar.name}</p>
+                  <p className="mt-0.5 text-xs text-text-secondary">{pillar.description}</p>
+                </div>
+                <span className="shrink-0 rounded-full bg-accent-soft px-2.5 py-1 text-xs text-accent">
+                  {Math.round(pillar.target_share * 100)}%
+                </span>
               </div>
-              <span className="shrink-0 rounded-full bg-accent-soft px-2.5 py-1 text-xs text-accent">
-                {Math.round(pillar.target_share * 100)}%
-              </span>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            title="No content pillars yet"
+            description="Pillars keep the AI from drifting into one format. Define a few and the strategy layer balances between them."
+          />
+        )}
       </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">

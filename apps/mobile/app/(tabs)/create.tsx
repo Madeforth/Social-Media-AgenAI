@@ -1,11 +1,11 @@
-import { MOCK_BRAND_GUIDELINES } from '@apex/mocks';
 import { tokens } from '@apex/ui';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SparkIcon } from '@/components/icons';
-import { Button, Card, ScreenTitle, SectionHeader } from '@/components/ui';
+import { Button, Card, EmptyState, ScreenTitle, SectionHeader } from '@/components/ui';
+import { useBrandGuidelines } from '@/lib/data';
 
 type Mode = 'ai_suggestion' | 'custom_brief';
 
@@ -25,6 +25,8 @@ const MODES: Array<{ id: Mode; title: string; description: string }> = [
 export default function CreateScreen() {
   const insets = useSafeAreaInsets();
   const [mode, setMode] = useState<Mode>('ai_suggestion');
+  const guidelines = useBrandGuidelines();
+  const pillars = guidelines.data?.content_pillars ?? [];
 
   return (
     <ScrollView
@@ -66,15 +68,22 @@ export default function CreateScreen() {
       <View style={styles.section}>
         <SectionHeader title="Content pillar" />
         <Card>
-          {MOCK_BRAND_GUIDELINES.content_pillars.map((pillar, index) => (
-            <View key={pillar.key} style={[styles.pillarRow, index > 0 && styles.rowDivider]}>
-              <View style={styles.pillarBody}>
-                <Text style={styles.pillarName}>{pillar.name}</Text>
-                <Text style={styles.pillarDescription}>{pillar.description}</Text>
+          {pillars.length > 0 ? (
+            pillars.map((pillar, index) => (
+              <View key={pillar.key} style={[styles.pillarRow, index > 0 && styles.rowDivider]}>
+                <View style={styles.pillarBody}>
+                  <Text style={styles.pillarName}>{pillar.name}</Text>
+                  <Text style={styles.pillarDescription}>{pillar.description}</Text>
+                </View>
+                <Text style={styles.pillarShare}>{Math.round(pillar.target_share * 100)}%</Text>
               </View>
-              <Text style={styles.pillarShare}>{Math.round(pillar.target_share * 100)}%</Text>
-            </View>
-          ))}
+            ))
+          ) : (
+            <EmptyState
+              title="No content pillars yet"
+              description="Define them in Brand Brain and the AI balances between them instead of repeating one format."
+            />
+          )}
         </Card>
         <Text style={styles.hint}>
           Leave everything unset and the AI picks the pillar from the recent balance.

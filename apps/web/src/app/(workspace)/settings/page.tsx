@@ -1,5 +1,3 @@
-import { MOCK_BRAND } from '@apex/mocks';
-
 import { PlugIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Card, CardDivider, CardHeader } from '@/components/ui/card';
@@ -27,7 +25,11 @@ function Row({
   );
 }
 
-export default function SettingsPage() {
+import { getCurrentBrand } from '@/lib/data';
+
+export default async function SettingsPage() {
+  const brand = await getCurrentBrand();
+
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6">
       <PageHeader title="Settings" description="Integrations, notifications and account." />
@@ -60,15 +62,17 @@ export default function SettingsPage() {
         <CardHeader title="Brand" />
         <CardDivider />
         <div className="divide-y divide-border-subtle">
+          {brand ? (
+            <Row
+              title={brand.name}
+              description={brand.description ?? 'No description yet.'}
+              action={<Button>Manage</Button>}
+            />
+          ) : null}
           <Row
-            title={MOCK_BRAND.name}
-            description={MOCK_BRAND.description ?? 'No description yet.'}
-            action={<Button>Manage</Button>}
-          />
-          <Row
-            title="Add a brand"
+            title={brand ? 'Add a brand' : 'Create your first brand'}
             description="The data model is multi-brand from the start."
-            action={<Button>New brand</Button>}
+            action={<Button variant={brand ? 'secondary' : 'primary'}>New brand</Button>}
           />
         </div>
       </Card>

@@ -1,4 +1,4 @@
-import type { MockPost } from '@apex/mocks';
+import type { PostWithVersion } from '@apex/types';
 import { tokens, VISUAL_FORMAT_LABELS } from '@apex/ui';
 import { StyleSheet, Text, View, type ViewStyle } from 'react-native';
 
@@ -17,7 +17,7 @@ function groundFor(id: string): string {
 }
 
 interface Props {
-  post: MockPost;
+  post: PostWithVersion;
   style?: ViewStyle;
   compact?: boolean;
 }

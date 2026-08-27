@@ -38,6 +38,10 @@ The first real brand is Apex Flow. The platform must be multi-brand-ready from t
 8. Keep the interface visually premium, calm, dark, minimal and focused on creative work.
 9. Avoid generic admin-dashboard aesthetics.
 10. Do not fabricate product features, claims, metrics or UI data.
+11. Never add mock data. No fixture packages, no sample posts, no seed rows, no hardcoded
+    example content, no placeholder numbers — not even temporarily while a backend is
+    missing. Build against a data-access seam that returns empty results and render real
+    loading, empty and error states instead.
 
 ## Visual Direction
 

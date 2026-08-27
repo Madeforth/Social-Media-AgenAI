@@ -1,4 +1,3 @@
-import { MOCK_NOW, findMockPost, mockVersionHistory } from '@apex/mocks';
 import { VISUAL_FORMAT_LABELS } from '@apex/ui';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -14,8 +13,8 @@ import { Button, ButtonLink } from '@/components/ui/button';
 import { Card, CardDivider, CardHeader } from '@/components/ui/card';
 import { CreativePreview } from '@/components/ui/creative-preview';
 import { StatusChip } from '@/components/ui/status-chip';
-import { cn } from '@/lib/cn';
-import { formatDate, formatRelative, formatTime } from '@/lib/format';
+import { getPost } from '@/lib/data';
+import { formatDate, formatTime } from '@/lib/format';
 
 interface PageParams {
   params: Promise<{ postId: string }>;
@@ -23,7 +22,7 @@ interface PageParams {
 
 export async function generateMetadata({ params }: PageParams) {
   const { postId } = await params;
-  const post = findMockPost(postId);
+  const post = await getPost(postId);
   return { title: `${post?.concept_title ?? 'Post'} · Apex Social AI` };
 }
 
@@ -43,13 +42,11 @@ function Field({ label, value, hint }: { label: string; value: string; hint?: st
 
 export default async function PostDetailPage({ params }: PageParams) {
   const { postId } = await params;
-  const post = findMockPost(postId);
+  const post = await getPost(postId);
 
   if (!post) {
     notFound();
   }
-
-  const versions = mockVersionHistory(post);
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6">
@@ -151,61 +148,31 @@ export default async function PostDetailPage({ params }: PageParams) {
             </div>
           </Card>
 
-          <div className="grid gap-6 lg:grid-cols-2">
-            <Card>
-              <CardHeader title="Schedule" />
-              <CardDivider />
-              <div className="flex flex-col gap-3 p-5 text-sm">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-text-secondary">Publish at</span>
-                  <span className="flex items-center gap-1.5 text-text-primary">
-                    <ClockIcon className="h-4 w-4 text-text-muted" />
-                    {post.scheduled_at
-                      ? `${formatDate(post.scheduled_at)}, ${formatTime(post.scheduled_at)}`
-                      : 'Not scheduled'}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-text-secondary">Platform</span>
-                  <span className="text-text-primary">Instagram</span>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-text-secondary">Account</span>
-                  <ButtonLink href="/settings" size="sm">
-                    Connect
-                  </ButtonLink>
-                </div>
+          <Card>
+            <CardHeader title="Schedule" />
+            <CardDivider />
+            <div className="flex flex-col gap-3 p-5 text-sm">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-text-secondary">Publish at</span>
+                <span className="flex items-center gap-1.5 text-text-primary">
+                  <ClockIcon className="h-4 w-4 text-text-muted" />
+                  {post.scheduled_at
+                    ? `${formatDate(post.scheduled_at)}, ${formatTime(post.scheduled_at)}`
+                    : 'Not scheduled'}
+                </span>
               </div>
-            </Card>
-
-            <Card>
-              <CardHeader title="Version history" />
-              <CardDivider />
-              <ol className="flex flex-col divide-y divide-border-subtle">
-                {versions.map((version) => {
-                  const current = version.id === post.version.id;
-                  return (
-                    <li
-                      key={version.id}
-                      className={cn(
-                        'flex items-center justify-between gap-3 px-5 py-3 text-sm',
-                        current && 'bg-accent-soft/40',
-                      )}
-                    >
-                      <span className="text-text-primary">
-                        Version {version.version_number}
-                        {current ? <span className="ml-2 text-xs text-accent">Current</span> : null}
-                      </span>
-                      <span className="text-xs text-text-muted">
-                        {version.created_by === 'AI' ? 'AI generated' : 'Edited'} ·{' '}
-                        {formatRelative(version.created_at, MOCK_NOW)}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ol>
-            </Card>
-          </div>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-text-secondary">Platform</span>
+                <span className="text-text-primary">Instagram</span>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-text-secondary">Account</span>
+                <ButtonLink href="/settings" size="sm">
+                  Connect
+                </ButtonLink>
+              </div>
+            </div>
+          </Card>
         </div>
       </div>
     </div>

@@ -1,4 +1,3 @@
-import { MOCK_NOW, MOCK_POSTS } from '@apex/mocks';
 import { tokens } from '@apex/ui';
 import { Link } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -6,11 +5,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CreativePreview } from '@/components/creative-preview';
 import { StatusChip } from '@/components/status-chip';
-import { Card, ScreenTitle } from '@/components/ui';
-import { formatRelative } from '@/lib/format';
+import { Card, EmptyState, ScreenTitle } from '@/components/ui';
+import { usePosts } from '@/lib/data';
 
 export default function LibraryScreen() {
   const insets = useSafeAreaInsets();
+  const { data: posts } = usePosts();
 
   return (
     <ScrollView
@@ -20,10 +20,24 @@ export default function LibraryScreen() {
         { paddingTop: insets.top + tokens.space.md, paddingBottom: tokens.space['2xl'] },
       ]}
     >
-      <ScreenTitle title="Library" subtitle={`${MOCK_POSTS.length} posts for this brand.`} />
+      <ScreenTitle
+        title="Library"
+        subtitle={
+          posts.length === 1 ? '1 post for this brand.' : `${posts.length} posts for this brand.`
+        }
+      />
+
+      {posts.length === 0 ? (
+        <Card>
+          <EmptyState
+            title="No posts yet"
+            description="Generated and drafted posts appear here once the workspace is connected."
+          />
+        </Card>
+      ) : null}
 
       <View style={styles.grid}>
-        {MOCK_POSTS.map((post) => (
+        {posts.map((post) => (
           <Link key={post.id} href={`/posts/${post.id}`} asChild>
             <Pressable style={styles.cell}>
               <Card>
@@ -35,7 +49,6 @@ export default function LibraryScreen() {
                     {post.version.headline || post.concept_title}
                   </Text>
                   <StatusChip status={post.status} />
-                  <Text style={styles.meta}>{formatRelative(post.created_at, MOCK_NOW)}</Text>
                 </View>
               </Card>
             </Pressable>
@@ -54,5 +67,4 @@ const styles = StyleSheet.create({
   preview: { height: 150 },
   body: { padding: tokens.space.sm, gap: 6 },
   headline: { color: tokens.color.textPrimary, fontSize: tokens.fontSize.sm, lineHeight: 18 },
-  meta: { color: tokens.color.textMuted, fontSize: tokens.fontSize.xs },
 });

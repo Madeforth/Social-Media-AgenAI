@@ -1,4 +1,3 @@
-import { MOCK_BRAND_GUIDELINES } from '@apex/mocks';
 import { VISUAL_FORMATS } from '@apex/types';
 import { VISUAL_FORMAT_LABELS } from '@apex/ui';
 
@@ -7,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardDivider, CardHeader } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
 import { cn } from '@/lib/cn';
+import { getBrandGuidelines } from '@/lib/data';
 
 export const metadata = { title: 'Create with AI · Apex Social AI' };
 
@@ -53,8 +53,9 @@ export default async function CreatePage({
 }: {
   searchParams: Promise<{ mode?: string }>;
 }) {
-  const { mode } = await searchParams;
+  const [{ mode }, guidelines] = await Promise.all([searchParams, getBrandGuidelines()]);
   const activeMode: Mode = mode === 'custom_brief' ? 'custom_brief' : 'ai_suggestion';
+  const pillars = guidelines?.content_pillars ?? [];
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6">
@@ -121,10 +122,13 @@ export default async function CreatePage({
           )}
 
           <div className="grid gap-5 sm:grid-cols-2">
-            <FieldShell label="Content pillar" hint="Optional">
+            <FieldShell
+              label="Content pillar"
+              hint={pillars.length === 0 ? 'None defined yet' : 'Optional'}
+            >
               <select disabled className={INPUT_CLASS}>
                 <option>Let the AI decide</option>
-                {MOCK_BRAND_GUIDELINES.content_pillars.map((pillar) => (
+                {pillars.map((pillar) => (
                   <option key={pillar.key}>{pillar.name}</option>
                 ))}
               </select>

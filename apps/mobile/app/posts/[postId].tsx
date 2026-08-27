@@ -1,4 +1,3 @@
-import { MOCK_NOW, findMockPost } from '@apex/mocks';
 import { tokens, VISUAL_FORMAT_LABELS } from '@apex/ui';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -6,12 +5,33 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { CreativePreview } from '@/components/creative-preview';
 import { StatusChip } from '@/components/status-chip';
 import { Button, Card, EmptyState } from '@/components/ui';
-import { formatRelative } from '@/lib/format';
+import { usePost } from '@/lib/data';
 
 /** The immersive review screen: visual first, details below, actions pinned. */
 export default function PostDetailScreen() {
   const { postId } = useLocalSearchParams<{ postId: string }>();
-  const post = findMockPost(postId ?? '');
+  const { data: post, loading, error } = usePost(postId ?? '');
+
+  if (loading) {
+    return (
+      <View style={styles.screen}>
+        <Stack.Screen options={{ headerShown: true, title: 'Loading' }} />
+        <EmptyState title="Loading" description="Fetching this post." />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.screen}>
+        <Stack.Screen options={{ headerShown: true, title: 'Error' }} />
+        <EmptyState
+          title="Could not load this post"
+          description="Check the connection and try again."
+        />
+      </View>
+    );
+  }
 
   if (!post) {
     return (
@@ -56,8 +76,7 @@ export default function PostDetailScreen() {
         </Card>
 
         <Text style={styles.generated}>
-          {post.version.created_by === 'AI' ? 'AI generated' : 'Edited'}{' '}
-          {formatRelative(post.version.created_at, MOCK_NOW)}
+          {post.version.created_by === 'AI' ? 'AI generated' : 'Edited by you'}
         </Text>
       </ScrollView>
 

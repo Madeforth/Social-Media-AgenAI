@@ -62,3 +62,8 @@ export type PostVersion = Omit<TableRow<'post_versions'>, 'hashtags' | 'model_me
   hashtags: string[];
   model_metadata: Record<string, unknown> | null;
 };
+
+/** A post joined with the version currently shown to the user. */
+export interface PostWithVersion extends Post {
+  version: PostVersion;
+}

@@ -13,7 +13,6 @@
   "dependencies": {
     "@apex/ai": "*",
     "@apex/api": "*",
-    "@apex/mocks": "*",
     "@apex/types": "*",
     "@apex/ui": "*",
     "@expo/metro-runtime": "~57.0.14",

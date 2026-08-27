@@ -82,3 +82,9 @@ Decision: `react-native-web`, `react-dom` and `@expo/metro-runtime` are installe
 
 ## 2026-08-27 — Mobile Calendar Is An Agenda, Not A Grid
 Decision: the mobile calendar renders a chronological agenda rather than a month grid. A 7x6 grid of tap targets does not survive a phone width at a usable size, and the mobile approval flow is optimised for one-handed use.
+
+## 2026-08-27 — No Mock Data, Ever
+Decision: the project never contains mock data. The `@apex/mocks` package built during Milestone 3 was deleted the same day on the owner's instruction, and the rule is now principle 11 in CLAUDE.md. It covers fixture packages, sample rows, seed data, hardcoded example content and placeholder numbers, including temporary ones added while a backend is missing.
+
+## 2026-08-27 — Data Access Seam
+Decision: screens read through a single module per app — `apps/web/src/lib/data.ts` and `apps/mobile/src/lib/data.ts`. Today every reader returns an empty result, so the screens render their empty states. When Supabase exists only these bodies change. Web exposes async functions consumed by server components; mobile exposes hooks returning `{ data, loading, error }` so the screens already handle all three states.

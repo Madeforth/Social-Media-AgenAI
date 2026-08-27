@@ -1,4 +1,4 @@
-import type { MockPost } from '@apex/mocks';
+import type { PostWithVersion } from '@apex/types';
 import { VISUAL_FORMAT_LABELS } from '@apex/ui';
 
 import { cn } from '@/lib/cn';
@@ -24,7 +24,7 @@ function gradientFor(id: string): string {
 }
 
 interface CreativePreviewProps {
-  post: MockPost;
+  post: PostWithVersion;
   className?: string;
   /** `feed` is the 4:5 Instagram ratio; `wide` suits list rows and hero panels. */
   ratio?: 'feed' | 'square' | 'wide';

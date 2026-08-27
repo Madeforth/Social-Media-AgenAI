@@ -264,7 +264,17 @@ export interface Dictionary {
         connectedBanner: string;
         errorBanner: string;
       };
-      gemini: { title: string; description: string; serverSide: string };
+      gemini: {
+        title: string;
+        description: string;
+        serverSide: string;
+        connected: string;
+        formApiKey: string;
+        formApiKeyHint: string;
+        formSubmit: string;
+        connectedBanner: string;
+        errorBanner: string;
+      };
     };
     brand: {
       title: string;

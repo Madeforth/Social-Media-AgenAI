@@ -346,8 +346,14 @@ export const en: Dictionary = {
       gemini: {
         title: 'Gemini',
         description:
-          'Configured as a Supabase secret. The key is only ever read inside an Edge Function.',
+          'Powers content generation. Paste your own API key here, or a project owner can set GEMINI_API_KEY as a Supabase secret instead — either way, it is only ever read inside an Edge Function.',
         serverSide: 'Server-side',
+        connected: 'Connected',
+        formApiKey: 'API key',
+        formApiKeyHint: 'From Google AI Studio. Verified against the Gemini API before saving.',
+        formSubmit: 'Connect',
+        connectedBanner: 'Gemini API key connected.',
+        errorBanner: 'Could not verify or save that key.',
       },
     },
     brand: {

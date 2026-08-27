@@ -18,6 +18,7 @@ import {
   GEMINI_TEXT_MODEL,
   INPUT_LIMITS,
   renderUntrusted,
+  resolveGeminiApiKey,
   sanitizeUserText,
   validateContentProposal,
   type UntrustedBlock,
@@ -38,7 +39,6 @@ Deno.serve(async (req) => {
   const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
   const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
   const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !SUPABASE_SERVICE_ROLE_KEY) {
     return json(500, { error: 'Supabase environment is not configured' });
   }
@@ -187,15 +187,16 @@ Deno.serve(async (req) => {
       .update({ output_json: output, duration_ms: Date.now() - startedAt })
       .eq('id', generationRow.id);
 
-  if (!GEMINI_API_KEY) {
-    await recordFailure({ error: 'GEMINI_API_KEY not configured' });
-    return json(503, { error: 'Gemini is not configured on this project' });
+  const geminiApiKey = await resolveGeminiApiKey(serviceClient, brand.organization_id);
+  if (!geminiApiKey) {
+    await recordFailure({ error: 'no Gemini API key configured for this brand or project' });
+    return json(503, { error: 'Gemini is not configured yet — connect a key in Settings' });
   }
 
   let geminiJson: unknown;
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_TEXT_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_TEXT_MODEL}:generateContent?key=${geminiApiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

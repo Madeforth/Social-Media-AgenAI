@@ -351,8 +351,14 @@ export const tr: Dictionary = {
       gemini: {
         title: 'Gemini',
         description:
-          'Bir Supabase secret’ı olarak yapılandırılmıştır. Anahtar yalnızca bir Edge Function içinde okunur.',
+          'İçerik üretimini güçlendirir. Kendi API anahtarını buraya yapıştır, ya da proje sahibi GEMINI_API_KEY’i Supabase secret’ı olarak ayarlayabilir — her iki durumda da anahtar yalnızca bir Edge Function içinde okunur.',
         serverSide: 'Sunucu tarafı',
+        connected: 'Bağlandı',
+        formApiKey: 'API anahtarı',
+        formApiKeyHint: 'Google AI Studio’dan. Kaydetmeden önce Gemini API’ye karşı doğrulanır.',
+        formSubmit: 'Bağla',
+        connectedBanner: 'Gemini API anahtarı bağlandı.',
+        errorBanner: 'Anahtar doğrulanamadı veya kaydedilemedi.',
       },
     },
     brand: {

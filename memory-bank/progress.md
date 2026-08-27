@@ -89,6 +89,13 @@
   failure. The topbar bell is now a real link to `/notifications` with an unread-count dot (read
   server-side in the workspace layout, `getUnreadNotificationCount()`); the page lists all
   notifications, links straight to the post when one is attached, and can mark one or all read.
+- Self-service Gemini key: an org owner/admin can paste their own Gemini API key in Settings
+  instead of needing a project owner to run `supabase secrets set` — new `connect-gemini` Edge
+  Function (same verify-before-store shape as `connect-instagram`), a new `ai_provider_keys` table
+  (migration `20260828090000`, Vault-backed like `social_accounts.token_secret_ref`), and a shared
+  `resolveGeminiApiKey()` helper in `_shared/ai.ts` that both `generate-post` and `generate-image`
+  now call — it checks the org's own key first, then falls back to the project-wide
+  `GEMINI_API_KEY` secret, so either setup path keeps working.
 
 ## In Progress
 

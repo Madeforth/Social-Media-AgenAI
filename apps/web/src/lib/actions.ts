@@ -419,6 +419,48 @@ export async function editPostVersion(formData: FormData): Promise<void> {
   redirect(`/${locale}/posts/${postId}`);
 }
 
+/** Validates and stores a pasted Gemini API key, so a project owner never needs CLI access. */
+export async function connectGemini(formData: FormData): Promise<void> {
+  const locale = targetLocale(formData);
+  const brand = await getCurrentBrand();
+  if (!brand) redirect(`/${locale}/settings`);
+
+  const supabase = await getServerSupabase();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session) redirect(`/${locale}/sign-in`);
+
+  let errorCode: string | null = null;
+
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/connect-gemini`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          brand_id: brand.id,
+          api_key: String(formData.get('apiKey') ?? '').trim(),
+        }),
+      },
+    );
+    if (!response.ok) errorCode = 'failed';
+  } catch {
+    errorCode = 'network';
+  }
+
+  revalidatePath(`/${locale}/settings`);
+  redirect(
+    errorCode
+      ? `/${locale}/settings?geminiError=${errorCode}`
+      : `/${locale}/settings?geminiConnected=1`,
+  );
+}
+
 /** Validates and stores a pasted long-lived Instagram access token (Milestone 9, V1 connect flow). */
 export async function connectInstagram(formData: FormData): Promise<void> {
   const locale = targetLocale(formData);

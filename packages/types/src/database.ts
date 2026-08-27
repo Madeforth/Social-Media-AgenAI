@@ -106,6 +106,41 @@ export type Database = {
           },
         ]
       }
+      ai_provider_keys: {
+        Row: {
+          created_at: string
+          id: string
+          organization_id: string
+          provider: string
+          secret_ref: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          organization_id: string
+          provider: string
+          secret_ref: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          organization_id?: string
+          provider?: string
+          secret_ref?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_provider_keys_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_quotas: {
         Row: {
           created_at: string

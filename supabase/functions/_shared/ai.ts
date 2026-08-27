@@ -262,8 +262,7 @@ export interface ValidationFailure {
 }
 
 export type ValidationResult<T> =
-  | { ok: true; value: T }
-  | { ok: false; failures: ValidationFailure[] };
+  { ok: true; value: T } | { ok: false; failures: ValidationFailure[] };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -399,6 +398,36 @@ export function validateContentProposal(value: unknown): ValidationResult<Conten
       qa_notes,
     },
   };
+}
+
+/**
+ * An org may paste its own Gemini key from Settings (`connect-gemini`), stored
+ * in Vault like any other provider secret. Falls back to the project-wide
+ * `GEMINI_API_KEY` secret set the old way (`supabase secrets set`), so both
+ * paths keep working. `client` is a Supabase service-role client — typed
+ * loosely here since this file has no dependency on `@supabase/supabase-js`'s
+ * types.
+ */
+// deno-lint-ignore no-explicit-any
+export async function resolveGeminiApiKey(
+  client: any,
+  organizationId: string,
+): Promise<string | null> {
+  const { data: keyRow } = await client
+    .from('ai_provider_keys')
+    .select('secret_ref')
+    .eq('organization_id', organizationId)
+    .eq('provider', 'GEMINI')
+    .maybeSingle();
+
+  if (keyRow?.secret_ref) {
+    const { data: secret } = await client.rpc('read_provider_secret', {
+      p_secret_id: keyRow.secret_ref,
+    });
+    if (typeof secret === 'string' && secret.length > 0) return secret;
+  }
+
+  return Deno.env.get('GEMINI_API_KEY') ?? null;
 }
 
 export function findForbiddenClaims(

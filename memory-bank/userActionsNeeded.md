@@ -6,13 +6,11 @@ target finish 2026-08-28 08:00. Check items off as done; add a date when complet
 
 ## Pending
 
-- [ ] Gemini API key: create in Google AI Studio / Google Cloud, then run
-      `npx supabase secrets set GEMINI_API_KEY=... --project-ref dxdbqikzbytenmdrkkgo`. The
-      `generate-post` Edge Function is deployed and live but returns 503 without this — verified
-      it fails cleanly rather than crashing. Once set, test a real generation from
-      `/create` on the production site (needs a signed-in account with a brand — see the brand
-      creation item below) and watch `npx supabase functions logs generate-post` for the first
-      real Gemini call.
+- [ ] Gemini API key: create one in Google AI Studio, then paste it into **Settings →
+      Integrations → Gemini** on the live site (`connect-gemini` Edge Function, deployed) — it's
+      verified against the Gemini API before being stored in Vault, no CLI needed. Falls back to a
+      project-wide `GEMINI_API_KEY` secret (`npx supabase secrets set ...`) if you'd rather do it
+      that way instead; either path works, the UI one just needs no terminal access.
 - [ ] Meta (Instagram) app: create a Meta for Developers app, add the Instagram Graph API
       product, and get a long-lived access token plus the numeric Instagram Business Account ID
       for the target account (Meta Business Suite, or the Graph API Explorer). Meta app review may

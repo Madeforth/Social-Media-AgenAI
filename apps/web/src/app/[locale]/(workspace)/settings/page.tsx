@@ -3,14 +3,24 @@ import { Button } from '@/components/ui/button';
 import { Card, CardDivider, CardHeader } from '@/components/ui/card';
 import { FieldLabel, Input } from '@/components/ui/field';
 import { PageHeader } from '@/components/ui/page-header';
-import { connectInstagram, createOrganizationAndBrand, signOutAction } from '@/lib/actions';
+import {
+  connectGemini,
+  connectInstagram,
+  createOrganizationAndBrand,
+  signOutAction,
+} from '@/lib/actions';
 import { getCurrentUser } from '@/lib/auth';
-import { getCurrentBrand, getSocialAccount } from '@/lib/data';
+import { getCurrentBrand, getGeminiKeyConnected, getSocialAccount } from '@/lib/data';
 import { getI18n } from '@/i18n/get-dictionary';
 
 interface PageParams {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ igConnected?: string; igError?: string }>;
+  searchParams: Promise<{
+    igConnected?: string;
+    igError?: string;
+    geminiConnected?: string;
+    geminiError?: string;
+  }>;
 }
 
 export async function generateMetadata({ params }: PageParams) {
@@ -41,15 +51,17 @@ function Row({
 
 export default async function SettingsPage({ params, searchParams }: PageParams) {
   const { locale } = await params;
-  const { igConnected, igError } = await searchParams;
-  const [brand, user, socialAccount, { dictionary }] = await Promise.all([
+  const { igConnected, igError, geminiConnected, geminiError } = await searchParams;
+  const [brand, user, socialAccount, geminiKeyConnected, { dictionary }] = await Promise.all([
     getCurrentBrand(),
     getCurrentUser(),
     getSocialAccount(),
+    getGeminiKeyConnected(),
     getI18n(locale),
   ]);
   const copy = dictionary.settings;
   const igCopy = copy.integrations.instagram;
+  const geminiCopy = copy.integrations.gemini;
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6">
@@ -124,13 +136,41 @@ export default async function SettingsPage({ params, searchParams }: PageParams)
               ) : null}
             </div>
           )}
-          <Row
-            title={copy.integrations.gemini.title}
-            description={copy.integrations.gemini.description}
-            action={
-              <span className="text-xs text-text-muted">{copy.integrations.gemini.serverSide}</span>
-            }
-          />
+          {geminiConnected ? (
+            <p className="mx-5 mt-4 rounded-md border border-accent/30 bg-accent-soft px-3 py-2 text-xs text-accent">
+              {geminiCopy.connectedBanner}
+            </p>
+          ) : null}
+          {geminiError ? (
+            <p className="mx-5 mt-4 rounded-md border border-red-900/50 bg-red-950/30 px-3 py-2 text-xs text-red-300">
+              {geminiCopy.errorBanner}
+            </p>
+          ) : null}
+          {geminiKeyConnected ? (
+            <Row
+              title={geminiCopy.title}
+              description={geminiCopy.connected}
+              action={<span className="text-xs text-text-muted">{geminiCopy.serverSide}</span>}
+            />
+          ) : (
+            <div className="px-5 py-4">
+              <p className="text-sm text-text-primary">{geminiCopy.title}</p>
+              <p className="mt-0.5 text-xs text-text-secondary">{geminiCopy.description}</p>
+              {brand ? (
+                <form action={connectGemini} className="mt-4 flex flex-wrap items-end gap-3">
+                  <input type="hidden" name="locale" value={locale} />
+                  <div className="min-w-0 flex-1">
+                    <FieldLabel label={geminiCopy.formApiKey} hint={geminiCopy.formApiKeyHint}>
+                      <Input name="apiKey" type="password" required />
+                    </FieldLabel>
+                  </div>
+                  <Button type="submit" variant="primary">
+                    {geminiCopy.formSubmit}
+                  </Button>
+                </form>
+              ) : null}
+            </div>
+          )}
         </div>
       </Card>
 

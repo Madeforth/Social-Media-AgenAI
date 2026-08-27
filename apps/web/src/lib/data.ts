@@ -68,6 +68,22 @@ export async function getBrandGuidelines(): Promise<BrandGuidelines | null> {
   return (data as unknown as BrandGuidelines) ?? null;
 }
 
+/** Whether this brand's organization has connected its own Gemini API key. */
+export async function getGeminiKeyConnected(): Promise<boolean> {
+  const brand = await getCurrentBrand();
+  if (!brand) return false;
+
+  const supabase = await getServerSupabase();
+  const { data } = await supabase
+    .from('ai_provider_keys')
+    .select('id')
+    .eq('organization_id', brand.organization_id)
+    .eq('provider', 'GEMINI')
+    .maybeSingle();
+
+  return Boolean(data);
+}
+
 /** The brand's connected Instagram account, if any. Never selects `token_secret_ref`. */
 export async function getSocialAccount(): Promise<SocialAccount | null> {
   const brand = await getCurrentBrand();

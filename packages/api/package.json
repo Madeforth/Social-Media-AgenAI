@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@apex/types": "*",
+    "@supabase/ssr": "^0.12.5",
     "@supabase/supabase-js": "^2.47.10"
   },
   "devDependencies": {

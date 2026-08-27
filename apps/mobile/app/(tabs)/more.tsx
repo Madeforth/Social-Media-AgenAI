@@ -1,12 +1,19 @@
 import { tokens } from '@apex/ui';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useAuth } from '@/auth/provider';
 import { ChevronRightIcon } from '@/components/icons';
-import { Card, ScreenTitle, SectionHeader } from '@/components/ui';
+import { Button, Card, ScreenTitle, SectionHeader } from '@/components/ui';
 import type { Locale } from '@/i18n/dictionary';
 import { useI18n } from '@/i18n/provider';
-import { useBrandAssets, useBrandGuidelines, useCurrentBrand } from '@/lib/data';
+import {
+  createOrganizationAndBrand,
+  useBrandAssets,
+  useBrandGuidelines,
+  useCurrentBrand,
+} from '@/lib/data';
 
 interface Entry {
   title: string;
@@ -17,9 +24,12 @@ export default function MoreScreen() {
   const insets = useSafeAreaInsets();
   const { locale, dictionary, setLocale } = useI18n();
   const copy = dictionary.more;
+  const { session, signOut } = useAuth();
   const brand = useCurrentBrand();
   const guidelines = useBrandGuidelines();
   const assets = useBrandAssets();
+  const [brandName, setBrandName] = useState('');
+  const [creating, setCreating] = useState(false);
 
   const pillarCount = guidelines.data?.content_pillars.length ?? 0;
 
@@ -37,8 +47,15 @@ export default function MoreScreen() {
   const settingsEntries: Entry[] = [
     { title: copy.instagram, detail: copy.notConnected },
     { title: copy.notifications, detail: copy.notConfigured },
-    { title: copy.account, detail: brand.data?.name ?? copy.noBrandYet },
   ];
+
+  async function handleCreateBrand() {
+    if (!session || !brandName.trim() || creating) return;
+    setCreating(true);
+    const { error } = await createOrganizationAndBrand(brandName.trim(), session.user.id);
+    setCreating(false);
+    if (!error) setBrandName('');
+  }
 
   return (
     <ScrollView
@@ -57,6 +74,25 @@ export default function MoreScreen() {
             <Row key={entry.title} entry={entry} divided={index > 0} />
           ))}
         </Card>
+        {!brand.loading && !brand.data ? (
+          <Card style={styles.languageCard}>
+            <Text style={styles.languageDescription}>{copy.createBrandDescription}</Text>
+            <TextInput
+              value={brandName}
+              onChangeText={setBrandName}
+              placeholder={copy.brandNamePlaceholder}
+              placeholderTextColor={tokens.color.textMuted}
+              accessibilityLabel={copy.brandNameLabel}
+              style={styles.textInput}
+            />
+            <Button
+              label={copy.createBrand}
+              variant="primary"
+              disabled={!brandName.trim() || creating}
+              onPress={handleCreateBrand}
+            />
+          </Card>
+        ) : null}
       </View>
 
       <View style={styles.section}>
@@ -86,6 +122,14 @@ export default function MoreScreen() {
               onSelect={setLocale}
             />
           </View>
+        </Card>
+      </View>
+
+      <View style={styles.section}>
+        <SectionHeader title={copy.account} />
+        <Card style={styles.languageCard}>
+          <Text style={styles.languageDescription}>{session?.user.email ?? ''}</Text>
+          <Button label={copy.signOut} onPress={() => void signOut()} />
         </Card>
       </View>
     </ScrollView>
@@ -136,6 +180,16 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: tokens.space.md, gap: tokens.space.lg },
   section: { gap: tokens.space.sm },
   languageCard: { padding: tokens.space.md, gap: tokens.space.sm },
+  textInput: {
+    height: 44,
+    borderRadius: tokens.radius.md,
+    borderWidth: 1,
+    borderColor: tokens.color.borderStrong,
+    backgroundColor: tokens.color.surfaceRaised,
+    paddingHorizontal: tokens.space.md,
+    color: tokens.color.textPrimary,
+    fontSize: tokens.fontSize.base,
+  },
   languageDescription: { color: tokens.color.textMuted, fontSize: tokens.fontSize.xs },
   languageOptions: { flexDirection: 'row', gap: tokens.space.sm },
   languageOption: {

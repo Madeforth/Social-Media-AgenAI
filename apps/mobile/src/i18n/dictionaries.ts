@@ -97,11 +97,15 @@ export const en: MobileDictionary = {
     notifications: 'Notifications',
     notConfigured: 'Not configured',
     account: 'Account',
-    noBrandYet: 'No brand yet',
     language: 'Language',
     languageDescription: 'Interface language',
     turkish: 'Türkçe',
     english: 'English',
+    signOut: 'Sign out',
+    createBrand: 'Create brand',
+    createBrandDescription: 'One brand per organization for now — this is the workspace everything else reads from.',
+    brandNameLabel: 'Brand name',
+    brandNamePlaceholder: 'e.g. Apex Flow',
   },
   postDetail: {
     loadingDescription: 'Fetching this post.',
@@ -118,6 +122,11 @@ export const en: MobileDictionary = {
     editedByYou: 'Edited by you',
     revise: 'Revise',
     approve: 'Approve',
+  },
+  signIn: {
+    title: 'Sign in to Apex Social AI',
+    subtitle: 'Use your Google account to continue.',
+    continueWithGoogle: 'Continue with Google',
   },
 };
 
@@ -225,11 +234,15 @@ export const tr: MobileDictionary = {
     notifications: 'Bildirimler',
     notConfigured: 'Yapılandırılmadı',
     account: 'Hesap',
-    noBrandYet: 'Henüz marka yok',
     language: 'Dil',
     languageDescription: 'Arayüz dili',
     turkish: 'Türkçe',
     english: 'İngilizce',
+    signOut: 'Çıkış yap',
+    createBrand: 'Marka oluştur',
+    createBrandDescription: 'Şimdilik organizasyon başına bir marka — diğer her şey buradan okunur.',
+    brandNameLabel: 'Marka adı',
+    brandNamePlaceholder: 'örn. Apex Flow',
   },
   postDetail: {
     loadingDescription: 'Gönderi getiriliyor.',
@@ -246,5 +259,10 @@ export const tr: MobileDictionary = {
     editedByYou: 'Senin tarafından düzenlendi',
     revise: 'Revize et',
     approve: 'Onayla',
+  },
+  signIn: {
+    title: "Apex Social AI'a giriş yap",
+    subtitle: 'Devam etmek için Google hesabını kullan.',
+    continueWithGoogle: 'Google ile devam et',
   },
 };

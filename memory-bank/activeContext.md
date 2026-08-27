@@ -2,10 +2,11 @@
 
 ## Current Phase
 
-Milestones 1–3 are closed and the Supabase project is live: the schema is applied, types are
-generated from it, RLS is verified end to end, and the security work in front of the AI runtime is
-in place. The screens still render empty states because the data seam has not been wired to
-Supabase yet — that is Milestone 4.
+Milestones 1–4 are closed. Auth (Google OAuth via Supabase) and brand selection are wired on both
+clients — see "Completed — Milestone 4" below. The data seam now does real Supabase reads gated by
+RLS; screens still render empty states, but only because no organization/brand exists yet in the
+project, not because the seam is stubbed. Milestone 5 (Brand Brain and Asset Library writes) is
+next.
 
 ## What Exists Now
 
@@ -16,8 +17,9 @@ Supabase yet — that is Milestone 4.
   detail, Brand Brain, assets, analytics, inbox and settings. Every route renders per request.
 - `apps/mobile`: Expo SDK 57 with expo-router. Five bottom tabs (Home, Create, Calendar, Library,
   More) plus the immersive post review screen.
-- `apps/*/src/lib/data.ts`: the only seam between screens and their data source. Every reader
-  currently returns an empty result.
+- `apps/*/src/lib/data.ts`: the only seam between screens and their data source. Every reader runs
+  a real Supabase query scoped only by RLS — no explicit user/org filter, Postgres decides what
+  comes back. Returns empty results today only because the project has no organizations yet.
 - `packages/types`: `database.ts` generated from the live schema, with derived domain types and
   enum-drift guards that fail the build if a runtime constant diverges from a database enum.
 - `packages/ui`: design tokens (`tokens.ts` + `tokens.css`) and the shared status presentation map
@@ -39,10 +41,23 @@ The repo is linked; `supabase/.temp/project-ref` holds the ref.
   into the file directly — that drops the header. The file is Prettier-ignored so regenerated
   output stays byte-comparable.
 - Local credentials are in `apps/web/.env.local` and `apps/mobile/.env`, both gitignored. Clients
-  use the `sb_publishable_...` key.
+  use the `sb_publishable_...` key. **These are local files, not checked in** — if they're missing
+  on a machine (a fresh checkout has no way to carry them), recreate them with
+  `npx supabase link --project-ref dxdbqikzbytenmdrkkgo` then
+  `npx supabase projects api-keys --project-ref dxdbqikzbytenmdrkkgo` (the CLI session must already
+  be logged in) and copy the `publishable` key plus `https://dxdbqikzbytenmdrkkgo.supabase.co` into
+  both files per `.env.example`. Symptom when missing: every route redirects to `/sign-in` and the
+  proxy throws "Missing Supabase URL" — because `getServerSupabase()`/the SSR client can't build.
 - The Auth admin API still requires the legacy `service_role` JWT; the new `sb_secret_...` key is
   rejected with "Invalid API key".
 - There is no data in the project: zero users, zero rows, zero storage objects.
+- **Google OAuth is not yet enabled in the Supabase dashboard** — sign-in reaches
+  `/auth/v1/authorize` correctly (verified) but Supabase returns `provider is not enabled`. Needs a
+  Google Cloud OAuth 2.0 Client ID (redirect URI
+  `https://dxdbqikzbytenmdrkkgo.supabase.co/auth/v1/callback`), pasted into Authentication →
+  Providers → Google, plus `apexsocial://auth-callback` and the web `/auth/callback` origins added
+  under Authentication → URL Configuration → Redirect URLs. This is a dashboard/Google Cloud step
+  only the project owner can do.
 
 ## Commands
 
@@ -72,17 +87,72 @@ down in `docs/SECURITY.md`), Meta webhook signature verification (Milestone 9), 
 inspection, auth brute-force tuning, and recording which user approved a post. No penetration
 testing has been done.
 
-## Next Action — Milestone 4
+## Next Action — Milestone 5
 
-Implement authentication and brand selection against Supabase by filling in the bodies of
-`apps/web/src/lib/data.ts` and `apps/mobile/src/lib/data.ts`. No screen should need rewriting.
+Brand Brain and Asset Library writes: forms to edit `brand_guidelines` and upload to
+`brand_assets`/Storage, from the account created in Milestone 4. `listBrandAssets()` already reads
+real rows; nothing writes them yet.
 
 Two things to remember when writing those queries:
 
 - `social_accounts` grants SELECT per column, so `select('*')` on that table is denied. Name the
   columns.
-- Nothing in the app has ever rendered a populated list, because no data source has existed. The
-  first real read is also the first test of every list, card and detail layout with content in it.
+- The first real read (Milestone 4) was also the first test of every list, card and detail layout
+  with content in it — but the project still has zero organizations, so this has only been
+  exercised against an empty result. Once a real account exists, watch for a layout that assumed
+  empty and breaks on a populated list.
+
+## Completed — Milestone 4: Google Auth + brand selection
+
+Auth is Google OAuth through Supabase Auth on both clients (user's choice — email/magic-link were
+also considered). Scope was one implicit brand per organization; a brand switcher between many was
+explicitly out of scope.
+
+Web:
+
+- `packages/api/src/client.ts` gained `createSsrBrowserClient`/`createSsrServerClient` (from
+  `@supabase/ssr`, newly a dependency) alongside the existing plain `createBrowserClient` mobile
+  keeps using. The web session lives in cookies, not `localStorage`, so the proxy and Server
+  Components can read it.
+- `apps/web/src/proxy.ts` now also gates every `[locale]` route behind `supabase.auth.getUser()` —
+  no session → redirect to `/${locale}/sign-in?next=...`; session present on `/sign-in` → redirect
+  home. `/auth/*` is exempt (it's the callback target, not a screen).
+- `apps/web/src/app/[locale]/sign-in/page.tsx` (Google button) and
+  `apps/web/src/app/auth/callback/route.ts` (`exchangeCodeForSession`, deliberately outside
+  `[locale]`) are new.
+- `apps/web/src/lib/data.ts` is no longer stubbed — see "What Exists Now" above.
+- `apps/web/src/lib/actions.ts`: `createOrganizationAndBrand` (Settings page form — inserts
+  `organizations` then `brands`; the `organizations_add_owner` trigger makes the caller `OWNER`
+  before the second insert runs) and `signOutAction`.
+- Settings gained an Account card (email + sign out) and the brand row became a real create form.
+  Topbar's avatar initials come from the session email now, not a hardcoded "MA". The old "Not
+  connected to Supabase" badge is gone — the app is actually connected now.
+
+Mobile:
+
+- `apps/mobile/src/auth/provider.tsx`: same shape as the i18n provider. Google sign-in uses
+  `expo-web-browser`'s `openAuthSessionAsync` plus `expo-linking`'s `createURL('auth-callback')`
+  (scheme `apexsocial://`, already in `app.json`) — Supabase's implicit-flow redirect fragment
+  (`#access_token&refresh_token`) is parsed manually and passed to `supabase.auth.setSession()`.
+- `apps/mobile/app/_layout.tsx` uses `Stack.Protected` (Expo Router's auth-guard API) to swap
+  between `(tabs)` and a new `sign-in.tsx` screen based on session state — no manual redirect logic.
+- `apps/mobile/src/lib/data.ts`: same real-query shift as web, hook-shaped, each depending on
+  `useCurrentBrand()`. `createOrganizationAndBrand` also exists here (called directly, no
+  server-action layer on mobile — RLS is the only gate either way).
+- `apps/mobile/app/(tabs)/more.tsx` gained the brand-creation form and a Sign out row.
+
+Verification:
+
+- Full-workspace typecheck, web lint, `npm test` (24/24), web production build (12 routes
+  including `sign-in` and `auth/callback`), and `verify:bundle` all pass.
+- Browser-verified against a real dev server: unauthenticated `/`, `/tr/library` etc. all redirect
+  to `/tr/sign-in?next=...`; clicking "Continue with Google" reaches Supabase's real
+  `/auth/v1/authorize` with the correct PKCE challenge and redirect — it currently returns
+  `provider is not enabled`, which is expected until the dashboard step above is done; `/auth/callback`
+  with no `code` redirects to sign-in instead of crashing.
+- **Not yet verified**: an actual completed Google sign-in, brand creation, sign-out, and RLS
+  isolation between two real accounts — all blocked on the pending Google provider setup. Native
+  mobile OAuth (the deep-link round trip) has never run on a device or simulator either.
 
 ## Completed — Web and Mobile TR/EN i18n
 
@@ -129,7 +199,6 @@ through the data seam and every screen has a real loading, empty and error state
   unavailable until Instagram is connected.
 - Dashboard counters are derived from the posts themselves, so a number can never disagree with
   what is on screen.
-- The web shell states plainly that it is not connected to Supabase.
 
 ## Current Visual Reference
 

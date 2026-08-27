@@ -27,7 +27,6 @@ export interface Dictionary {
     settings: string;
   };
   topbar: {
-    notConnected: string;
     notifications: string;
   };
   sidebar: {
@@ -211,6 +210,13 @@ export interface Dictionary {
       createFirstBrand: string;
       multiBrandNotice: string;
       newBrand: string;
+      brandNameLabel: string;
+      brandNamePlaceholder: string;
+    };
+    account: {
+      title: string;
+      signedInAs: string;
+      signOut: string;
     };
     notifications: {
       title: string;
@@ -241,5 +247,10 @@ export interface Dictionary {
     title: string;
     description: string;
     backToDashboard: string;
+  };
+  signIn: {
+    title: string;
+    subtitle: string;
+    continueWithGoogle: string;
   };
 }

@@ -21,15 +21,17 @@
 - Turkish/English localization on web and mobile. Web uses locale-prefixed routes with negotiated
   cookie persistence; mobile uses the device locale plus a persistent in-app selector. All screen
   copy, navigation, statuses, domain labels and dates follow the active locale.
+- Auth and brand selection (Milestone 4): Google OAuth via Supabase Auth on web (cookie-based
+  session, proxy route guard) and mobile (`expo-web-browser` + deep link), one implicit
+  brand-per-organization creation flow on both, and the data-access seam now runs real
+  RLS-scoped Supabase reads instead of stubs.
 
 ## In Progress
 
-- None. Milestone 4 is the next action.
+- None. Milestone 5 is the next action.
 
 ## Not Started
 
-- Auth and brand selection (Milestone 4)
-- Wiring the data-access seam to live Supabase reads
 - Brand Brain and Asset Library writes (Milestone 5)
 - The Edge Function security gate and Gemini integration (Milestone 6 — contract in
   `docs/SECURITY.md`)
@@ -68,6 +70,20 @@
 - `npm run lint`, full-workspace `npm run typecheck`, all 24 tests and the client-bundle secret
   scan pass after the localization work.
 - Native layout and the native persistence bridge are not yet exercised on a real device or
+  simulator.
+
+## Verification — Milestone 4, auth and brand selection
+
+- Full-workspace typecheck, web lint, `npm test` (24/24), web production build (12 routes,
+  including the new `sign-in` and `auth/callback`) and `verify:bundle` all pass.
+- Browser-verified against a real dev server: every unauthenticated path redirects to
+  `/tr/sign-in?next=...`; "Continue with Google" reaches Supabase's real `/auth/v1/authorize`
+  endpoint with a correct PKCE challenge and redirect URL; `/auth/callback` with no `code` redirects
+  to sign-in rather than crashing.
+- NOT verified: an actual completed Google sign-in, brand creation, sign-out, or RLS isolation
+  between two real signed-in accounts — Google OAuth is coded correctly end-to-end but the provider
+  is not yet enabled in the Supabase dashboard (returns `provider is not enabled`), which is a
+  manual step only the project owner can do. Native mobile OAuth has never run on a device or
   simulator.
 
 ## Verification — the live database

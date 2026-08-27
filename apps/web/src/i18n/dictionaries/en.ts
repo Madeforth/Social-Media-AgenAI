@@ -27,7 +27,6 @@ export const en: Dictionary = {
     settings: 'Settings',
   },
   topbar: {
-    notConnected: 'Not connected to Supabase',
     notifications: 'Notifications',
   },
   sidebar: {
@@ -287,6 +286,13 @@ export const en: Dictionary = {
       createFirstBrand: 'Create your first brand',
       multiBrandNotice: 'The data model is multi-brand from the start.',
       newBrand: 'New brand',
+      brandNameLabel: 'Brand name',
+      brandNamePlaceholder: 'e.g. Apex Flow',
+    },
+    account: {
+      title: 'Account',
+      signedInAs: 'Signed in as',
+      signOut: 'Sign out',
     },
     notifications: {
       title: 'Notifications',
@@ -324,5 +330,10 @@ export const en: Dictionary = {
     title: 'This page does not exist',
     description: 'The link may be stale, or the post it pointed at was removed.',
     backToDashboard: 'Back to dashboard',
+  },
+  signIn: {
+    title: 'Sign in to Apex Social AI',
+    subtitle: 'Use your Google account to continue.',
+    continueWithGoogle: 'Continue with Google',
   },
 };

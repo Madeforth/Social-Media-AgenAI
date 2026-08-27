@@ -1,20 +1,50 @@
-import type { Brand, BrandAsset, BrandGuidelines, PostStatus, PostWithVersion } from '@apex/types';
+import type {
+  Brand,
+  BrandAsset,
+  BrandGuidelines,
+  PostStatus,
+  PostVersion,
+  PostWithVersion,
+} from '@apex/types';
+
+import { getServerSupabase } from './supabase-server';
 
 /**
  * The single seam between the screens and their data source.
  *
- * Supabase is not provisioned yet, so every reader returns an empty result and
- * the screens render their empty states. When the project exists, only the
- * bodies here change — no screen has to be rewritten, and no screen has ever
- * been shown data that did not come from the database.
+ * Row Level Security is the only access boundary here: every query below is
+ * scoped only by the signed-in user's session, and Postgres decides what rows
+ * come back. `getCurrentBrand()` picks the caller's earliest brand — V1 is one
+ * implicit brand per organization, not a switcher between many.
  */
 
 export async function getCurrentBrand(): Promise<Brand | null> {
-  return null;
+  const supabase = await getServerSupabase();
+  const { data } = await supabase
+    .from('brands')
+    .select('*')
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  return data ?? null;
 }
 
 export async function listPosts(): Promise<PostWithVersion[]> {
-  return [];
+  const brand = await getCurrentBrand();
+  if (!brand) return [];
+
+  const supabase = await getServerSupabase();
+  const { data } = await supabase
+    .from('posts')
+    .select('*, version:post_versions!posts_current_version_id_fkey(*)')
+    .eq('brand_id', brand.id)
+    .order('created_at', { ascending: false });
+
+  return (data ?? [])
+    .filter((post): post is typeof post & { version: NonNullable<typeof post.version> } =>
+      Boolean(post.version),
+    )
+    .map((post) => ({ ...post, version: post.version as unknown as PostVersion }));
 }
 
 export async function getPost(id: string): Promise<PostWithVersion | null> {
@@ -23,11 +53,31 @@ export async function getPost(id: string): Promise<PostWithVersion | null> {
 }
 
 export async function getBrandGuidelines(): Promise<BrandGuidelines | null> {
-  return null;
+  const brand = await getCurrentBrand();
+  if (!brand) return null;
+
+  const supabase = await getServerSupabase();
+  const { data } = await supabase
+    .from('brand_guidelines')
+    .select('*')
+    .eq('brand_id', brand.id)
+    .maybeSingle();
+
+  return (data as unknown as BrandGuidelines) ?? null;
 }
 
 export async function listBrandAssets(): Promise<BrandAsset[]> {
-  return [];
+  const brand = await getCurrentBrand();
+  if (!brand) return [];
+
+  const supabase = await getServerSupabase();
+  const { data } = await supabase
+    .from('brand_assets')
+    .select('*')
+    .eq('brand_id', brand.id)
+    .order('created_at', { ascending: false });
+
+  return (data as unknown as BrandAsset[]) ?? [];
 }
 
 export interface DashboardSummary {

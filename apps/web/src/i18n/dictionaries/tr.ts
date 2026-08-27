@@ -27,7 +27,6 @@ export const tr: Dictionary = {
     settings: 'Ayarlar',
   },
   topbar: {
-    notConnected: "Supabase'e bağlı değil",
     notifications: 'Bildirimler',
   },
   sidebar: {
@@ -290,6 +289,13 @@ export const tr: Dictionary = {
       createFirstBrand: 'İlk markanı oluştur',
       multiBrandNotice: 'Veri modeli en baştan çok-markalı.',
       newBrand: 'Yeni marka',
+      brandNameLabel: 'Marka adı',
+      brandNamePlaceholder: 'örn. Apex Flow',
+    },
+    account: {
+      title: 'Hesap',
+      signedInAs: 'Giriş yapan',
+      signOut: 'Çıkış yap',
     },
     notifications: {
       title: 'Bildirimler',
@@ -327,5 +333,10 @@ export const tr: Dictionary = {
     title: 'Bu sayfa mevcut değil',
     description: 'Bağlantı eski olabilir veya işaret ettiği gönderi kaldırılmış olabilir.',
     backToDashboard: 'Panele dön',
+  },
+  signIn: {
+    title: "Apex Social AI'a giriş yap",
+    subtitle: 'Devam etmek için Google hesabını kullan.',
+    continueWithGoogle: "Google ile devam et",
   },
 };

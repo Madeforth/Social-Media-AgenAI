@@ -85,11 +85,15 @@ export interface MobileDictionary {
     notifications: string;
     notConfigured: string;
     account: string;
-    noBrandYet: string;
     language: string;
     languageDescription: string;
     turkish: string;
     english: string;
+    signOut: string;
+    createBrand: string;
+    createBrandDescription: string;
+    brandNameLabel: string;
+    brandNamePlaceholder: string;
   };
   postDetail: {
     loadingDescription: string;
@@ -106,5 +110,10 @@ export interface MobileDictionary {
     editedByYou: string;
     revise: string;
     approve: string;
+  };
+  signIn: {
+    title: string;
+    subtitle: string;
+    continueWithGoogle: string;
   };
 }

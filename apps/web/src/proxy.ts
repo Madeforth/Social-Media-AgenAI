@@ -1,3 +1,4 @@
+import { createSsrServerClient } from '@apex/api';
 import { NextResponse, type NextRequest } from 'next/server';
 
 import { defaultLocale, hasLocale, type Locale } from '@/i18n/config';
@@ -26,15 +27,24 @@ function negotiateLocale(request: NextRequest): Locale {
 }
 
 /**
- * Issues a fresh CSP nonce for every request, and ensures every path carries a
- * locale prefix (redirecting once if it doesn't).
+ * Issues a fresh CSP nonce for every request, ensures every path carries a
+ * locale prefix (redirecting once if it doesn't), and gates every
+ * `[locale]` route behind a signed-in session except `/sign-in` itself.
  *
  * The nonce is put on the *request* headers as well as the response: Next.js
  * looks for it there when it renders, so its own scripts are emitted with the
  * matching nonce and everything else inline is refused by the browser.
  */
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
+
+  // The OAuth callback is deliberately outside `[locale]` — it's a machine
+  // redirect target, not a screen, and never needs a locale prefix or an
+  // auth check (it's what establishes the session in the first place).
+  if (pathname.startsWith('/auth/')) {
+    return NextResponse.next();
+  }
+
   const pathLocale = localeFromPathname(pathname);
 
   if (!pathLocale) {
@@ -58,6 +68,38 @@ export function proxy(request: NextRequest) {
 
   if (request.cookies.get(LOCALE_COOKIE)?.value !== pathLocale) {
     response.cookies.set(LOCALE_COOKIE, pathLocale, { maxAge: 60 * 60 * 24 * 365, path: '/' });
+  }
+
+  const supabase = createSsrServerClient(
+    {
+      url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      publishableKey: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    },
+    {
+      getAll: () => request.cookies.getAll(),
+      setAll: (cookiesToSet) => {
+        for (const { name, value, options } of cookiesToSet) {
+          response.cookies.set(name, value, options);
+        }
+      },
+    },
+  );
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const pathAfterLocale = pathname.slice(pathLocale.length + 1) || '/';
+  const isSignInRoute = pathAfterLocale === '/sign-in';
+
+  if (!user && !isSignInRoute) {
+    const signInUrl = new URL(`/${pathLocale}/sign-in`, request.url);
+    signInUrl.searchParams.set('next', `${pathname}${search}`);
+    return NextResponse.redirect(signInUrl);
+  }
+
+  if (user && isSignInRoute) {
+    return NextResponse.redirect(new URL(`/${pathLocale}`, request.url));
   }
 
   return response;

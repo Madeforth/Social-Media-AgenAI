@@ -131,3 +131,25 @@ locale in a React context, initializes it from `expo-localization`, exposes the 
 and persists an explicit choice with AsyncStorage. Domain status colors remain in `packages/ui`,
 while each client supplies the localized label so English presentation constants never leak into a
 translated screen.
+
+## 2026-08-27 — Google OAuth, One Brand Per Organization
+Decision: Supabase Auth's Google provider is the only sign-in method for V1 (email/password and
+magic link were considered and dropped — the user picked Google explicitly). Web keeps its session
+in cookies via `@supabase/ssr` so the proxy and Server Components can read it; mobile keeps
+`@supabase/supabase-js`'s default client with an AsyncStorage adapter and drives the OAuth round
+trip itself through `expo-web-browser` plus a deep link, since Supabase's browser-redirect flow
+does not apply to a native app. "Brand selection" for V1 is deliberately just creating one brand
+inside one new organization — the schema is multi-brand-ready, but no screen needs a switcher yet,
+so building one now would be speculative. `getCurrentBrand()`/`useCurrentBrand()` pick the caller's
+earliest brand with no explicit switching UI.
+
+Every `lib/data.ts` reader now queries Supabase directly with **no explicit user/org filter** —
+Row Level Security is the only access boundary, matching the pattern the client-creation code
+comments already stated as the design intent. This was chosen over threading a user id through
+every query because RLS already enforces it at the database layer regardless, and a redundant
+application-level filter would be two sources of truth that could drift.
+
+The Google Cloud OAuth client and the Supabase dashboard's provider toggle are **not something a
+coding session can do** — no browser session logged into the user's Google/Supabase account exists
+here. This is recorded as a standing manual prerequisite, not a bug: sign-in is coded and verified
+up to the point Supabase's `/authorize` endpoint responds `provider is not enabled`.

@@ -7,16 +7,18 @@ import { LocaleLink } from '@/components/locale-link';
 import { LocaleSwitcher } from '@/components/locale-switcher';
 import type { Dictionary } from '@/i18n/dictionary';
 import { cn } from '@/lib/cn';
+import { initialsFromEmail } from '@/lib/format';
 import { isNavItemActive, PRIMARY_NAV, SECONDARY_NAV } from '@/lib/nav';
 
 const ALL_NAV = [...PRIMARY_NAV, ...SECONDARY_NAV];
 
 interface TopbarProps {
   brandName: string | null;
+  userEmail: string | null;
   labels: Pick<Dictionary, 'nav' | 'topbar' | 'localeSwitcher'>;
 }
 
-export function Topbar({ brandName, labels }: TopbarProps) {
+export function Topbar({ brandName, userEmail, labels }: TopbarProps) {
   const pathname = usePathname();
 
   return (
@@ -28,14 +30,6 @@ export function Topbar({ brandName, labels }: TopbarProps) {
             {brandName ?? 'APEX SOCIAL AI'}
           </span>
         </div>
-
-        {/*
-          Stated plainly rather than hidden: nothing on these screens is real
-          until the Supabase project exists.
-        */}
-        <span className="hidden rounded-full border border-border-subtle px-2.5 py-1 text-[11px] text-text-muted lg:inline-flex">
-          {labels.topbar.notConnected}
-        </span>
 
         <div className="flex items-center gap-2">
           <LocaleSwitcher labels={labels.localeSwitcher} />
@@ -50,7 +44,7 @@ export function Topbar({ brandName, labels }: TopbarProps) {
             aria-hidden="true"
             className="flex h-9 w-9 items-center justify-center rounded-full border border-border-strong bg-surface-raised text-xs font-medium text-text-secondary"
           >
-            MA
+            {initialsFromEmail(userEmail)}
           </span>
         </div>
       </div>

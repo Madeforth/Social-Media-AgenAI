@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { StatusChip } from '@/components/status-chip';
 import { Card, EmptyState, ScreenTitle } from '@/components/ui';
+import { useI18n } from '@/i18n/provider';
 import { calendarDate, usePosts } from '@/lib/data';
 import { formatDayMonth, formatTime, formatWeekday } from '@/lib/format';
 
@@ -19,6 +20,8 @@ function agenda(all: PostWithVersion[]): PostWithVersion[] {
 
 export default function CalendarScreen() {
   const insets = useSafeAreaInsets();
+  const { locale, dictionary } = useI18n();
+  const copy = dictionary.calendar;
   const query = usePosts();
   const posts = agenda(query.data);
 
@@ -30,7 +33,7 @@ export default function CalendarScreen() {
         { paddingTop: insets.top + tokens.space.md, paddingBottom: tokens.space['2xl'] },
       ]}
     >
-      <ScreenTitle title="Calendar" subtitle="Scheduled and published content." />
+      <ScreenTitle title={copy.title} subtitle={copy.subtitle} />
 
       {posts.length > 0 ? (
         <Card>
@@ -43,7 +46,8 @@ export default function CalendarScreen() {
                   <View style={[styles.rail, { backgroundColor: tint }]} />
                   <View style={styles.body}>
                     <Text style={styles.date}>
-                      {formatWeekday(at)} {formatDayMonth(at)} · {formatTime(at)}
+                      {formatWeekday(at, locale)} {formatDayMonth(at, locale)} ·{' '}
+                      {formatTime(at, locale)}
                     </Text>
                     <Text style={styles.headline} numberOfLines={2}>
                       {post.version.headline || post.concept_title}
@@ -57,10 +61,7 @@ export default function CalendarScreen() {
         </Card>
       ) : (
         <Card>
-          <EmptyState
-            title="Nothing on the calendar"
-            description="Approved posts appear here once they have a publish time."
-          />
+          <EmptyState title={copy.emptyTitle} description={copy.emptyDescription} />
         </Card>
       )}
     </ScrollView>

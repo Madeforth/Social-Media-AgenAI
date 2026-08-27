@@ -84,46 +84,41 @@ Two things to remember when writing those queries:
 - Nothing in the app has ever rendered a populated list, because no data source has existed. The
   first real read is also the first test of every list, card and detail layout with content in it.
 
-## In Progress — Web TR/EN i18n (unscheduled, web-only)
+## Completed — Web and Mobile TR/EN i18n
 
-The user asked for a Turkish/English toggle on the web app mid-session. Not a numbered milestone;
-being done alongside Milestone 4 work. Scope is `apps/web` only — `apps/mobile` and
-`packages/ui`'s English label maps in `status.ts` are untouched.
+Turkish/English localization is complete on both shipping clients. It is an unscheduled product
+feature alongside the numbered milestones; Milestone 4 is still the next backend milestone.
 
-Decided approach (plan file was `joyful-wiggling-meerkat.md`): Next.js's own `app/[locale]` +
-dictionary pattern, no new dependency (`next-intl` was considered and rejected — CLAUDE.md's
-guardrail against adding a framework when the stack already solves it). Locale lives in the URL
-(`/tr/...`, `/en/...`), default locale is Turkish, negotiated in `apps/web/src/middleware.ts` from
-a `NEXT_LOCALE` cookie, then `Accept-Language`, then the default — merged into the same middleware
-function that issues the CSP nonce (Next only runs one middleware).
+Web:
 
-Done so far:
+- Every route lives under `apps/web/src/app/[locale]/`; Turkish is the default.
+- `apps/web/src/proxy.ts` combines locale negotiation with the per-request CSP nonce. Unprefixed
+  paths negotiate from `NEXT_LOCALE`, then `Accept-Language`, then Turkish. This is `proxy.ts`, not
+  `middleware.ts`, because Next.js 16 renamed the convention.
+- Every page, metadata title, shell label, empty state, status, visual/asset label and date is
+  dictionary-driven. Internal links preserve `/tr` or `/en`, and the locale switcher preserves the
+  current path and query string.
+- A localized route-level 404 exists, while the global fallback is Turkish.
 
-- Every route moved under `apps/web/src/app/[locale]/` (the `(workspace)` group and the root
-  layout, which now reads `params.locale` and sets `<html lang>`).
-- `apps/web/src/middleware.ts` redirects any unprefixed path to `/${locale}${pathname}`.
-- `apps/web/src/i18n/`: `config.ts` (locales/defaultLocale/hasLocale), `dictionary.ts` (the
-  `Dictionary` type every screen's strings must satisfy), `dictionaries/{en,tr}.ts`,
-  `get-dictionary.ts`.
-- `apps/web/src/components/locale-link.tsx`: a `next/link` wrapper that reads the locale from
-  `useParams()` and prefixes `href` — the intended replacement for `next/link` in every internal
-  link.
+Mobile:
 
-Not done yet — this is why the app still renders English:
+- `apps/mobile/src/i18n/` contains the typed dictionaries and React context used by every screen,
+  tab label, status chip, visual label and date formatter.
+- Initial locale comes from `expo-localization` (English only when the device reports English;
+  otherwise Turkish). The user can switch language in More > Language, and AsyncStorage persists
+  the selection across launches.
+- The mobile locale is app state, not a route segment; all tabs and the current screen update
+  immediately without navigation.
 
-- No `page.tsx`/`layout.tsx` reads `getDictionary()` yet; every screen still has its English
-  strings as literals.
-- `components/shell/sidebar.tsx` and `topbar.tsx` are not dictionary-driven, and there is no
-  locale switcher UI yet.
-- `apps/web/src/lib/nav.ts` still hardcodes English labels; `isNavItemActive` does not yet strip
-  the locale prefix before comparing.
-- `next/link` usages across pages/shell are not yet swapped for `LocaleLink`.
-- `apps/web/src/lib/format.ts` date formatters are hardcoded to `en-GB` — need a locale parameter
-  so Turkish renders Turkish month/weekday names.
-- Not typechecked, not built, not browser-verified since the route move.
+Verification:
 
-Full plan detail (file-by-file) lives in the plan file referenced above if the session that wrote
-it has ended; otherwise it's in that session's context.
+- `npm run lint`, `npm run typecheck`, `npm test`, `npm run build --workspace @apex/web` and
+  `npm run verify:bundle` pass.
+- Expo production exports pass for both iOS and Android.
+- Web TR/EN switching and locale-preserving navigation were exercised in Chrome against a
+  production server. The mobile app was rendered through react-native-web; TR/EN switching and
+  AsyncStorage persistence across a reload were exercised with no visible runtime failure.
+- Native layout is still not verified on a physical device or simulator.
 
 ## Standing Rule — No Mock Data
 

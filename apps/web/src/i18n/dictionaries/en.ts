@@ -15,6 +15,7 @@ export const en: Dictionary = {
     rootDescription: 'AI-native social media operating system.',
   },
   nav: {
+    primaryNavigation: 'Primary navigation',
     dashboard: 'Dashboard',
     createWithAi: 'Create with AI',
     calendar: 'Calendar',
@@ -148,7 +149,8 @@ export const en: Dictionary = {
     title: 'Calendar',
     description: (monthYear) => `${monthYear} · scheduled and published content`,
     weekdays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-    emptyMessage: 'Nothing is scheduled yet. Approved posts appear on this grid once they have a publish time.',
+    emptyMessage:
+      'Nothing is scheduled yet. Approved posts appear on this grid once they have a publish time.',
   },
   library: {
     title: 'Content Library',
@@ -196,6 +198,7 @@ export const en: Dictionary = {
   brandBrain: {
     title: 'Brand Brain',
     description: (brandName) => `Everything the AI knows about ${brandName}.`,
+    yourBrand: 'your brand',
     emptyTitle: 'No brand defined yet',
     emptyDescription:
       'Mission, positioning, tone, visual rules and content pillars are entered here. The AI reads all of it before it writes anything.',
@@ -271,7 +274,8 @@ export const en: Dictionary = {
       },
       gemini: {
         title: 'Gemini',
-        description: 'Configured as a Supabase secret. The key is only ever read inside an Edge Function.',
+        description:
+          'Configured as a Supabase secret. The key is only ever read inside an Edge Function.',
         serverSide: 'Server-side',
       },
     },
@@ -304,5 +308,21 @@ export const en: Dictionary = {
     emptyDescription:
       'The navigation slot and the data model are reserved so this can be switched on without a migration.',
   },
-  localeSwitcher: { tr: 'TR', en: 'EN' },
+  localeSwitcher: {
+    label: 'Language',
+    tr: 'TR',
+    en: 'EN',
+    switchToTurkish: 'Switch to Turkish',
+    switchToEnglish: 'Switch to English',
+  },
+  creativePreview: {
+    label: (headline) => `Creative preview: ${headline}`,
+    emptyLabel: 'Creative preview placeholder, no visual generated yet',
+    awaitingGeneration: 'Awaiting generation',
+  },
+  notFound: {
+    title: 'This page does not exist',
+    description: 'The link may be stale, or the post it pointed at was removed.',
+    backToDashboard: 'Back to dashboard',
+  },
 };

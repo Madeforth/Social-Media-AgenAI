@@ -18,12 +18,13 @@
 - Security work in front of the AI runtime: web security headers with a nonce-based CSP, database
   cost limits, a client-bundle secret scanner, and prompt-injection containment plus model output
   validation.
+- Turkish/English localization on web and mobile. Web uses locale-prefixed routes with negotiated
+  cookie persistence; mobile uses the device locale plus a persistent in-app selector. All screen
+  copy, navigation, statuses, domain labels and dates follow the active locale.
 
 ## In Progress
 
-- Web TR/EN i18n (unscheduled, web-only, not a numbered milestone). Route restructure to
-  `app/[locale]`, middleware locale negotiation, and the dictionary infrastructure are committed;
-  wiring pages/shell components to the dictionaries is not done — see `activeContext.md`.
+- None. Milestone 4 is the next action.
 
 ## Not Started
 
@@ -56,6 +57,18 @@
   Rendering was checked through react-native-web, which does not exercise native layout.
 - NOT verified: no screen has been seen rendering a populated list, because there is no data
   source yet. Only the empty states have actually been exercised.
+
+## Verification — TR/EN localization
+
+- Web production build exposes every route under both `/tr` and `/en`; locale switching and an
+  English internal navigation were exercised in Chrome and kept the correct prefix.
+- Mobile typecheck plus iOS and Android production exports pass. The react-native-web verification
+  surface switched every visible label and tab from Turkish to English, then retained English
+  after reload through AsyncStorage.
+- `npm run lint`, full-workspace `npm run typecheck`, all 24 tests and the client-bundle secret
+  scan pass after the localization work.
+- Native layout and the native persistence bridge are not yet exercised on a real device or
+  simulator.
 
 ## Verification — the live database
 

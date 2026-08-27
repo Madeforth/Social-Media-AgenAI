@@ -3,18 +3,27 @@ import { ButtonLink } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { PageHeader } from '@/components/ui/page-header';
+import { getI18n } from '@/i18n/get-dictionary';
 
-export const metadata = { title: 'Analytics · Apex Social AI' };
+interface PageParams {
+  params: Promise<{ locale: string }>;
+}
 
-const METRICS = ['Impressions', 'Reach', 'Engagement', 'Profile visits'];
+export async function generateMetadata({ params }: PageParams) {
+  const { locale } = await params;
+  const { dictionary } = await getI18n(locale);
+  return { title: `${dictionary.meta.analytics} · Apex Social AI` };
+}
 
-export default function AnalyticsPage() {
+export default async function AnalyticsPage({ params }: PageParams) {
+  const { locale } = await params;
+  const { dictionary } = await getI18n(locale);
+  const copy = dictionary.analytics;
+  const metrics = Object.values(copy.metrics);
+
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6">
-      <PageHeader
-        title="Analytics"
-        description="Performance for published content, pulled from Instagram."
-      />
+      <PageHeader title={copy.title} description={copy.description} />
 
       {/*
         These figures come from the Meta Graph API and nowhere else. The tiles
@@ -22,11 +31,11 @@ export default function AnalyticsPage() {
         be indistinguishable from a real one.
       */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {METRICS.map((metric) => (
+        {metrics.map((metric) => (
           <Card key={metric} className="p-5">
             <p className="text-xs font-medium text-text-secondary">{metric}</p>
             <p className="mt-3 text-2xl font-semibold text-text-muted">—</p>
-            <p className="mt-1 text-xs text-text-muted">No account connected</p>
+            <p className="mt-1 text-xs text-text-muted">{copy.noAccountConnected}</p>
           </Card>
         ))}
       </div>
@@ -34,11 +43,11 @@ export default function AnalyticsPage() {
       <Card>
         <EmptyState
           icon={<AnalyticsIcon className="h-5 w-5" />}
-          title="Connect Instagram to see performance"
-          description="Once an account is connected, published posts start reporting impressions, reach, engagement and profile visits here."
+          title={copy.connectTitle}
+          description={copy.connectDescription}
           action={
             <ButtonLink href="/settings" variant="primary">
-              Go to integrations
+              {copy.goToIntegrations}
             </ButtonLink>
           }
         />

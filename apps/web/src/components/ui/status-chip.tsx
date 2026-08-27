@@ -5,11 +5,12 @@ import { cn } from '@/lib/cn';
 
 interface StatusChipProps {
   status: PostStatus;
+  label: string;
   className?: string;
 }
 
-export function StatusChip({ status, className }: StatusChipProps) {
-  const { label, tint, surface } = POST_STATUS_PRESENTATION[status];
+export function StatusChip({ status, label, className }: StatusChipProps) {
+  const { tint, surface } = POST_STATUS_PRESENTATION[status];
   const animate = status === 'GENERATING' || status === 'PUBLISHING';
 
   return (

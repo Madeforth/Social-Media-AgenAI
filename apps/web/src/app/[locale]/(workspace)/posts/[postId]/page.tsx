@@ -1,5 +1,3 @@
-import { VISUAL_FORMAT_LABELS } from '@apex/ui';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import {
@@ -9,24 +7,36 @@ import {
   PencilIcon,
   RefreshIcon,
 } from '@/components/icons';
+import { LocaleLink } from '@/components/locale-link';
 import { Button, ButtonLink } from '@/components/ui/button';
 import { Card, CardDivider, CardHeader } from '@/components/ui/card';
 import { CreativePreview } from '@/components/ui/creative-preview';
 import { StatusChip } from '@/components/ui/status-chip';
+import { getI18n } from '@/i18n/get-dictionary';
 import { getPost } from '@/lib/data';
 import { formatDate, formatTime } from '@/lib/format';
 
 interface PageParams {
-  params: Promise<{ postId: string }>;
+  params: Promise<{ locale: string; postId: string }>;
 }
 
 export async function generateMetadata({ params }: PageParams) {
-  const { postId } = await params;
-  const post = await getPost(postId);
-  return { title: `${post?.concept_title ?? 'Post'} · Apex Social AI` };
+  const { locale, postId } = await params;
+  const [post, i18n] = await Promise.all([getPost(postId), getI18n(locale)]);
+  return { title: `${post?.concept_title ?? i18n.dictionary.meta.postFallback} · Apex Social AI` };
 }
 
-function Field({ label, value, hint }: { label: string; value: string; hint?: string }) {
+function Field({
+  label,
+  value,
+  emptyLabel,
+  hint,
+}: {
+  label: string;
+  value: string;
+  emptyLabel: string;
+  hint?: string;
+}) {
   return (
     <div>
       <div className="flex items-baseline justify-between gap-3">
@@ -34,26 +44,31 @@ function Field({ label, value, hint }: { label: string; value: string; hint?: st
         {hint ? <p className="text-[11px] text-text-muted">{hint}</p> : null}
       </div>
       <p className="mt-1.5 whitespace-pre-line rounded-md border border-border-subtle bg-surface-raised px-3 py-2.5 text-sm text-text-primary">
-        {value || <span className="text-text-muted">Not generated yet</span>}
+        {value || <span className="text-text-muted">{emptyLabel}</span>}
       </p>
     </div>
   );
 }
 
 export default async function PostDetailPage({ params }: PageParams) {
-  const { postId } = await params;
-  const post = await getPost(postId);
+  const { locale: requestedLocale, postId } = await params;
+  const [post, i18n] = await Promise.all([getPost(postId), getI18n(requestedLocale)]);
 
   if (!post) {
     notFound();
   }
+  const { locale, dictionary } = i18n;
+  const copy = dictionary.postDetail;
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6">
       <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-text-muted">
-        <Link href="/library" className="transition-colors duration-150 hover:text-text-primary">
-          Content Library
-        </Link>
+        <LocaleLink
+          href="/library"
+          className="transition-colors duration-150 hover:text-text-primary"
+        >
+          {copy.breadcrumbContentLibrary}
+        </LocaleLink>
         <ChevronRightIcon className="h-3.5 w-3.5" />
         <span className="text-text-secondary">{post.concept_title}</span>
       </nav>
@@ -64,72 +79,95 @@ export default async function PostDetailPage({ params }: PageParams) {
             <h1 className="text-xl font-semibold tracking-tight text-text-primary">
               {post.concept_title}
             </h1>
-            <StatusChip status={post.status} />
+            <StatusChip status={post.status} label={dictionary.status[post.status]} />
           </div>
           <p className="mt-1 text-sm text-text-secondary">
             {post.content_pillar}
-            {post.visual_format ? ` · ${VISUAL_FORMAT_LABELS[post.visual_format]}` : ''} · v
+            {post.visual_format ? ` · ${dictionary.visualFormat[post.visual_format]}` : ''} · v
             {post.version.version_number}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button size="md">
             <RefreshIcon className="h-4 w-4" />
-            Regenerate
+            {copy.regenerate}
           </Button>
           <Button size="md">
             <PencilIcon className="h-4 w-4" />
-            Edit
+            {copy.edit}
           </Button>
           <Button variant="primary" size="md">
             <CheckIcon className="h-4 w-4" />
-            Approve
+            {copy.approve}
           </Button>
         </div>
       </header>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,420px)_1fr]">
         <div className="flex flex-col gap-4">
-          <CreativePreview post={post} ratio="feed" size="lg" />
+          <CreativePreview post={post} labels={dictionary} ratio="feed" size="lg" />
           {post.ui_asset_required ? (
             <p className="rounded-md border border-border-subtle bg-surface px-3 py-2.5 text-xs text-text-secondary">
-              This concept uses a real product screenshot. The asset is placed as supplied and is
-              never redrawn.
+              {copy.uiAssetNotice}
             </p>
           ) : null}
         </div>
 
         <div className="flex flex-col gap-6">
           <Card>
-            <CardHeader title="Strategy" />
+            <CardHeader title={copy.strategy.title} />
             <CardDivider />
             <div className="grid gap-4 p-5 sm:grid-cols-2">
-              <Field label="Objective" value={post.objective} />
-              <Field label="Content pillar" value={post.content_pillar} />
+              <Field
+                label={copy.strategy.objective}
+                value={post.objective}
+                emptyLabel={copy.notGeneratedYet}
+              />
+              <Field
+                label={copy.strategy.contentPillar}
+                value={post.content_pillar}
+                emptyLabel={copy.notGeneratedYet}
+              />
               <div className="sm:col-span-2">
-                <Field label="Creative direction" value={post.version.creative_direction} />
+                <Field
+                  label={copy.strategy.creativeDirection}
+                  value={post.version.creative_direction}
+                  emptyLabel={copy.notGeneratedYet}
+                />
               </div>
             </div>
           </Card>
 
           <Card>
-            <CardHeader title="Copy" />
+            <CardHeader title={copy.copy.title} />
             <CardDivider />
             <div className="flex flex-col gap-4 p-5">
               <Field
-                label="Headline"
+                label={copy.copy.headline}
                 value={post.version.headline}
+                emptyLabel={copy.notGeneratedYet}
                 hint={`${post.version.headline.length}/60`}
               />
-              <Field label="Supporting copy" value={post.version.supporting_copy} />
               <Field
-                label="Caption"
+                label={copy.copy.supportingCopy}
+                value={post.version.supporting_copy}
+                emptyLabel={copy.notGeneratedYet}
+              />
+              <Field
+                label={copy.copy.caption}
                 value={post.version.caption}
+                emptyLabel={copy.notGeneratedYet}
                 hint={`${post.version.caption.length}/2200`}
               />
-              <Field label="Call to action" value={post.version.cta} />
+              <Field
+                label={copy.copy.callToAction}
+                value={post.version.cta}
+                emptyLabel={copy.notGeneratedYet}
+              />
               <div>
-                <p className="text-[11px] uppercase tracking-[0.12em] text-text-muted">Hashtags</p>
+                <p className="text-[11px] uppercase tracking-[0.12em] text-text-muted">
+                  {copy.copy.hashtags}
+                </p>
                 <div className="mt-1.5 flex flex-wrap gap-2">
                   {post.version.hashtags.length > 0 ? (
                     post.version.hashtags.map((tag) => (
@@ -141,7 +179,7 @@ export default async function PostDetailPage({ params }: PageParams) {
                       </span>
                     ))
                   ) : (
-                    <span className="text-sm text-text-muted">Not generated yet</span>
+                    <span className="text-sm text-text-muted">{copy.notGeneratedYet}</span>
                   )}
                 </div>
               </div>
@@ -149,26 +187,26 @@ export default async function PostDetailPage({ params }: PageParams) {
           </Card>
 
           <Card>
-            <CardHeader title="Schedule" />
+            <CardHeader title={copy.schedule.title} />
             <CardDivider />
             <div className="flex flex-col gap-3 p-5 text-sm">
               <div className="flex items-center justify-between gap-3">
-                <span className="text-text-secondary">Publish at</span>
+                <span className="text-text-secondary">{copy.schedule.publishAt}</span>
                 <span className="flex items-center gap-1.5 text-text-primary">
                   <ClockIcon className="h-4 w-4 text-text-muted" />
                   {post.scheduled_at
-                    ? `${formatDate(post.scheduled_at)}, ${formatTime(post.scheduled_at)}`
-                    : 'Not scheduled'}
+                    ? `${formatDate(post.scheduled_at, locale)}, ${formatTime(post.scheduled_at, locale)}`
+                    : copy.schedule.notScheduled}
                 </span>
               </div>
               <div className="flex items-center justify-between gap-3">
-                <span className="text-text-secondary">Platform</span>
-                <span className="text-text-primary">Instagram</span>
+                <span className="text-text-secondary">{copy.schedule.platform}</span>
+                <span className="text-text-primary">{copy.schedule.instagram}</span>
               </div>
               <div className="flex items-center justify-between gap-3">
-                <span className="text-text-secondary">Account</span>
+                <span className="text-text-secondary">{copy.schedule.account}</span>
                 <ButtonLink href="/settings" size="sm">
-                  Connect
+                  {copy.schedule.connect}
                 </ButtonLink>
               </div>
             </div>

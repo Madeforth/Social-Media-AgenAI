@@ -3,7 +3,7 @@ import type { Dictionary } from '../dictionary';
 export const tr: Dictionary = {
   meta: {
     dashboard: 'Panel',
-    create: "Yapay Zeka ile Oluştur",
+    create: 'Yapay Zeka ile Oluştur',
     calendar: 'Takvim',
     library: 'İçerik Kitaplığı',
     brandBrain: 'Marka Beyni',
@@ -15,8 +15,9 @@ export const tr: Dictionary = {
     rootDescription: 'Yapay zeka odaklı sosyal medya işletim sistemi.',
   },
   nav: {
+    primaryNavigation: 'Ana navigasyon',
     dashboard: 'Panel',
-    createWithAi: "Yapay Zeka ile Oluştur",
+    createWithAi: 'Yapay Zeka ile Oluştur',
     calendar: 'Takvim',
     contentLibrary: 'İçerik Kitaplığı',
     brandBrain: 'Marka Beyni',
@@ -81,7 +82,8 @@ export const tr: Dictionary = {
     createCard: {
       badge: 'Yapay Zeka ile Oluştur',
       heading: 'Yapay zeka, kitlen için etkileyici içerik oluştursun',
-      description: "Neye ihtiyacın olduğunu söyle, ya da markanın ne söylemesi gerektiğine yapay zeka karar versin.",
+      description:
+        'Neye ihtiyacın olduğunu söyle, ya da markanın ne söylemesi gerektiğine yapay zeka karar versin.',
       createButton: 'Yapay Zeka ile Oluştur',
       customBrief: 'Özel brief',
     },
@@ -98,7 +100,8 @@ export const tr: Dictionary = {
       review: 'İncele',
       edit: 'Düzenle',
       emptyTitle: 'Onay kuyruğu boş',
-      emptyDescription: 'Oluşturulan gönderiler, zamanlanmadan önce incelenmek üzere burada listelenir.',
+      emptyDescription:
+        'Oluşturulan gönderiler, zamanlanmadan önce incelenmek üzere burada listelenir.',
     },
     performance: {
       title: 'Performans özeti',
@@ -109,12 +112,14 @@ export const tr: Dictionary = {
     },
   },
   create: {
-    title: "Yapay Zeka ile Oluştur",
-    description: 'Uzun bir prompt yazmana hiç gerek kalmamalı. Bir mod seç, gerisini marka halleder.',
+    title: 'Yapay Zeka ile Oluştur',
+    description:
+      'Uzun bir prompt yazmana hiç gerek kalmamalı. Bir mod seç, gerisini marka halleder.',
     modes: {
       aiSuggestion: {
         title: 'Yapay zeka önerisi',
-        description: 'Yapay zeka markayı, son içerik geçmişini ve pillar dengesini okuyup karar verir.',
+        description:
+          'Yapay zeka markayı, son içerik geçmişini ve pillar dengesini okuyup karar verir.',
       },
       customBrief: {
         title: 'Özel brief',
@@ -146,17 +151,19 @@ export const tr: Dictionary = {
     title: 'Takvim',
     description: (monthYear) => `${monthYear} · zamanlanan ve yayınlanan içerik`,
     weekdays: ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'],
-    emptyMessage: 'Henüz zamanlanmış bir şey yok. Onaylanan gönderiler, bir yayın zamanı belirlendiğinde bu ızgarada görünür.',
+    emptyMessage:
+      'Henüz zamanlanmış bir şey yok. Onaylanan gönderiler, bir yayın zamanı belirlendiğinde bu ızgarada görünür.',
   },
   library: {
     title: 'İçerik Kitaplığı',
     description: 'Bu markaya ait tüm gönderiler, en yeniden eskiye.',
     all: (count) => `Tümü (${count})`,
     emptyNoStatusTitle: 'Henüz gönderi yok',
-    emptyNoStatusDescription: "Çalışma alanı Supabase'e bağlandığında oluşturulan ve taslak gönderiler burada görünür.",
+    emptyNoStatusDescription:
+      "Çalışma alanı Supabase'e bağlandığında oluşturulan ve taslak gönderiler burada görünür.",
     emptyFilteredTitle: 'Bu durumda gönderi yok',
     emptyFilteredDescription: 'Farklı bir filtre dene, ya da yeni bir şey oluştur.',
-    createWithAi: "Yapay Zeka ile Oluştur",
+    createWithAi: 'Yapay Zeka ile Oluştur',
   },
   postDetail: {
     breadcrumbContentLibrary: 'İçerik Kitaplığı',
@@ -193,6 +200,7 @@ export const tr: Dictionary = {
   brandBrain: {
     title: 'Marka Beyni',
     description: (brandName) => `Yapay zekanın ${brandName} hakkında bildiği her şey.`,
+    yourBrand: 'markan',
     emptyTitle: 'Henüz marka tanımlanmadı',
     emptyDescription:
       'Misyon, konumlandırma, ton, görsel kurallar ve içerik pillar’ları buraya girilir. Yapay zeka bir şey yazmadan önce hepsini okur.',
@@ -232,7 +240,8 @@ export const tr: Dictionary = {
   },
   assets: {
     title: 'Varlık Kitaplığı',
-    description: 'Yapay zekanın kullanabileceği logolar, ürün ekran görüntüleri, rozetler ve referans görseller.',
+    description:
+      'Yapay zekanın kullanabileceği logolar, ürün ekran görüntüleri, rozetler ve referans görseller.',
     uploadAsset: 'Varlık yükle',
     trustedNotice:
       'Ürün arayüzü ekran görüntüleri güvenilir varlık olarak kabul edilir. Yapay zeka bunları bir kompozisyona yerleştirebilir, ama asla yeniden çizmez veya arayüz uydurmaz.',
@@ -268,7 +277,8 @@ export const tr: Dictionary = {
       },
       gemini: {
         title: 'Gemini',
-        description: 'Bir Supabase secret’ı olarak yapılandırılmıştır. Anahtar yalnızca bir Edge Function içinde okunur.',
+        description:
+          'Bir Supabase secret’ı olarak yapılandırılmıştır. Anahtar yalnızca bir Edge Function içinde okunur.',
         serverSide: 'Sunucu tarafı',
       },
     },
@@ -298,7 +308,24 @@ export const tr: Dictionary = {
     title: 'Gelen Kutusu',
     description: 'Yorumlar ve direkt mesajlar, tek yerde.',
     emptyTitle: "Gelen Kutusu V1'e dahil değil",
-    emptyDescription: 'Navigasyon alanı ve veri modeli, bir migration gerekmeden devreye alınabilmesi için ayrılmıştır.',
+    emptyDescription:
+      'Navigasyon alanı ve veri modeli, bir migration gerekmeden devreye alınabilmesi için ayrılmıştır.',
   },
-  localeSwitcher: { tr: 'TR', en: 'EN' },
+  localeSwitcher: {
+    label: 'Dil',
+    tr: 'TR',
+    en: 'EN',
+    switchToTurkish: 'Türkçeye geç',
+    switchToEnglish: 'İngilizceye geç',
+  },
+  creativePreview: {
+    label: (headline) => `Kreatif önizleme: ${headline}`,
+    emptyLabel: 'Henüz görsel oluşturulmadı; kreatif önizleme yer tutucusu',
+    awaitingGeneration: 'Oluşturulmayı bekliyor',
+  },
+  notFound: {
+    title: 'Bu sayfa mevcut değil',
+    description: 'Bağlantı eski olabilir veya işaret ettiği gönderi kaldırılmış olabilir.',
+    backToDashboard: 'Panele dön',
+  },
 };

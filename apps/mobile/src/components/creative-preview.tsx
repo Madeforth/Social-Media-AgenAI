@@ -1,6 +1,8 @@
 import type { PostWithVersion } from '@apex/types';
-import { tokens, VISUAL_FORMAT_LABELS } from '@apex/ui';
+import { tokens } from '@apex/ui';
 import { StyleSheet, Text, View, type ViewStyle } from 'react-native';
+
+import { useI18n } from '@/i18n/provider';
 
 /**
  * Stand-in for the generated creative, matching the web placeholder: no image
@@ -23,6 +25,7 @@ interface Props {
 }
 
 export function CreativePreview({ post, style, compact = false }: Props) {
+  const { dictionary } = useI18n();
   const headline = post.version.headline;
   return (
     <View style={[styles.frame, { backgroundColor: groundFor(post.id) }, style]}>
@@ -34,10 +37,10 @@ export function CreativePreview({ post, style, compact = false }: Props) {
         ]}
         numberOfLines={compact ? 3 : 4}
       >
-        {headline || 'Awaiting generation'}
+        {headline || dictionary.creativePreview.awaitingGeneration}
       </Text>
       {!compact && post.visual_format ? (
-        <Text style={styles.format}>{VISUAL_FORMAT_LABELS[post.visual_format]}</Text>
+        <Text style={styles.format}>{dictionary.visualFormat[post.visual_format]}</Text>
       ) : null}
     </View>
   );

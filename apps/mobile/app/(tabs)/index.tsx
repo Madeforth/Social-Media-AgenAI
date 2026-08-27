@@ -7,11 +7,14 @@ import { CreativePreview } from '@/components/creative-preview';
 import { ApexMarkIcon, ChevronRightIcon, ClockIcon } from '@/components/icons';
 import { StatusChip } from '@/components/status-chip';
 import { Button, Card, EmptyState, SectionHeader } from '@/components/ui';
+import { useI18n } from '@/i18n/provider';
 import { approvalQueue, summarise, upcoming, useCurrentBrand, usePosts } from '@/lib/data';
 import { formatDayOfMonth, formatTime, formatWeekday } from '@/lib/format';
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
+  const { locale, dictionary } = useI18n();
+  const copy = dictionary.home;
   const brand = useCurrentBrand();
   const posts = usePosts();
 
@@ -36,45 +39,40 @@ export default function HomeScreen() {
 
       {posts.loading ? (
         <Card>
-          <Text style={styles.stateText}>Loading…</Text>
+          <Text style={styles.stateText}>{copy.loading}</Text>
         </Card>
       ) : posts.error ? (
         <Card>
-          <EmptyState
-            title="Could not load your content"
-            description="Check the connection and pull to try again."
-          />
+          <EmptyState title={copy.loadErrorTitle} description={copy.loadErrorDescription} />
         </Card>
       ) : (
         <>
           <Card style={styles.weekCard}>
-            <Text style={styles.weekLabel}>This week</Text>
+            <Text style={styles.weekLabel}>{copy.thisWeek}</Text>
             <View style={styles.weekRow}>
               <Text style={styles.weekValue}>{summary.plannedThisWeek}</Text>
-              <Text style={styles.weekUnit}>posts planned</Text>
+              <Text style={styles.weekUnit}>{copy.postsPlanned(summary.plannedThisWeek)}</Text>
             </View>
             <View style={styles.weekStats}>
               <View style={styles.weekStat}>
                 <Text style={styles.weekStatValue}>{summary.readyToApprove}</Text>
-                <Text style={styles.weekStatLabel}>Ready</Text>
+                <Text style={styles.weekStatLabel}>{copy.ready}</Text>
               </View>
               <View style={styles.weekStatDivider} />
               <View style={styles.weekStat}>
                 <Text style={styles.weekStatValue}>{summary.scheduled}</Text>
-                <Text style={styles.weekStatLabel}>Scheduled</Text>
+                <Text style={styles.weekStatLabel}>{copy.scheduled}</Text>
               </View>
               <View style={styles.weekStatDivider} />
               <View style={styles.weekStat}>
                 <Text style={styles.weekStatValue}>{summary.publishedThisMonth}</Text>
-                <Text style={styles.weekStatLabel}>Published</Text>
+                <Text style={styles.weekStatLabel}>{copy.published}</Text>
               </View>
             </View>
           </Card>
 
           <View style={styles.section}>
-            <SectionHeader
-              title={`Ready for approval${approvals.length > 0 ? ` (${approvals.length})` : ''}`}
-            />
+            <SectionHeader title={copy.readyForApproval(approvals.length)} />
             {approvals.length > 0 ? (
               approvals.map((post) => (
                 <Card key={post.id} style={styles.approvalCard}>
@@ -86,10 +84,10 @@ export default function HomeScreen() {
                     <Text style={styles.approvalHeadline}>{post.version.headline}</Text>
                     <View style={styles.approvalActions}>
                       <Link href={`/posts/${post.id}`} asChild>
-                        <Button label="Review" variant="primary" style={styles.flexButton} />
+                        <Button label={copy.review} variant="primary" style={styles.flexButton} />
                       </Link>
                       <Link href={`/posts/${post.id}`} asChild>
-                        <Button label="Edit" style={styles.flexButton} />
+                        <Button label={copy.edit} style={styles.flexButton} />
                       </Link>
                     </View>
                   </View>
@@ -98,8 +96,8 @@ export default function HomeScreen() {
             ) : (
               <Card>
                 <EmptyState
-                  title="Approval queue is clear"
-                  description="Generated posts land here for review before they can be scheduled."
+                  title={copy.approvalEmptyTitle}
+                  description={copy.approvalEmptyDescription}
                 />
               </Card>
             )}
@@ -107,11 +105,11 @@ export default function HomeScreen() {
 
           <View style={styles.section}>
             <SectionHeader
-              title="Upcoming"
+              title={copy.upcoming}
               action={
                 <Link href="/calendar" asChild>
                   <Pressable style={styles.linkRow}>
-                    <Text style={styles.linkText}>View calendar</Text>
+                    <Text style={styles.linkText}>{copy.viewCalendar}</Text>
                     <ChevronRightIcon color={tokens.color.textSecondary} size={14} />
                   </Pressable>
                 </Link>
@@ -129,10 +127,10 @@ export default function HomeScreen() {
                     >
                       <View style={styles.upcomingDate}>
                         <Text style={styles.upcomingWeekday}>
-                          {post.scheduled_at ? formatWeekday(post.scheduled_at) : '—'}
+                          {post.scheduled_at ? formatWeekday(post.scheduled_at, locale) : '—'}
                         </Text>
                         <Text style={styles.upcomingDay}>
-                          {post.scheduled_at ? formatDayOfMonth(post.scheduled_at) : '--'}
+                          {post.scheduled_at ? formatDayOfMonth(post.scheduled_at, locale) : '--'}
                         </Text>
                       </View>
                       <View style={styles.upcomingBody}>
@@ -142,7 +140,9 @@ export default function HomeScreen() {
                         <View style={styles.upcomingMeta}>
                           <ClockIcon color={tokens.color.textMuted} size={13} />
                           <Text style={styles.upcomingTime}>
-                            {post.scheduled_at ? formatTime(post.scheduled_at) : 'Not scheduled'}
+                            {post.scheduled_at
+                              ? formatTime(post.scheduled_at, locale)
+                              : copy.notScheduled}
                           </Text>
                         </View>
                       </View>
@@ -152,8 +152,8 @@ export default function HomeScreen() {
                 ))
               ) : (
                 <EmptyState
-                  title="Nothing scheduled"
-                  description="Approved posts appear here once they have a publish time."
+                  title={copy.upcomingEmptyTitle}
+                  description={copy.upcomingEmptyDescription}
                 />
               )}
             </Card>

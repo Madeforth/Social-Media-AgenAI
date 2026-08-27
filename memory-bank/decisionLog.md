@@ -122,3 +122,12 @@ Decision: the Edge Function auth/authorization/rate-limit gate was specified in 
 
 ## 2026-08-27 — Amend-And-Reset Only While The Database Is Empty
 Decision: while the Supabase project holds no rows, a defect found in a freshly pushed migration is fixed in the migration itself and the schema rebuilt with `supabase db reset --linked`, rather than layered with a corrective migration. This was used twice and kept the migration history readable. The row count is checked first every time, and the moment there is real data the rule inverts: every correction becomes a new migration.
+
+## 2026-08-27 — Turkish/English Localization On Both Clients
+Decision: Turkish and English are first-class interface locales on web, iOS and Android. Turkish is
+the fallback locale. Web follows Next.js's built-in `[locale]` plus dictionary pattern with no i18n
+framework; locale is visible in the URL and persisted by the negotiation cookie. Mobile keeps
+locale in a React context, initializes it from `expo-localization`, exposes the selector under More,
+and persists an explicit choice with AsyncStorage. Domain status colors remain in `packages/ui`,
+while each client supplies the localized label so English presentation constants never leak into a
+translated screen.

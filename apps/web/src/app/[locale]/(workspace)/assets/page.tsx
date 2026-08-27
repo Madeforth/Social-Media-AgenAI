@@ -1,28 +1,36 @@
-import { BRAND_ASSET_TYPE_LABELS } from '@apex/ui';
-
 import { AssetsIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { PageHeader } from '@/components/ui/page-header';
+import { getI18n } from '@/i18n/get-dictionary';
 import { listBrandAssets } from '@/lib/data';
 
-export const metadata = { title: 'Assets · Apex Social AI' };
+interface PageParams {
+  params: Promise<{ locale: string }>;
+}
 
-export default async function AssetsPage() {
-  const assets = await listBrandAssets();
+export async function generateMetadata({ params }: PageParams) {
+  const { locale } = await params;
+  const { dictionary } = await getI18n(locale);
+  return { title: `${dictionary.meta.assets} · Apex Social AI` };
+}
+
+export default async function AssetsPage({ params }: PageParams) {
+  const { locale } = await params;
+  const [assets, { dictionary }] = await Promise.all([listBrandAssets(), getI18n(locale)]);
+  const copy = dictionary.assets;
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6">
       <PageHeader
-        title="Asset Library"
-        description="Logos, product screenshots, badges and reference imagery the AI may use."
-        action={<Button variant="primary">Upload asset</Button>}
+        title={copy.title}
+        description={copy.description}
+        action={<Button variant="primary">{copy.uploadAsset}</Button>}
       />
 
       <p className="rounded-md border border-border-subtle bg-surface px-4 py-3 text-xs text-text-secondary">
-        Product UI screenshots are treated as trusted assets. The AI may place one inside a
-        composition, but it never redraws or invents product interface.
+        {copy.trustedNotice}
       </p>
 
       {assets.length > 0 ? (
@@ -35,7 +43,7 @@ export default async function AssetsPage() {
               <div className="p-4">
                 <p className="truncate text-sm text-text-primary">{asset.name}</p>
                 <p className="mt-1 text-xs text-text-muted">
-                  {BRAND_ASSET_TYPE_LABELS[asset.asset_type]}
+                  {dictionary.assetType[asset.asset_type]}
                 </p>
               </div>
             </Card>
@@ -45,9 +53,9 @@ export default async function AssetsPage() {
         <Card>
           <EmptyState
             icon={<AssetsIcon className="h-5 w-5" />}
-            title="No assets yet"
-            description="Upload a logo, product screenshots and reference imagery. Files are stored in a private Supabase bucket; only the path is kept in the database."
-            action={<Button variant="primary">Upload asset</Button>}
+            title={copy.emptyTitle}
+            description={copy.emptyDescription}
+            action={<Button variant="primary">{copy.uploadAsset}</Button>}
           />
         </Card>
       )}

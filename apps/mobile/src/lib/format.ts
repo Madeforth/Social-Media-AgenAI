@@ -1,24 +1,24 @@
+import type { Locale } from '@/i18n/dictionary';
+
 /**
  * Formatting is pinned to UTC so the mobile app and the web app label the same
  * row with the same date, whatever the device timezone is.
  */
 const TIME_ZONE = 'UTC';
 
-const weekday = new Intl.DateTimeFormat('en-GB', { weekday: 'short', timeZone: TIME_ZONE });
-const dayOfMonth = new Intl.DateTimeFormat('en-GB', { day: '2-digit', timeZone: TIME_ZONE });
-const dayMonth = new Intl.DateTimeFormat('en-GB', {
-  day: 'numeric',
-  month: 'short',
-  timeZone: TIME_ZONE,
-});
-const clock = new Intl.DateTimeFormat('en-GB', {
-  hour: '2-digit',
-  minute: '2-digit',
-  hour12: false,
-  timeZone: TIME_ZONE,
-});
+const intlLocale: Record<Locale, string> = { tr: 'tr-TR', en: 'en-GB' };
 
-export const formatWeekday = (iso: string) => weekday.format(new Date(iso)).toUpperCase();
-export const formatDayOfMonth = (iso: string) => dayOfMonth.format(new Date(iso));
-export const formatDayMonth = (iso: string) => dayMonth.format(new Date(iso));
-export const formatTime = (iso: string) => clock.format(new Date(iso));
+function formatter(locale: Locale, options: Intl.DateTimeFormatOptions) {
+  return new Intl.DateTimeFormat(intlLocale[locale], { ...options, timeZone: TIME_ZONE });
+}
+
+export const formatWeekday = (iso: string, locale: Locale) =>
+  formatter(locale, { weekday: 'short' })
+    .format(new Date(iso))
+    .toLocaleUpperCase(intlLocale[locale]);
+export const formatDayOfMonth = (iso: string, locale: Locale) =>
+  formatter(locale, { day: '2-digit' }).format(new Date(iso));
+export const formatDayMonth = (iso: string, locale: Locale) =>
+  formatter(locale, { day: 'numeric', month: 'short' }).format(new Date(iso));
+export const formatTime = (iso: string, locale: Locale) =>
+  formatter(locale, { hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(iso));

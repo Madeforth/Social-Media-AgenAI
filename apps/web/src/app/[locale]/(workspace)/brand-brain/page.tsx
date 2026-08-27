@@ -3,26 +3,49 @@ import { Button } from '@/components/ui/button';
 import { Card, CardDivider, CardHeader } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { PageHeader } from '@/components/ui/page-header';
+import { getI18n } from '@/i18n/get-dictionary';
 import { getBrandGuidelines, getCurrentBrand } from '@/lib/data';
 
-export const metadata = { title: 'Brand Brain · Apex Social AI' };
+interface PageParams {
+  params: Promise<{ locale: string }>;
+}
 
-function TextBlock({ label, value }: { label: string; value: string | null }) {
+export async function generateMetadata({ params }: PageParams) {
+  const { locale } = await params;
+  const { dictionary } = await getI18n(locale);
+  return { title: `${dictionary.meta.brandBrain} · Apex Social AI` };
+}
+
+function TextBlock({
+  label,
+  value,
+  emptyLabel,
+}: {
+  label: string;
+  value: string | null;
+  emptyLabel: string;
+}) {
   return (
     <div>
       <p className="text-[11px] uppercase tracking-[0.12em] text-text-muted">{label}</p>
       {value ? (
         <p className="mt-1.5 text-sm leading-relaxed text-text-primary">{value}</p>
       ) : (
-        <p className="mt-1.5 text-sm text-text-muted">
-          Not defined yet — the AI works better once this is filled in.
-        </p>
+        <p className="mt-1.5 text-sm text-text-muted">{emptyLabel}</p>
       )}
     </div>
   );
 }
 
-function ListBlock({ label, values }: { label: string; values: string[] }) {
+function ListBlock({
+  label,
+  values,
+  emptyLabel,
+}: {
+  label: string;
+  values: string[];
+  emptyLabel: string;
+}) {
   return (
     <div>
       <p className="text-[11px] uppercase tracking-[0.12em] text-text-muted">{label}</p>
@@ -38,24 +61,30 @@ function ListBlock({ label, values }: { label: string; values: string[] }) {
           ))}
         </ul>
       ) : (
-        <p className="mt-1.5 text-sm text-text-muted">Nothing defined yet.</p>
+        <p className="mt-1.5 text-sm text-text-muted">{emptyLabel}</p>
       )}
     </div>
   );
 }
 
-export default async function BrandBrainPage() {
-  const [brand, guidelines] = await Promise.all([getCurrentBrand(), getBrandGuidelines()]);
+export default async function BrandBrainPage({ params }: PageParams) {
+  const { locale } = await params;
+  const [brand, guidelines, { dictionary }] = await Promise.all([
+    getCurrentBrand(),
+    getBrandGuidelines(),
+    getI18n(locale),
+  ]);
+  const copy = dictionary.brandBrain;
 
   if (!guidelines) {
     return (
       <div className="mx-auto flex max-w-5xl flex-col gap-6">
-        <PageHeader title="Brand Brain" description="Everything the AI knows about your brand." />
+        <PageHeader title={copy.title} description={copy.description(copy.yourBrand)} />
         <Card>
           <EmptyState
             icon={<BrainIcon className="h-5 w-5" />}
-            title="No brand defined yet"
-            description="Mission, positioning, tone, visual rules and content pillars are entered here. The AI reads all of it before it writes anything."
+            title={copy.emptyTitle}
+            description={copy.emptyDescription}
           />
         </Card>
       </div>
@@ -65,12 +94,12 @@ export default async function BrandBrainPage() {
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6">
       <PageHeader
-        title="Brand Brain"
-        description={`Everything the AI knows about ${brand?.name ?? 'your brand'}.`}
+        title={copy.title}
+        description={copy.description(brand?.name ?? copy.yourBrand)}
         action={
           <Button>
             <PencilIcon className="h-4 w-4" />
-            Edit
+            {copy.edit}
           </Button>
         }
       />
@@ -80,21 +109,37 @@ export default async function BrandBrainPage() {
           title={
             <span className="flex items-center gap-2">
               <BrainIcon className="h-4 w-4 text-accent" />
-              Positioning
+              {copy.positioning.title}
             </span>
           }
         />
         <CardDivider />
         <div className="grid gap-5 p-5 sm:grid-cols-2">
-          <TextBlock label="Mission" value={guidelines.mission} />
-          <TextBlock label="Vision" value={guidelines.vision} />
-          <TextBlock label="Positioning" value={guidelines.positioning} />
-          <TextBlock label="Target audience" value={guidelines.target_audience} />
+          <TextBlock
+            label={copy.positioning.mission}
+            value={guidelines.mission}
+            emptyLabel={copy.positioning.notDefined}
+          />
+          <TextBlock
+            label={copy.positioning.vision}
+            value={guidelines.vision}
+            emptyLabel={copy.positioning.notDefined}
+          />
+          <TextBlock
+            label={copy.positioning.positioning}
+            value={guidelines.positioning}
+            emptyLabel={copy.positioning.notDefined}
+          />
+          <TextBlock
+            label={copy.positioning.targetAudience}
+            value={guidelines.target_audience}
+            emptyLabel={copy.positioning.notDefined}
+          />
         </div>
       </Card>
 
       <Card>
-        <CardHeader title="Content pillars" />
+        <CardHeader title={copy.contentPillars.title} />
         <CardDivider />
         {guidelines.content_pillars.length > 0 ? (
           <div className="flex flex-col divide-y divide-border-subtle">
@@ -112,45 +157,68 @@ export default async function BrandBrainPage() {
           </div>
         ) : (
           <EmptyState
-            title="No content pillars yet"
-            description="Pillars keep the AI from drifting into one format. Define a few and the strategy layer balances between them."
+            title={copy.contentPillars.emptyTitle}
+            description={copy.contentPillars.emptyDescription}
           />
         )}
       </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
-          <CardHeader title="Voice and copy rules" />
+          <CardHeader title={copy.voiceAndCopy.title} />
           <CardDivider />
           <div className="flex flex-col gap-5 p-5">
             <ListBlock
-              label="Tone attributes"
+              label={copy.voiceAndCopy.toneAttributes}
               values={guidelines.tone_of_voice?.attributes ?? []}
+              emptyLabel={copy.voiceAndCopy.nothingDefined}
             />
-            <ListBlock label="Always" values={guidelines.copy_rules?.do ?? []} />
-            <ListBlock label="Never" values={guidelines.copy_rules?.dont ?? []} />
+            <ListBlock
+              label={copy.voiceAndCopy.always}
+              values={guidelines.copy_rules?.do ?? []}
+              emptyLabel={copy.voiceAndCopy.nothingDefined}
+            />
+            <ListBlock
+              label={copy.voiceAndCopy.never}
+              values={guidelines.copy_rules?.dont ?? []}
+              emptyLabel={copy.voiceAndCopy.nothingDefined}
+            />
           </div>
         </Card>
 
         <Card>
-          <CardHeader title="Visual rules" />
+          <CardHeader title={copy.visualRules.title} />
           <CardDivider />
           <div className="flex flex-col gap-5 p-5">
-            <ListBlock label="Palette" values={guidelines.visual_rules?.palette ?? []} />
-            <ListBlock label="Typography" values={guidelines.visual_rules?.typography ?? []} />
-            <ListBlock label="Avoid" values={guidelines.visual_rules?.avoid ?? []} />
+            <ListBlock
+              label={copy.visualRules.palette}
+              values={guidelines.visual_rules?.palette ?? []}
+              emptyLabel={copy.voiceAndCopy.nothingDefined}
+            />
+            <ListBlock
+              label={copy.visualRules.typography}
+              values={guidelines.visual_rules?.typography ?? []}
+              emptyLabel={copy.voiceAndCopy.nothingDefined}
+            />
+            <ListBlock
+              label={copy.visualRules.avoid}
+              values={guidelines.visual_rules?.avoid ?? []}
+              emptyLabel={copy.voiceAndCopy.nothingDefined}
+            />
           </div>
         </Card>
       </div>
 
       <Card>
-        <CardHeader title="Forbidden claims" />
+        <CardHeader title={copy.forbiddenClaims.title} />
         <CardDivider />
         <div className="p-5">
-          <p className="mb-3 text-xs text-text-secondary">
-            The AI is told never to state these, whatever the brief says.
-          </p>
-          <ListBlock label="Claims" values={guidelines.forbidden_claims} />
+          <p className="mb-3 text-xs text-text-secondary">{copy.forbiddenClaims.notice}</p>
+          <ListBlock
+            label={copy.forbiddenClaims.claims}
+            values={guidelines.forbidden_claims}
+            emptyLabel={copy.voiceAndCopy.nothingDefined}
+          />
         </div>
       </Card>
     </div>

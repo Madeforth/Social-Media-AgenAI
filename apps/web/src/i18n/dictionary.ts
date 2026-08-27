@@ -15,6 +15,7 @@ export interface Dictionary {
     rootDescription: string;
   };
   nav: {
+    primaryNavigation: string;
     dashboard: string;
     createWithAi: string;
     calendar: string;
@@ -154,6 +155,7 @@ export interface Dictionary {
   brandBrain: {
     title: string;
     description: (brandName: string) => string;
+    yourBrand: string;
     emptyTitle: string;
     emptyDescription: string;
     edit: string;
@@ -223,5 +225,21 @@ export interface Dictionary {
     emptyTitle: string;
     emptyDescription: string;
   };
-  localeSwitcher: { tr: string; en: string };
+  localeSwitcher: {
+    label: string;
+    tr: string;
+    en: string;
+    switchToTurkish: string;
+    switchToEnglish: string;
+  };
+  creativePreview: {
+    label: (headline: string) => string;
+    emptyLabel: string;
+    awaitingGeneration: string;
+  };
+  notFound: {
+    title: string;
+    description: string;
+    backToDashboard: string;
+  };
 }

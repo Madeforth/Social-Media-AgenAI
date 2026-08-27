@@ -5,28 +5,30 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SparkIcon } from '@/components/icons';
 import { Button, Card, EmptyState, ScreenTitle, SectionHeader } from '@/components/ui';
+import { useI18n } from '@/i18n/provider';
 import { useBrandGuidelines } from '@/lib/data';
 
 type Mode = 'ai_suggestion' | 'custom_brief';
 
-const MODES: Array<{ id: Mode; title: string; description: string }> = [
-  {
-    id: 'ai_suggestion',
-    title: 'AI suggestion',
-    description: 'Let the AI decide what the brand should say next.',
-  },
-  {
-    id: 'custom_brief',
-    title: 'Custom brief',
-    description: 'Describe the idea in your own words.',
-  },
-];
-
 export default function CreateScreen() {
   const insets = useSafeAreaInsets();
+  const { dictionary } = useI18n();
+  const copy = dictionary.create;
   const [mode, setMode] = useState<Mode>('ai_suggestion');
   const guidelines = useBrandGuidelines();
   const pillars = guidelines.data?.content_pillars ?? [];
+  const modes: Array<{ id: Mode; title: string; description: string }> = [
+    {
+      id: 'ai_suggestion',
+      title: copy.aiSuggestionTitle,
+      description: copy.aiSuggestionDescription,
+    },
+    {
+      id: 'custom_brief',
+      title: copy.customBriefTitle,
+      description: copy.customBriefDescription,
+    },
+  ];
 
   return (
     <ScrollView
@@ -36,13 +38,10 @@ export default function CreateScreen() {
         { paddingTop: insets.top + tokens.space.md, paddingBottom: tokens.space['2xl'] },
       ]}
     >
-      <ScreenTitle
-        title="What do you want to create?"
-        subtitle="Choose an option to get started."
-      />
+      <ScreenTitle title={copy.title} subtitle={copy.subtitle} />
 
       <View style={styles.modes}>
-        {MODES.map((option) => {
+        {modes.map((option) => {
           const active = option.id === mode;
           return (
             <Pressable
@@ -66,7 +65,7 @@ export default function CreateScreen() {
       </View>
 
       <View style={styles.section}>
-        <SectionHeader title="Content pillar" />
+        <SectionHeader title={copy.contentPillar} />
         <Card>
           {pillars.length > 0 ? (
             pillars.map((pillar, index) => (
@@ -79,21 +78,14 @@ export default function CreateScreen() {
               </View>
             ))
           ) : (
-            <EmptyState
-              title="No content pillars yet"
-              description="Define them in Brand Brain and the AI balances between them instead of repeating one format."
-            />
+            <EmptyState title={copy.noPillarsTitle} description={copy.noPillarsDescription} />
           )}
         </Card>
-        <Text style={styles.hint}>
-          Leave everything unset and the AI picks the pillar from the recent balance.
-        </Text>
+        <Text style={styles.hint}>{copy.balanceHint}</Text>
       </View>
 
-      <Button label="Generate content" variant="primary" disabled />
-      <Text style={styles.footnote}>
-        Generation is wired up in a later milestone, once the Gemini Edge Function exists.
-      </Text>
+      <Button label={copy.generate} variant="primary" disabled />
+      <Text style={styles.footnote}>{copy.disabledNotice}</Text>
     </ScrollView>
   );
 }

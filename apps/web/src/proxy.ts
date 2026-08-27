@@ -33,7 +33,7 @@ function negotiateLocale(request: NextRequest): Locale {
  * looks for it there when it renders, so its own scripts are emitted with the
  * matching nonce and everything else inline is refused by the browser.
  */
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const pathLocale = localeFromPathname(pathname);
 

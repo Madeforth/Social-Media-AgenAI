@@ -1,6 +1,5 @@
 import type { PostWithVersion } from '@apex/types';
-import { VISUAL_FORMAT_LABELS } from '@apex/ui';
-
+import type { Dictionary } from '@/i18n/dictionary';
 import { cn } from '@/lib/cn';
 
 /**
@@ -25,6 +24,7 @@ function gradientFor(id: string): string {
 
 interface CreativePreviewProps {
   post: PostWithVersion;
+  labels: Pick<Dictionary, 'visualFormat' | 'creativePreview'>;
   className?: string;
   /** `feed` is the 4:5 Instagram ratio; `wide` suits list rows and hero panels. */
   ratio?: 'feed' | 'square' | 'wide';
@@ -45,6 +45,7 @@ const HEADLINE_SIZES = {
 
 export function CreativePreview({
   post,
+  labels,
   className,
   ratio = 'feed',
   size = 'md',
@@ -61,9 +62,7 @@ export function CreativePreview({
       style={{ backgroundImage: gradientFor(post.id) }}
       role="img"
       aria-label={
-        headline
-          ? `Creative preview: ${headline}`
-          : 'Creative preview placeholder, no visual generated yet'
+        headline ? labels.creativePreview.label(headline) : labels.creativePreview.emptyLabel
       }
     >
       <div className="absolute inset-0 flex flex-col justify-between p-3">
@@ -77,11 +76,13 @@ export function CreativePreview({
             {headline}
           </p>
         ) : (
-          <p className={cn('text-white/35', HEADLINE_SIZES[size])}>Awaiting generation</p>
+          <p className={cn('text-white/35', HEADLINE_SIZES[size])}>
+            {labels.creativePreview.awaitingGeneration}
+          </p>
         )}
         {size !== 'sm' && post.visual_format ? (
           <p className="text-[10px] uppercase tracking-[0.14em] text-white/40">
-            {VISUAL_FORMAT_LABELS[post.visual_format]}
+            {labels.visualFormat[post.visual_format]}
           </p>
         ) : null}
       </div>

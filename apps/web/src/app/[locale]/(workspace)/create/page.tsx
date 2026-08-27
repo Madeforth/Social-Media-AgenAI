@@ -1,29 +1,25 @@
 import { VISUAL_FORMATS } from '@apex/types';
-import { VISUAL_FORMAT_LABELS } from '@apex/ui';
 
 import { PencilIcon, SparkIcon } from '@/components/icons';
+import { LocaleLink } from '@/components/locale-link';
 import { Button } from '@/components/ui/button';
 import { Card, CardDivider, CardHeader } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
+import { getI18n } from '@/i18n/get-dictionary';
 import { cn } from '@/lib/cn';
 import { getBrandGuidelines } from '@/lib/data';
 
-export const metadata = { title: 'Create with AI · Apex Social AI' };
-
 type Mode = 'ai_suggestion' | 'custom_brief';
 
-const MODES: Array<{ id: Mode; title: string; description: string }> = [
-  {
-    id: 'ai_suggestion',
-    title: 'AI suggestion',
-    description: 'The AI reads the brand, the recent history and the pillar balance, then decides.',
-  },
-  {
-    id: 'custom_brief',
-    title: 'Custom brief',
-    description: 'Describe the idea in your own words and let the AI shape it.',
-  },
-];
+interface PageParams {
+  params: Promise<{ locale: string }>;
+}
+
+export async function generateMetadata({ params }: PageParams) {
+  const { locale } = await params;
+  const { dictionary } = await getI18n(locale);
+  return { title: `${dictionary.meta.create} · Apex Social AI` };
+}
 
 function FieldShell({
   label,
@@ -49,27 +45,36 @@ const INPUT_CLASS =
   'w-full rounded-md border border-border-subtle bg-surface-raised px-3 py-2.5 text-sm text-text-primary outline-none transition-colors duration-150 placeholder:text-text-muted focus:border-accent';
 
 export default async function CreatePage({
+  params,
   searchParams,
 }: {
+  params: Promise<{ locale: string }>;
   searchParams: Promise<{ mode?: string }>;
 }) {
-  const [{ mode }, guidelines] = await Promise.all([searchParams, getBrandGuidelines()]);
+  const [{ mode }, { locale }, guidelines] = await Promise.all([
+    searchParams,
+    params,
+    getBrandGuidelines(),
+  ]);
+  const { dictionary } = await getI18n(locale);
+  const copy = dictionary.create;
   const activeMode: Mode = mode === 'custom_brief' ? 'custom_brief' : 'ai_suggestion';
   const pillars = guidelines?.content_pillars ?? [];
+  const modes: Array<{ id: Mode; title: string; description: string }> = [
+    { id: 'ai_suggestion', ...copy.modes.aiSuggestion },
+    { id: 'custom_brief', ...copy.modes.customBrief },
+  ];
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6">
-      <PageHeader
-        title="Create with AI"
-        description="You should never have to write a long prompt. Pick a mode and the brand does the rest."
-      />
+      <PageHeader title={copy.title} description={copy.description} />
 
       <div className="grid gap-3 sm:grid-cols-2">
-        {MODES.map((option) => {
+        {modes.map((option) => {
           const active = option.id === activeMode;
           const Icon = option.id === 'ai_suggestion' ? SparkIcon : PencilIcon;
           return (
-            <a
+            <LocaleLink
               key={option.id}
               href={`/create?mode=${option.id}`}
               className={cn(
@@ -96,71 +101,67 @@ export default async function CreatePage({
                 {option.title}
               </p>
               <p className="mt-1 text-xs text-text-secondary">{option.description}</p>
-            </a>
+            </LocaleLink>
           );
         })}
       </div>
 
       <Card>
-        <CardHeader title="Brief" />
+        <CardHeader title={copy.brief.title} />
         <CardDivider />
         <div className="flex flex-col gap-5 p-5">
           {activeMode === 'custom_brief' ? (
-            <FieldShell label="What should this post be about?" hint="Optional">
+            <FieldShell label={copy.brief.whatShouldThisBeAbout} hint={copy.brief.optional}>
               <textarea
                 rows={4}
                 disabled
-                placeholder="Describe the idea in your own words."
+                placeholder={copy.brief.placeholder}
                 className={cn(INPUT_CLASS, 'resize-none')}
               />
             </FieldShell>
           ) : (
             <p className="rounded-md border border-border-subtle bg-surface-raised px-3 py-2.5 text-sm text-text-secondary">
-              The AI will pick the objective, the content pillar and the creative format from the
-              Brand Brain and the recent content history.
+              {copy.brief.aiDecidesDescription}
             </p>
           )}
 
           <div className="grid gap-5 sm:grid-cols-2">
             <FieldShell
-              label="Content pillar"
-              hint={pillars.length === 0 ? 'None defined yet' : 'Optional'}
+              label={copy.fields.contentPillar}
+              hint={pillars.length === 0 ? copy.fields.noneDefinedYet : copy.brief.optional}
             >
               <select disabled className={INPUT_CLASS}>
-                <option>Let the AI decide</option>
+                <option>{copy.fields.letAiDecide}</option>
                 {pillars.map((pillar) => (
                   <option key={pillar.key}>{pillar.name}</option>
                 ))}
               </select>
             </FieldShell>
-            <FieldShell label="Visual format" hint="Optional">
+            <FieldShell label={copy.fields.visualFormat} hint={copy.brief.optional}>
               <select disabled className={INPUT_CLASS}>
-                <option>Let the AI decide</option>
+                <option>{copy.fields.letAiDecide}</option>
                 {VISUAL_FORMATS.map((format) => (
-                  <option key={format}>{VISUAL_FORMAT_LABELS[format]}</option>
+                  <option key={format}>{dictionary.visualFormat[format]}</option>
                 ))}
               </select>
             </FieldShell>
-            <FieldShell label="Publish date" hint="Optional">
+            <FieldShell label={copy.fields.publishDate} hint={copy.brief.optional}>
               <input type="date" disabled className={INPUT_CLASS} />
             </FieldShell>
-            <FieldShell label="Language">
+            <FieldShell label={copy.fields.language}>
               <select disabled className={INPUT_CLASS}>
-                <option>English</option>
-                <option>Türkçe</option>
+                <option>{copy.languages.english}</option>
+                <option>{copy.languages.turkish}</option>
               </select>
             </FieldShell>
           </div>
         </div>
         <CardDivider />
         <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-          <p className="text-xs text-text-muted">
-            Generation is wired up in a later milestone — the form is disabled until the Gemini Edge
-            Function exists.
-          </p>
+          <p className="text-xs text-text-muted">{copy.disabledNotice}</p>
           <Button variant="primary" disabled>
             <SparkIcon className="h-4 w-4" />
-            Generate content
+            {copy.generateButton}
           </Button>
         </div>
       </Card>

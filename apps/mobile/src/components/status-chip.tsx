@@ -2,12 +2,15 @@ import type { PostStatus } from '@apex/types';
 import { POST_STATUS_PRESENTATION, tokens } from '@apex/ui';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { useI18n } from '@/i18n/provider';
+
 export function StatusChip({ status }: { status: PostStatus }) {
-  const { label, tint, surface } = POST_STATUS_PRESENTATION[status];
+  const { dictionary } = useI18n();
+  const { tint, surface } = POST_STATUS_PRESENTATION[status];
   return (
     <View style={[styles.chip, { backgroundColor: surface }]}>
       <View style={[styles.dot, { backgroundColor: tint }]} />
-      <Text style={[styles.label, { color: tint }]}>{label}</Text>
+      <Text style={[styles.label, { color: tint }]}>{dictionary.status[status]}</Text>
     </View>
   );
 }

@@ -1,5 +1,7 @@
 import type { ComponentType, SVGProps } from 'react';
 
+import type { Dictionary } from '@/i18n/dictionary';
+import { hasLocale } from '@/i18n/config';
 import {
   AnalyticsIcon,
   AssetsIcon,
@@ -14,27 +16,29 @@ import {
 
 export interface NavItem {
   href: string;
-  label: string;
+  labelKey: keyof Dictionary['nav'];
   icon: ComponentType<SVGProps<SVGSVGElement>>;
 }
 
 /** Primary workspace navigation, in the order defined by CLAUDE.md. */
 export const PRIMARY_NAV: NavItem[] = [
-  { href: '/', label: 'Dashboard', icon: DashboardIcon },
-  { href: '/create', label: 'Create with AI', icon: SparkIcon },
-  { href: '/calendar', label: 'Calendar', icon: CalendarIcon },
-  { href: '/library', label: 'Content Library', icon: LibraryIcon },
-  { href: '/brand-brain', label: 'Brand Brain', icon: BrainIcon },
-  { href: '/assets', label: 'Assets', icon: AssetsIcon },
-  { href: '/analytics', label: 'Analytics', icon: AnalyticsIcon },
-  { href: '/inbox', label: 'Inbox', icon: InboxIcon },
+  { href: '/', labelKey: 'dashboard', icon: DashboardIcon },
+  { href: '/create', labelKey: 'createWithAi', icon: SparkIcon },
+  { href: '/calendar', labelKey: 'calendar', icon: CalendarIcon },
+  { href: '/library', labelKey: 'contentLibrary', icon: LibraryIcon },
+  { href: '/brand-brain', labelKey: 'brandBrain', icon: BrainIcon },
+  { href: '/assets', labelKey: 'assets', icon: AssetsIcon },
+  { href: '/analytics', labelKey: 'analytics', icon: AnalyticsIcon },
+  { href: '/inbox', labelKey: 'inbox', icon: InboxIcon },
 ];
 
 export const SECONDARY_NAV: NavItem[] = [
-  { href: '/settings', label: 'Settings', icon: SettingsIcon },
+  { href: '/settings', labelKey: 'settings', icon: SettingsIcon },
 ];
 
 export function isNavItemActive(pathname: string, href: string): boolean {
-  if (href === '/') return pathname === '/';
-  return pathname === href || pathname.startsWith(`${href}/`);
+  const [, firstSegment, ...rest] = pathname.split('/');
+  const localPathname = firstSegment && hasLocale(firstSegment) ? `/${rest.join('/')}` : pathname;
+  if (href === '/') return localPathname === '/' || localPathname === '';
+  return localPathname === href || localPathname.startsWith(`${href}/`);
 }

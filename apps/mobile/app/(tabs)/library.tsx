@@ -6,10 +6,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CreativePreview } from '@/components/creative-preview';
 import { StatusChip } from '@/components/status-chip';
 import { Card, EmptyState, ScreenTitle } from '@/components/ui';
+import { useI18n } from '@/i18n/provider';
 import { usePosts } from '@/lib/data';
 
 export default function LibraryScreen() {
   const insets = useSafeAreaInsets();
+  const { dictionary } = useI18n();
+  const copy = dictionary.library;
   const { data: posts } = usePosts();
 
   return (
@@ -20,19 +23,11 @@ export default function LibraryScreen() {
         { paddingTop: insets.top + tokens.space.md, paddingBottom: tokens.space['2xl'] },
       ]}
     >
-      <ScreenTitle
-        title="Library"
-        subtitle={
-          posts.length === 1 ? '1 post for this brand.' : `${posts.length} posts for this brand.`
-        }
-      />
+      <ScreenTitle title={copy.title} subtitle={copy.postCount(posts.length)} />
 
       {posts.length === 0 ? (
         <Card>
-          <EmptyState
-            title="No posts yet"
-            description="Generated and drafted posts appear here once the workspace is connected."
-          />
+          <EmptyState title={copy.emptyTitle} description={copy.emptyDescription} />
         </Card>
       ) : null}
 

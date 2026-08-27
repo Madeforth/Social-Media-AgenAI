@@ -1,16 +1,23 @@
 import type { PostWithVersion } from '@apex/types';
 import { POST_STATUS_PRESENTATION } from '@apex/ui';
-import Link from 'next/link';
 
+import { LocaleLink } from '@/components/locale-link';
 import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
+import { getI18n } from '@/i18n/get-dictionary';
 import { cn } from '@/lib/cn';
 import { listPosts } from '@/lib/data';
 import { formatMonthYear } from '@/lib/format';
 
-export const metadata = { title: 'Calendar · Apex Social AI' };
+interface PageParams {
+  params: Promise<{ locale: string }>;
+}
 
-const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+export async function generateMetadata({ params }: PageParams) {
+  const { locale } = await params;
+  const { dictionary } = await getI18n(locale);
+  return { title: `${dictionary.meta.calendar} · Apex Social AI` };
+}
 
 /** The date a post occupies on the calendar: when it published, else when it is due. */
 function calendarDate(post: PostWithVersion): string | null {
@@ -36,8 +43,10 @@ function buildMonthGrid(reference: string): Array<{ key: string; inMonth: boolea
   });
 }
 
-export default async function CalendarPage() {
-  const posts = await listPosts();
+export default async function CalendarPage({ params }: PageParams) {
+  const { locale: requestedLocale } = await params;
+  const [posts, i18n] = await Promise.all([listPosts(), getI18n(requestedLocale)]);
+  const { locale, dictionary } = i18n;
 
   // The current month is a render-time fact, not stored data.
   const reference = new Date().toISOString();
@@ -55,13 +64,13 @@ export default async function CalendarPage() {
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6">
       <PageHeader
-        title="Calendar"
-        description={`${formatMonthYear(reference)} · scheduled and published content`}
+        title={dictionary.calendar.title}
+        description={dictionary.calendar.description(formatMonthYear(reference, locale))}
       />
 
       <Card className="overflow-hidden">
         <div className="grid grid-cols-7 border-b border-border-subtle">
-          {WEEKDAYS.map((day) => (
+          {dictionary.calendar.weekdays.map((day) => (
             <div
               key={day}
               className="px-3 py-2.5 text-[11px] font-medium uppercase tracking-[0.12em] text-text-muted"
@@ -98,14 +107,14 @@ export default async function CalendarPage() {
                   {dayPosts.map((post) => {
                     const { tint, surface } = POST_STATUS_PRESENTATION[post.status];
                     return (
-                      <Link
+                      <LocaleLink
                         key={post.id}
                         href={`/posts/${post.id}`}
                         className="truncate rounded px-1.5 py-1 text-[11px] leading-tight transition-opacity duration-150 hover:opacity-80"
                         style={{ color: tint, backgroundColor: surface }}
                       >
                         {post.version.headline || post.concept_title}
-                      </Link>
+                      </LocaleLink>
                     );
                   })}
                 </div>
@@ -117,8 +126,7 @@ export default async function CalendarPage() {
 
       {posts.length === 0 ? (
         <p className="text-center text-sm text-text-secondary">
-          Nothing is scheduled yet. Approved posts appear on this grid once they have a publish
-          time.
+          {dictionary.calendar.emptyMessage}
         </p>
       ) : null}
     </div>

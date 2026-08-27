@@ -1,6 +1,6 @@
-import Link from 'next/link';
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 
+import { LocaleLink } from '@/components/locale-link';
 import { cn } from '@/lib/cn';
 
 type Variant = 'primary' | 'secondary' | 'ghost';
@@ -46,8 +46,8 @@ export function ButtonLink({
   children,
 }: ButtonLinkProps) {
   return (
-    <Link href={href} className={cn(BASE, VARIANTS[variant], SIZES[size], className)}>
+    <LocaleLink href={href} className={cn(BASE, VARIANTS[variant], SIZES[size], className)}>
       {children}
-    </Link>
+    </LocaleLink>
   );
 }

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 
-import { locales, type Locale } from '@/i18n/config';
+import { locales } from '@/i18n/config';
 import { getDictionary } from '@/i18n/get-dictionary';
 
 import '../globals.css';
@@ -29,7 +29,7 @@ export function generateStaticParams() {
 
 interface LocaleLayoutProps {
   children: React.ReactNode;
-  params: Promise<{ locale: Locale }>;
+  params: Promise<{ locale: string }>;
 }
 
 export async function generateMetadata({ params }: LocaleLayoutProps): Promise<Metadata> {
@@ -43,6 +43,7 @@ export async function generateMetadata({ params }: LocaleLayoutProps): Promise<M
 
 export default async function RootLayout({ children, params }: LocaleLayoutProps) {
   const { locale } = await params;
+  await getDictionary(locale);
 
   return (
     <html lang={locale} className={`${inter.variable} h-full`}>

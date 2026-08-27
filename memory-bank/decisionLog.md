@@ -64,3 +64,21 @@ Decision: `packages/types/src/database.ts` holds the row shapes, and the domain 
 
 ## 2026-08-27 — Migrations Not Yet Executed
 Decision: Milestone 2 ships migrations verified only by parsing them with libpg_query, because neither Docker nor a local PostgreSQL is available on this machine and no Supabase project is provisioned. They must be applied against a real database before Milestone 3 depends on them.
+
+## 2026-08-27 — Temporary @apex/mocks Package
+Decision: fixtures live in their own workspace package rather than being duplicated inside each app. Web and mobile must show the same content while there is no backend, and duplicated fixtures would drift. The package is deliberately disposable and is deleted once screens read from Supabase.
+
+## 2026-08-27 — Deterministic Fixture Time
+Decision: every fixture timestamp derives from a fixed `MOCK_NOW` constant, and no fixture calls `Date.now()`. All date formatting is pinned to UTC. Without this the server-rendered and client-rendered output disagree and Next.js reports a hydration mismatch on every date on the page.
+
+## 2026-08-27 — No Fabricated Metrics In The UI
+Decision: impressions, reach, engagement and profile visits are rendered as unavailable until an Instagram account is connected, and dashboard counters are counted from the fixtures. CLAUDE.md forbids fabricating metrics, and a placeholder number would be indistinguishable from a real one once the account is live. Both shells also carry a visible "Demo data" label.
+
+## 2026-08-27 — Hand-Written Icons Instead Of An Icon Library
+Decision: icons are hand-written SVG, shared in shape between the web app and the mobile app (which draws them through `react-native-svg`). The stack already renders SVG on both platforms, so an icon library would add a dependency for a dozen simple paths.
+
+## 2026-08-27 — react-native-web For Verification
+Decision: `react-native-web`, `react-dom` and `@expo/metro-runtime` are installed in `apps/mobile` so the mobile app can be rendered and inspected in a browser during development. This is a verification surface, not a shipping one — the product web client is `apps/web`. It caught a real defect: `<Link asChild>` renders through `<Slot>`, which cannot merge an array of styles onto the cloned child.
+
+## 2026-08-27 — Mobile Calendar Is An Agenda, Not A Grid
+Decision: the mobile calendar renders a chronological agenda rather than a month grid. A 7x6 grid of tap targets does not survive a phone width at a usable size, and the mobile approval flow is optimised for one-handed use.

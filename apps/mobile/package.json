@@ -13,17 +13,22 @@
   "dependencies": {
     "@apex/ai": "*",
     "@apex/api": "*",
+    "@apex/mocks": "*",
     "@apex/types": "*",
     "@apex/ui": "*",
+    "@expo/metro-runtime": "~57.0.14",
     "expo": "~57.0.17",
     "expo-constants": "~57.0.15",
     "expo-linking": "~57.0.8",
     "expo-router": "~57.0.17",
     "expo-status-bar": "~57.0.1",
     "react": "19.2.3",
+    "react-dom": "19.2.3",
     "react-native": "0.86.3",
     "react-native-safe-area-context": "~5.7.0",
-    "react-native-screens": "~4.26.0"
+    "react-native-screens": "~4.26.0",
+    "react-native-svg": "15.15.4",
+    "react-native-web": "^0.21.2"
   },
   "devDependencies": {
     "@types/react": "~19.2.2",

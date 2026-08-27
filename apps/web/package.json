@@ -12,6 +12,7 @@
   "dependencies": {
     "@apex/ai": "*",
     "@apex/api": "*",
+    "@apex/mocks": "*",
     "@apex/types": "*",
     "@apex/ui": "*",
     "next": "16.3.3",

@@ -109,6 +109,77 @@ export async function listBrandAssets(): Promise<BrandAsset[]> {
   return (data as unknown as BrandAsset[]) ?? [];
 }
 
+export interface AnalyticsSummary {
+  connected: boolean;
+  hasMetrics: boolean;
+  impressions: number;
+  reach: number;
+  engagement: number;
+  /** Instagram's media insights have no per-post profile-visit metric — always unavailable. */
+  profileVisits: null;
+}
+
+/**
+ * Sums each published post's most recent metrics snapshot. `post_metrics` is
+ * a time series (one row per sync), so summing every row would double-count
+ * — only the latest row per post is kept before the totals are added.
+ */
+export async function getAnalyticsSummary(): Promise<AnalyticsSummary> {
+  const brand = await getCurrentBrand();
+  if (!brand) {
+    return {
+      connected: false,
+      hasMetrics: false,
+      impressions: 0,
+      reach: 0,
+      engagement: 0,
+      profileVisits: null,
+    };
+  }
+
+  const supabase = await getServerSupabase();
+  const [{ data: account }, { data: rows }] = await Promise.all([
+    supabase
+      .from('social_accounts')
+      .select('status')
+      .eq('brand_id', brand.id)
+      .eq('platform', 'INSTAGRAM')
+      .eq('status', 'CONNECTED')
+      .maybeSingle(),
+    supabase
+      .from('post_metrics')
+      .select(
+        'post_id, captured_at, impressions, reach, likes, comments, saves, shares, posts!inner(brand_id)',
+      )
+      .eq('posts.brand_id', brand.id)
+      .order('captured_at', { ascending: false }),
+  ]);
+
+  type MetricsRow = NonNullable<typeof rows>[number];
+  const latestByPost = new Map<string, MetricsRow>();
+  for (const row of rows ?? []) {
+    if (!latestByPost.has(row.post_id)) latestByPost.set(row.post_id, row);
+  }
+
+  let impressions = 0;
+  let reach = 0;
+  let engagement = 0;
+  for (const row of latestByPost.values()) {
+    impressions += row.impressions ?? 0;
+    reach += row.reach ?? 0;
+    engagement += (row.likes ?? 0) + (row.comments ?? 0) + (row.saves ?? 0) + (row.shares ?? 0);
+  }
+
+  return {
+    connected: Boolean(account),
+    hasMetrics: latestByPost.size > 0,
+    impressions,
+    reach,
+    engagement,
+    profileVisits: null,
+  };
+}
+
 export interface DashboardSummary {
   plannedThisWeek: number;
   readyToApprove: number;

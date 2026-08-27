@@ -196,6 +196,7 @@ export const en: Dictionary = {
     revisionNotePlaceholder: 'Optional — tell the AI what to fix before it regenerates.',
     publishNow: 'Publish now',
     publishErrorBanner: 'Publishing failed. Check the connected account and try again.',
+    syncMetrics: 'Sync metrics',
     strategy: {
       title: 'Strategy',
       objective: 'Objective',
@@ -313,10 +314,14 @@ export const en: Dictionary = {
       profileVisits: 'Profile visits',
     },
     noAccountConnected: 'No account connected',
+    notYetSynced: 'Not available',
     connectTitle: 'Connect Instagram to see performance',
     connectDescription:
       'Once an account is connected, published posts start reporting impressions, reach, engagement and profile visits here.',
     goToIntegrations: 'Go to integrations',
+    noSyncTitle: 'No metrics synced yet',
+    noSyncDescription:
+      'Metrics are pulled per post — open a published post and sync its metrics to see numbers here.',
   },
   settings: {
     title: 'Settings',

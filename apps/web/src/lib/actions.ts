@@ -501,3 +501,32 @@ export async function publishPost(formData: FormData): Promise<void> {
       : `/${locale}/posts/${postId}`,
   );
 }
+
+/** Calls `sync-post-metrics` for one published post. */
+export async function syncMetrics(formData: FormData): Promise<void> {
+  const locale = targetLocale(formData);
+  const postId = String(formData.get('postId') ?? '');
+  if (!postId) return;
+
+  const supabase = await getServerSupabase();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session) redirect(`/${locale}/sign-in`);
+
+  try {
+    await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/sync-post-metrics`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ post_id: postId }),
+    });
+  } catch {
+    // Best-effort: the analytics page just keeps showing the last synced value.
+  }
+
+  revalidatePath(`/${locale}/posts/${postId}`);
+  revalidatePath(`/${locale}/analytics`, 'layout');
+}

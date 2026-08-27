@@ -199,6 +199,7 @@ export const tr: Dictionary = {
       'Opsiyonel — yeniden oluşturmadan önce yapay zekaya neyi düzelteceğini söyle.',
     publishNow: 'Şimdi yayınla',
     publishErrorBanner: 'Yayınlama başarısız oldu. Bağlı hesabı kontrol edip tekrar dene.',
+    syncMetrics: 'Metrikleri senkronize et',
     strategy: {
       title: 'Strateji',
       objective: 'Amaç',
@@ -317,10 +318,14 @@ export const tr: Dictionary = {
       profileVisits: 'Profil ziyareti',
     },
     noAccountConnected: 'Bağlı hesap yok',
+    notYetSynced: 'Kullanılamıyor',
     connectTitle: "Performansı görmek için Instagram'ı bağla",
     connectDescription:
       'Bir hesap bağlandığında, yayınlanan gönderiler burada gösterim, erişim, etkileşim ve profil ziyareti raporlamaya başlar.',
     goToIntegrations: 'Entegrasyonlara git',
+    noSyncTitle: 'Henüz senkronize edilmiş metrik yok',
+    noSyncDescription:
+      'Metrikler gönderi başına çekilir — yayınlanmış bir gönderiyi aç ve metriklerini senkronize et.',
   },
   settings: {
     title: 'Ayarlar',

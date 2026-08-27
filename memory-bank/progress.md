@@ -75,14 +75,27 @@
   `memory-bank/userActionsNeeded.md` for the Meta app setup this all still needs before it can be
   exercised for real.
 
+- Basic analytics: `getAnalyticsSummary()` sums each published post's most recent `post_metrics`
+  snapshot for the brand (impressions, reach, engagement = likes+comments+saves+shares).
+  Profile visits stays permanently unavailable (`null`) — Instagram's media insights have no
+  per-post profile-visit metric, so there is nothing to sum; the tile says so rather than showing
+  a fabricated number. A "Sync metrics" button on the post detail page (shown once a post is
+  PUBLISHED) calls `sync-post-metrics`; the Analytics page distinguishes three real states: no
+  account connected, connected but nothing synced yet, and real numbers.
+
 ## In Progress
 
-- None. Milestone 9 was the last numbered milestone; Notifications and Analytics remain.
+- None. All nine numbered milestones plus basic analytics are done. Notifications (the
+  `notifications` table exists with RLS from Milestone 9's migration, but nothing writes rows or
+  renders a UI for it yet) is the one remaining unscheduled item from CLAUDE.md's "Not Started"
+  list.
 
 ## Not Started
 
-- Notifications
-- Analytics (beyond the dashboard/analytics page's existing empty state)
+- Notifications: no writer, no UI. Would need something to call `insert` on `public.notifications`
+  (an Edge Function is the natural place, e.g. on generation completing or a publish failing) and
+  a topbar/inbox surface to read and mark them read — `notifications_select`/`notifications_update`
+  policies already exist and are scoped to the caller's own `user_id`.
 
 ## Verification — Milestone 1, monorepo
 

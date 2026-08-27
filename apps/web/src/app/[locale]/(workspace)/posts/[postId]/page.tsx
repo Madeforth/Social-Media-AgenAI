@@ -21,6 +21,7 @@ import {
   regeneratePost,
   requestRevision,
   schedulePost,
+  syncMetrics,
 } from '@/lib/actions';
 import { getPost, getPostImageUrl } from '@/lib/data';
 import { formatDate, formatTime } from '@/lib/format';
@@ -143,6 +144,16 @@ export default async function PostDetailPage({ params, searchParams }: PageParam
               <input type="hidden" name="postId" value={post.id} />
               <Button type="submit" variant="primary" size="md">
                 {copy.publishNow}
+              </Button>
+            </form>
+          ) : null}
+          {post.status === 'PUBLISHED' ? (
+            <form action={syncMetrics}>
+              <input type="hidden" name="locale" value={locale} />
+              <input type="hidden" name="postId" value={post.id} />
+              <Button type="submit" size="md">
+                <RefreshIcon className="h-4 w-4" />
+                {copy.syncMetrics}
               </Button>
             </form>
           ) : null}

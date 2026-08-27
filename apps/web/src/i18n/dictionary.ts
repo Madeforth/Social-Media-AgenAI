@@ -143,6 +143,7 @@ export interface Dictionary {
     revisionNotePlaceholder: string;
     publishNow: string;
     publishErrorBanner: string;
+    syncMetrics: string;
     strategy: {
       title: string;
       objective: string;
@@ -237,9 +238,12 @@ export interface Dictionary {
     description: string;
     metrics: { impressions: string; reach: string; engagement: string; profileVisits: string };
     noAccountConnected: string;
+    notYetSynced: string;
     connectTitle: string;
     connectDescription: string;
     goToIntegrations: string;
+    noSyncTitle: string;
+    noSyncDescription: string;
   };
   settings: {
     title: string;

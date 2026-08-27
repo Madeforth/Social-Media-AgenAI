@@ -2,11 +2,33 @@
 
 ## Current Phase
 
-Milestones 1–4 are closed. Auth (Google OAuth via Supabase) and brand selection are wired on both
-clients — see "Completed — Milestone 4" below. The data seam now does real Supabase reads gated by
-RLS; screens still render empty states, but only because no organization/brand exists yet in the
-project, not because the seam is stubbed. Milestone 5 (Brand Brain and Asset Library writes) is
-next.
+All nine numbered milestones are closed, plus basic analytics and notifications — the full
+generation → review → schedule → publish loop exists end to end on **web**, deployed to
+`https://socialai.madeforth.net`. This was built in one long autonomous overnight session
+(2026-08-27 23:00 → 2026-08-28); see the per-milestone `feat:` commits on `main` for the detailed
+narrative each one carries. **Mobile was not touched** — everything below Milestone 4 (Brand Brain
+writes, Create-with-AI wiring, approval/scheduling, publishing, analytics, notifications) is
+web-only. Bringing mobile to parity is the natural next scope of work.
+
+Three things are true simultaneously right now:
+
+1. Every screen in CLAUDE.md's V1 list has a real implementation behind it — no more disabled
+   forms or static placeholders.
+2. Almost none of the AI/publishing path has been exercised with real provider calls, because
+   `GEMINI_API_KEY` and a working Meta app are both still pending — see
+   `memory-bank/userActionsNeeded.md`, which is the actual punch list.
+3. A handful of things were deliberately scoped out rather than built blind overnight (cron-driven
+   auto-publish being the main one) — see `docs/SECURITY.md`'s Milestone 9 section and
+   `memory-bank/progress.md` for the reasoning on each.
+
+## Next Action
+
+Nothing is scoped and unbuilt. The two live paths are:
+
+1. Work through `memory-bank/userActionsNeeded.md` (Gemini key, Meta app + credentials, native
+   mobile testing) and then actually exercise the AI/publishing loop for the first time with real
+   calls — fix whatever a real Gemini/Meta response surfaces that the never-tested code got wrong.
+2. Bring `apps/mobile` up to parity with everything web gained tonight.
 
 ## What Exists Now
 
@@ -26,7 +48,14 @@ next.
   both apps render chips from.
 - `packages/ai`: model ids, the prompt framework, structured-output schemas, and `safety.ts` —
   prompt-injection containment and model output validation, under 24 tests.
-- `supabase/migrations/`: seven migrations, all applied.
+- `supabase/migrations/`: eight migrations, all applied (the eighth adds Vault-backed provider
+  secret storage for Milestone 9).
+- `supabase/functions/`: seven deployed Edge Functions — `generate-post`, `generate-image`,
+  `connect-instagram`, `publish-instagram-post`, `sync-post-metrics`, `meta-webhook`, plus
+  `_shared/ai.ts` (a self-contained Deno copy of `packages/ai/src`, not a real import — see that
+  file's header comment). All follow the same gate shape from `docs/SECURITY.md`; all verified to
+  fail closed (401 unauthenticated, or a clean 503/400 when a secret is missing) — none has been
+  exercised with a real Gemini or Meta call yet.
 - `scripts/`: `generate-database-types.mjs` and `check-client-bundle.mjs`.
 
 ## Custom domain
@@ -42,8 +71,9 @@ applies on every domain automatically since it's request-level, not domain-level
 Project `Apex Social AI`, ref `dxdbqikzbytenmdrkkgo`, region `eu-central-1`, PostgreSQL 17.
 The repo is linked; `supabase/.temp/project-ref` holds the ref.
 
-- All seven migrations applied. 13 tables in `public`, all with RLS, plus `ai_quotas`. 5 policies
-  on `storage.objects`. Two private buckets.
+- All eight migrations applied. 14 tables in `public`, all with RLS, plus `ai_quotas`. 5 policies
+  on `storage.objects`. Two private buckets. `supabase_vault` extension enabled for provider
+  secret storage.
 - `npx supabase db advisors --linked --level warn` reports zero findings.
 - Regenerate types with `npm run types:generate` after every migration. Do not pipe the CLI output
   into the file directly — that drops the header. The file is Prettier-ignored so regenerated
@@ -88,25 +118,13 @@ header set on the web app, which is why every route renders per request; `npm ru
 proving no server-only value reaches the browser; prompt-injection containment and model output
 validation in `packages/ai/src/safety.ts`.
 
-Not yet addressed: the Edge Function gate (Milestone 6 — the required order of checks is written
-down in `docs/SECURITY.md`), Meta webhook signature verification (Milestone 9), upload content
-inspection, auth brute-force tuning, and recording which user approved a post. No penetration
-testing has been done.
+Also enforced now (Milestone 9, see `docs/SECURITY.md`): the full Edge Function gate on all six
+functions; Instagram webhook signature verification (`meta-webhook`, timing-safe HMAC check before
+any payload is parsed); provider tokens live only in Supabase Vault, never in a table.
 
-## Next Action — Milestone 5
-
-Brand Brain and Asset Library writes: forms to edit `brand_guidelines` and upload to
-`brand_assets`/Storage, from the account created in Milestone 4. `listBrandAssets()` already reads
-real rows; nothing writes them yet.
-
-Two things to remember when writing those queries:
-
-- `social_accounts` grants SELECT per column, so `select('*')` on that table is denied. Name the
-  columns.
-- The first real read (Milestone 4) was also the first test of every list, card and detail layout
-  with content in it — but the project still has zero organizations, so this has only been
-  exercised against an empty result. Once a real account exists, watch for a layout that assumed
-  empty and breaks on a populated list.
+Not yet addressed: upload content inspection, auth brute-force tuning, recording which user
+approved a post, Meta token refresh/rotation, and cron-triggered auto-publish (deliberately cut —
+see `docs/SECURITY.md`). No penetration testing has been done.
 
 ## Completed — Milestone 4: Google Auth + brand selection
 
@@ -201,8 +219,9 @@ Verification:
 CLAUDE.md principle 11: never add mock data of any kind, including temporarily. Screens read
 through the data seam and every screen has a real loading, empty and error state.
 
-- No performance metric is invented. Analytics tiles and the dashboard performance panel render as
-  unavailable until Instagram is connected.
+- No performance metric is invented. Analytics tiles render as unavailable until an account is
+  connected and a post's metrics have actually been synced — profile visits stays permanently
+  unavailable since Instagram's per-media insights have no such metric to report.
 - Dashboard counters are derived from the posts themselves, so a number can never disagree with
   what is on screen.
 

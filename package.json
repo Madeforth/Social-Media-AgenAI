@@ -11,18 +11,23 @@
     "node": ">=20"
   },
   "scripts": {
-    "web": "npm run dev --workspace @apex/web",
-    "mobile": "npm run start --workspace @apex/mobile",
     "build": "npm run build --workspaces --if-present",
-    "typecheck": "npm run typecheck --workspaces --if-present",
-    "lint": "npm run lint --workspaces --if-present",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
-    "supabase": "supabase"
+    "lint": "npm run lint --workspaces --if-present",
+    "mobile": "npm run start --workspace @apex/mobile",
+    "supabase": "supabase",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "types:generate": "node scripts/generate-database-types.mjs",
+    "verify:bundle": "node scripts/check-client-bundle.mjs",
+    "web": "npm run dev --workspace @apex/web"
   },
   "devDependencies": {
     "prettier": "^3.4.2",
     "supabase": "^2.2.1",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "vitest": "^4.1.11"
   }
 }

@@ -34,6 +34,21 @@ The repo is linked; `supabase/.temp/project-ref` holds the ref.
   use the `sb_publishable_...` key.
 - There is no data in the project: zero users, zero rows, zero storage objects.
 
+## Security Posture
+See `docs/SECURITY.md`, which marks each control as enforced-and-verified or planned.
+
+Enforced today: RLS on all 13 tables with no grants for `anon`; RLS helpers in a `private` schema
+with no RPC surface; provider token column not readable by clients; `ai_quotas` cost limits
+enforced in the database and readable but not writable by clients; nonce-based CSP plus the full
+header set on the web app, which is why every route renders per request; `npm run verify:bundle`
+proves no server-only value reaches the browser; prompt-injection containment and model output
+validation in `packages/ai/src/safety.ts` under 24 tests.
+
+Not yet addressed: the Edge Function gate (Milestone 6 — the required order of checks is written
+down in `docs/SECURITY.md`), Meta webhook signature verification (Milestone 9), upload content
+inspection, auth brute-force tuning, and recording which user approved a post. No penetration
+testing has been done.
+
 ## Next Action — Milestone 4
 Implement authentication and brand selection against Supabase by filling in the bodies of
 `apps/web/src/lib/data.ts` and `apps/mobile/src/lib/data.ts`. No screen should need rewriting.

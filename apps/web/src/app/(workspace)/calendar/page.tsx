@@ -10,9 +10,6 @@ import { formatMonthYear } from '@/lib/format';
 
 export const metadata = { title: 'Calendar · Apex Social AI' };
 
-// The grid is anchored to the current month, so it must not be baked at build time.
-export const dynamic = 'force-dynamic';
-
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 /** The date a post occupies on the calendar: when it published, else when it is due. */

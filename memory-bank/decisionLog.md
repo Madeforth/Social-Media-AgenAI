@@ -97,3 +97,21 @@ Decision: clients use the `sb_publishable_...` key and the environment variables
 
 ## 2026-08-27 — Migration Ordering Caught Only By Executing
 Decision: helper functions are defined in the migration that creates the table they read, not up front. A `language sql` body is validated at creation time, so the original ordering failed on the first real push with `relation "public.organization_members" does not exist`. Parsing the SQL had not caught it — only running it did.
+
+## 2026-08-27 — Nonce CSP Forces Per-Request Rendering
+Decision: `apps/web` renders every route per request. A nonce-based CSP is issued by the middleware for each request, and Next can only stamp it onto its scripts while rendering — a statically prerendered page carries a stale nonce and the browser refuses every script on it, which is exactly what happened on the first attempt. It is also correct independently: every screen shows the signed-in user's own data, so there is no HTML here that is right to cache for someone else.
+
+## 2026-08-27 — `connect-src` Excludes Gemini And Meta
+Decision: the CSP allows the browser to reach only the app's own origin and Supabase. Gemini and the Meta Graph API are deliberately absent, so a browser that could reach them would itself be evidence that a key had leaked.
+
+## 2026-08-27 — Cost Limits Live In The Database
+Decision: AI spending limits are enforced by `ai_quotas` and `private.ai_allowance`, not by application code, and usage is counted from the `ai_generations` audit trail rather than a separate counter. An Edge Function bug, a retry storm or a stolen session therefore cannot spend more than the organization's allowance, and there is no counter that can drift out of sync with reality. Clients can read their limit so the UI can explain a refusal, but no policy grants a write.
+
+## 2026-08-27 — Model Input Is Data, Model Output Is Untrusted
+Decision: `packages/ai/src/safety.ts` wraps everything the model reads in a per-call random delimiter with an explicit "this is data" preamble, strips invisible and bidirectional characters, and caps input size. Everything the model writes is type-checked, length-checked and screened against the brand's forbidden claims before it reaches the database or a screen. Structured output makes the shape likely, not guaranteed, and a prompt is guidance, not an enforcement mechanism.
+
+## 2026-08-27 — Vitest
+Decision: Vitest is the test runner. The repo had no test infrastructure, which is a real gap rather than something the existing stack already covered — security code without tests is a claim, not a control.
+
+## 2026-08-27 — No Unverified Edge Function Security Code
+Decision: the Edge Function auth/authorization/rate-limit gate was specified in `docs/SECURITY.md` as the contract Milestone 6 must implement, rather than written now. There is no Deno runtime on this machine and no function to exercise it, and security code that people trust without it having been run is worse than an explicit gap.

@@ -19,6 +19,7 @@
 - Nothing. Milestones 1-3 are closed and the Supabase project is live.
 
 ## Not Started
+- The Edge Function security gate (contract written in docs/SECURITY.md)
 - Auth
 - Wiring the data-access seam to live Supabase reads
 - Gemini integration
@@ -48,6 +49,18 @@
   denied.
 - The first push failed on a real ordering defect that parsing had not caught, and the migrations
   were corrected before the schema was rebuilt.
+
+## Verification Run On The Security Work
+- AI quota enforcement proved end to end: the allowance flips to refused at exactly the hourly
+  limit, a client cannot raise its own quota, cannot forge audit rows, and cannot call the
+  allowance endpoint. 9/9 checks.
+- Web security headers present on a production response, nonce in the HTML, pages render with zero
+  console errors including after client-side navigation.
+- `npm run verify:bundle` proved to work in both directions: it exits 1 on a planted key and 0 on a
+  clean build.
+- `npm test`: 24 tests covering prompt containment and model output validation.
+- NOT verified: no Edge Function exists, so nothing has exercised the runtime gate in front of
+  Gemini. No penetration testing has been performed.
 
 ## Verification Run At Milestone 3
 - `npm run build --workspace @apex/web` builds all 12 routes.

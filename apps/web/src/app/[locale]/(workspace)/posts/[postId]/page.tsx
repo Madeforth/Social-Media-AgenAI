@@ -6,6 +6,7 @@ import {
   ClockIcon,
   PencilIcon,
   RefreshIcon,
+  SparkIcon,
 } from '@/components/icons';
 import { LocaleLink } from '@/components/locale-link';
 import { Button, ButtonLink } from '@/components/ui/button';
@@ -13,11 +14,15 @@ import { Card, CardDivider, CardHeader } from '@/components/ui/card';
 import { CreativePreview } from '@/components/ui/creative-preview';
 import { StatusChip } from '@/components/ui/status-chip';
 import { getI18n } from '@/i18n/get-dictionary';
-import { getPost } from '@/lib/data';
+import { generateImage } from '@/lib/actions';
+import { getPost, getPostImageUrl } from '@/lib/data';
 import { formatDate, formatTime } from '@/lib/format';
+
+export const maxDuration = 60;
 
 interface PageParams {
   params: Promise<{ locale: string; postId: string }>;
+  searchParams: Promise<{ imageError?: string }>;
 }
 
 export async function generateMetadata({ params }: PageParams) {
@@ -50,8 +55,9 @@ function Field({
   );
 }
 
-export default async function PostDetailPage({ params }: PageParams) {
+export default async function PostDetailPage({ params, searchParams }: PageParams) {
   const { locale: requestedLocale, postId } = await params;
+  const { imageError } = await searchParams;
   const [post, i18n] = await Promise.all([getPost(postId), getI18n(requestedLocale)]);
 
   if (!post) {
@@ -59,6 +65,11 @@ export default async function PostDetailPage({ params }: PageParams) {
   }
   const { locale, dictionary } = i18n;
   const copy = dictionary.postDetail;
+  const imageUrl = await getPostImageUrl(post.version.image_storage_path);
+  const imageErrorMessage =
+    imageError && imageError in copy.imageErrors
+      ? copy.imageErrors[imageError as keyof typeof copy.imageErrors]
+      : null;
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6">
@@ -103,14 +114,34 @@ export default async function PostDetailPage({ params }: PageParams) {
         </div>
       </header>
 
+      {imageErrorMessage ? (
+        <p className="rounded-md border border-red-900/50 bg-red-950/30 px-4 py-3 text-sm text-red-300">
+          {imageErrorMessage}
+        </p>
+      ) : null}
+
       <div className="grid gap-6 xl:grid-cols-[minmax(0,420px)_1fr]">
         <div className="flex flex-col gap-4">
-          <CreativePreview post={post} labels={dictionary} ratio="feed" size="lg" />
+          <CreativePreview
+            post={post}
+            labels={dictionary}
+            ratio="feed"
+            size="lg"
+            imageUrl={imageUrl}
+          />
           {post.ui_asset_required ? (
             <p className="rounded-md border border-border-subtle bg-surface px-3 py-2.5 text-xs text-text-secondary">
               {copy.uiAssetNotice}
             </p>
           ) : null}
+          <form action={generateImage}>
+            <input type="hidden" name="locale" value={locale} />
+            <input type="hidden" name="postId" value={post.id} />
+            <Button type="submit" variant="secondary" className="w-full">
+              <SparkIcon className="h-4 w-4" />
+              {imageUrl ? copy.regenerateImage : copy.generateImage}
+            </Button>
+          </form>
         </div>
 
         <div className="flex flex-col gap-6">

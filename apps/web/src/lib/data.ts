@@ -66,6 +66,16 @@ export async function getBrandGuidelines(): Promise<BrandGuidelines | null> {
   return (data as unknown as BrandGuidelines) ?? null;
 }
 
+/** Signed URL into the private `generated-images` bucket, or null if there is no image yet. */
+export async function getPostImageUrl(storagePath: string | null): Promise<string | null> {
+  if (!storagePath) return null;
+  const supabase = await getServerSupabase();
+  const { data } = await supabase.storage
+    .from('generated-images')
+    .createSignedUrl(storagePath, 3600);
+  return data?.signedUrl ?? null;
+}
+
 export async function listBrandAssets(): Promise<BrandAsset[]> {
   const brand = await getCurrentBrand();
   if (!brand) return [];

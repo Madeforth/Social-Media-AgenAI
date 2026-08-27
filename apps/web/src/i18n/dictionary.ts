@@ -134,6 +134,9 @@ export interface Dictionary {
     edit: string;
     approve: string;
     uiAssetNotice: string;
+    generateImage: string;
+    regenerateImage: string;
+    imageErrors: { quota: string; not_configured: string; network: string; failed: string };
     strategy: {
       title: string;
       objective: string;

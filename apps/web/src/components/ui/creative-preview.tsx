@@ -29,6 +29,8 @@ interface CreativePreviewProps {
   /** `feed` is the 4:5 Instagram ratio; `wide` suits list rows and hero panels. */
   ratio?: 'feed' | 'square' | 'wide';
   size?: 'sm' | 'md' | 'lg';
+  /** A signed URL into the private `generated-images` bucket, when one exists. */
+  imageUrl?: string | null;
 }
 
 const RATIOS = {
@@ -49,8 +51,28 @@ export function CreativePreview({
   className,
   ratio = 'feed',
   size = 'md',
+  imageUrl,
 }: CreativePreviewProps) {
   const headline = post.version.headline;
+
+  if (imageUrl) {
+    return (
+      <div
+        className={cn(
+          'relative overflow-hidden rounded-md border border-border-subtle bg-surface-raised',
+          RATIOS[ratio],
+          className,
+        )}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element -- signed Supabase Storage URL, not a Next image domain */}
+        <img
+          src={imageUrl}
+          alt={headline || labels.creativePreview.emptyLabel}
+          className="h-full w-full object-cover"
+        />
+      </div>
+    );
+  }
 
   return (
     <div

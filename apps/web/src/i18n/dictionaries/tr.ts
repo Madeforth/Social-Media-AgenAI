@@ -178,6 +178,14 @@ export const tr: Dictionary = {
     approve: 'Onayla',
     uiAssetNotice:
       'Bu konsept gerçek bir ürün ekran görüntüsü kullanıyor. Varlık olduğu gibi yerleştirilir, asla yeniden çizilmez.',
+    generateImage: 'Görsel oluştur',
+    regenerateImage: 'Görseli yeniden oluştur',
+    imageErrors: {
+      quota: 'Bu markanın yapay zeka üretim kotası doldu — daha sonra tekrar dene.',
+      not_configured: 'Gemini bu projede henüz yapılandırılmadı.',
+      network: 'Üretim servisine ulaşılamadı. Bağlantını kontrol edip tekrar dene.',
+      failed: 'Görsel oluşturma başarısız oldu. Tekrar dene.',
+    },
     strategy: {
       title: 'Strateji',
       objective: 'Amaç',

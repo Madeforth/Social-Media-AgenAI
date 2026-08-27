@@ -176,6 +176,14 @@ export const en: Dictionary = {
     approve: 'Approve',
     uiAssetNotice:
       'This concept uses a real product screenshot. The asset is placed as supplied and is never redrawn.',
+    generateImage: 'Generate image',
+    regenerateImage: 'Regenerate image',
+    imageErrors: {
+      quota: 'This brand has used its AI generation allowance for now — try again later.',
+      not_configured: 'Gemini is not configured on this project yet.',
+      network: 'Could not reach the generation service. Check your connection and try again.',
+      failed: 'Image generation failed. Try again.',
+    },
     strategy: {
       title: 'Strategy',
       objective: 'Objective',

@@ -40,13 +40,21 @@
   `memory-bank/userActionsNeeded.md`); the function returns 503 without crashing when the key is
   absent, which was verified.
 
+- Image generation and storage workflows (Milestone 7): `generate-image` Edge Function, deployed,
+  running the same six-step gate as `generate-post`. Turns a post version's stored creative
+  direction/generation prompt into an image via Gemini's image model, uploads it into the private
+  `generated-images` bucket at `<brand_id>/<post_id>/<version_id>.png`, and updates that version's
+  `image_storage_path`. The post detail page now signs a URL for that path and renders the real
+  image in `CreativePreview` when one exists (still the gradient placeholder elsewhere — library,
+  calendar, dashboard cards were not changed), plus a Generate/Regenerate image button. Same
+  not-yet-exercised caveat as Milestone 6: needs `GEMINI_API_KEY` set.
+
 ## In Progress
 
-- None. Milestone 7 is the next action.
+- None. Milestone 8 is the next action.
 
 ## Not Started
 
-- Image generation and storage workflows (Milestone 7)
 - Approval, revision and scheduling (Milestone 8)
 - Meta integration and publishing (Milestone 9)
 - Notifications

@@ -218,6 +218,46 @@ export async function generatePost(formData: FormData): Promise<void> {
   redirect(`/${locale}/create?error=${errorCode}`);
 }
 
+/** Calls the `generate-image` Edge Function for a post's current version. */
+export async function generateImage(formData: FormData): Promise<void> {
+  const locale = targetLocale(formData);
+  const postId = String(formData.get('postId') ?? '');
+  if (!postId) redirect(`/${locale}/library`);
+
+  const supabase = await getServerSupabase();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session) redirect(`/${locale}/sign-in`);
+
+  let errorCode: string | null = null;
+
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/generate-image`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ post_id: postId }),
+      },
+    );
+    if (!response.ok) {
+      errorCode =
+        response.status === 429 ? 'quota' : response.status === 503 ? 'not_configured' : 'failed';
+    }
+  } catch {
+    errorCode = 'network';
+  }
+
+  revalidatePath(`/${locale}/posts/${postId}`);
+  redirect(
+    errorCode ? `/${locale}/posts/${postId}?imageError=${errorCode}` : `/${locale}/posts/${postId}`,
+  );
+}
+
 /** Removes both the storage object and its row. Only ADMIN/OWNER can — RLS enforces it. */
 export async function deleteBrandAsset(formData: FormData): Promise<void> {
   const locale = targetLocale(formData);

@@ -95,13 +95,13 @@ alter table public.notifications enable row level security;
 
 create policy social_accounts_select on public.social_accounts
   for select to authenticated
-  using (public.can_read_brand(brand_id));
+  using (private.can_read_brand(brand_id));
 
 -- Connecting and disconnecting an account happens through an Edge Function, but
 -- an admin may remove a stale row directly.
 create policy social_accounts_delete on public.social_accounts
   for delete to authenticated
-  using (public.can_administer_brand(brand_id));
+  using (private.can_administer_brand(brand_id));
 
 create policy publication_jobs_select on public.publication_jobs
   for select to authenticated
@@ -110,7 +110,7 @@ create policy publication_jobs_select on public.publication_jobs
       select 1
       from public.posts p
       where p.id = publication_jobs.post_id
-        and public.can_read_brand(p.brand_id)
+        and private.can_read_brand(p.brand_id)
     )
   );
 
@@ -121,7 +121,7 @@ create policy post_metrics_select on public.post_metrics
       select 1
       from public.posts p
       where p.id = post_metrics.post_id
-        and public.can_read_brand(p.brand_id)
+        and private.can_read_brand(p.brand_id)
     )
   );
 

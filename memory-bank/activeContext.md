@@ -1,8 +1,9 @@
 # Active Context
 
 ## Current Phase
-Milestone 3 complete — the design system shell is built on both surfaces. There is no data source
-yet, so every screen renders its empty state.
+Milestone 3 complete and the Supabase project is live. The schema is applied, types are generated
+from it and RLS is verified end to end. The screens still render empty states because the data
+seam has not been wired to Supabase yet — that is Milestone 4.
 
 ## What Exists Now
 - npm workspaces monorepo: `apps/web`, `apps/mobile`, `packages/{config,types,ui,api,ai}`,
@@ -19,30 +20,28 @@ yet, so every screen renders its empty state.
 - `packages/types`: `database.ts` row shapes with derived domain types and enum-drift guards.
 - `supabase/migrations/`: six migrations with RLS, still never executed.
 
-## Blocking Issue
-The migrations have never been run and no Supabase project is provisioned. This machine has no
-Docker and no local PostgreSQL, so `supabase start` cannot boot. The migrations were verified by
-parsing only, which catches syntax errors but not semantic ones.
+## Supabase
+Project `Apex Social AI`, ref `dxdbqikzbytenmdrkkgo`, region `eu-central-1`, PostgreSQL 17.
+The repo is linked; `supabase/.temp/project-ref` holds the ref.
 
-## Next Action
-Provision a Supabase project, then:
+- All six migrations applied. 13 tables, all with RLS, 39 policies in `public` and 5 on
+  `storage.objects`. Two private buckets.
+- `npx supabase db advisors --linked --level warn` reports zero findings.
+- Types are generated from the live schema into `packages/types/src/database.ts`. Regenerate with
+  `npx supabase gen types typescript --linked` after every migration; the file is Prettier-ignored
+  so regenerated output stays byte-comparable.
+- Local credentials are in `apps/web/.env.local` and `apps/mobile/.env`, both gitignored. Clients
+  use the `sb_publishable_...` key.
+- There is no data in the project: zero users, zero rows, zero storage objects.
 
-```bash
-npx supabase link --project-ref <ref>
-npx supabase db push
-npx supabase gen types typescript --linked > packages/types/src/database.ts
-```
-
-Diff the regenerated types against the hand-written file and reconcile any drift.
-
-## Then — Milestone 4
+## Next Action — Milestone 4
 Implement authentication and brand selection against Supabase by filling in the bodies of
 `apps/web/src/lib/data.ts` and `apps/mobile/src/lib/data.ts`. No screen should need rewriting.
 
 ## Standing Rule — No Mock Data
-CLAUDE.md principle 11: never add mock data of any kind, including temporarily. A `@apex/mocks`
-fixture package existed briefly during Milestone 3 and was removed. Screens read through the data
-seam, which currently returns empty results, and every screen has a real empty state.
+CLAUDE.md principle 11: never add mock data of any kind, including temporarily. Screens read
+through the data seam, which currently returns empty results, and every screen has a real loading,
+empty and error state.
 
 - No performance metric is invented. Analytics tiles and the dashboard performance panel render as
   unavailable until Instagram is connected.

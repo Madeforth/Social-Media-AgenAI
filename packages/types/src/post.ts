@@ -1,5 +1,5 @@
 import type { AssertEqual } from './common';
-import type { Enums, TableRow } from './database';
+import type { Enums, Tables } from './database';
 
 /**
  * Canonical post lifecycle. This runtime array exists so clients can iterate the
@@ -19,7 +19,7 @@ export const POST_STATUSES = [
   'CANCELLED',
 ] as const;
 
-export type PostStatus = Enums['post_status'];
+export type PostStatus = Enums<'post_status'>;
 
 export const POST_STATUS_ENUM_MATCHES: AssertEqual<PostStatus, (typeof POST_STATUSES)[number]> =
   true;
@@ -41,7 +41,7 @@ export const VISUAL_FORMATS = [
   'SEASONAL',
 ] as const;
 
-export type VisualFormat = Enums['visual_format'];
+export type VisualFormat = Enums<'visual_format'>;
 
 export const VISUAL_FORMAT_ENUM_MATCHES: AssertEqual<
   VisualFormat,
@@ -54,11 +54,11 @@ export const EDITABLE_POST_STATUSES: readonly PostStatus[] = ['DRAFT', 'READY', 
 /** Statuses that mean the post is out of the user's hands. */
 export const TERMINAL_POST_STATUSES: readonly PostStatus[] = ['PUBLISHED', 'FAILED', 'CANCELLED'];
 
-export type Post = TableRow<'posts'>;
+export type Post = Tables<'posts'>;
 
-export type PostVersionAuthor = Enums['post_version_author'];
+export type PostVersionAuthor = Enums<'post_version_author'>;
 
-export type PostVersion = Omit<TableRow<'post_versions'>, 'hashtags' | 'model_metadata'> & {
+export type PostVersion = Omit<Tables<'post_versions'>, 'hashtags' | 'model_metadata'> & {
   hashtags: string[];
   model_metadata: Record<string, unknown> | null;
 };

@@ -1,5 +1,5 @@
 import type { AssertEqual } from './common';
-import type { Enums, TableRow } from './database';
+import type { Enums, Tables } from './database';
 import type { VisualFormat } from './post';
 
 /**
@@ -50,7 +50,7 @@ export const GENERATION_TYPES = [
   'QA_REVIEW',
 ] as const;
 
-export type GenerationType = Enums['generation_type'];
+export type GenerationType = Enums<'generation_type'>;
 
 export const GENERATION_TYPE_ENUM_MATCHES: AssertEqual<
   GenerationType,
@@ -58,11 +58,11 @@ export const GENERATION_TYPE_ENUM_MATCHES: AssertEqual<
 > = true;
 
 /** Audit row for every AI call. Prompts and outputs are stored, never discarded. */
-export type AiGeneration = Omit<TableRow<'ai_generations'>, 'input_json' | 'output_json'> & {
+export type AiGeneration = Omit<Tables<'ai_generations'>, 'input_json' | 'output_json'> & {
   input_json: Record<string, unknown>;
   output_json: Record<string, unknown> | null;
 };
 
-export type ContentStrategy = Omit<TableRow<'content_strategies'>, 'strategy_json'> & {
+export type ContentStrategy = Omit<Tables<'content_strategies'>, 'strategy_json'> & {
   strategy_json: Record<string, unknown>;
 };

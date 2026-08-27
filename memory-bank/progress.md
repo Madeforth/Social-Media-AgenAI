@@ -16,13 +16,11 @@
   app that currently returns empty results.
 
 ## In Progress
-- Milestone 2 is written but unverified: the migrations have never been applied to a database.
+- Nothing. Milestones 1-3 are closed and the Supabase project is live.
 
 ## Not Started
-- Applying migrations to a real Supabase project
-- Regenerating database types from the live schema
 - Auth
-- Replacing fixtures with live Supabase reads
+- Wiring the data-access seam to live Supabase reads
 - Gemini integration
 - Storage workflows
 - Meta integration
@@ -35,17 +33,26 @@
 - `npx expo export --platform ios` bundles successfully, so Metro resolves workspace packages.
 - `npm run lint --workspace @apex/web` passes.
 
-## Verification Run At Milestone 2
-- All six migrations parse cleanly under libpg_query (147 statements total).
-- `npm run typecheck --workspaces` passes with the derived domain types.
-- Enum-drift guards confirmed to fail the build when a status is removed from a runtime constant.
-- NOT verified: the migrations have not been executed, so semantic errors (a bad column
-  reference inside a policy, an ordering problem) would not have been caught.
+## Verification Run Against The Live Database
+- All six migrations applied to `dxdbqikzbytenmdrkkgo`. 13 tables, 13 with RLS, 39 policies in
+  `public`, 5 on `storage.objects`, 2 private buckets, 0 grants for `anon`.
+- `supabase db advisors --linked --level warn`: zero findings.
+- Types generated from the live schema; `npm run typecheck --workspaces` passes, which means the
+  enum-drift guards now check the runtime constants against the real database enums.
+- RLS proved end to end with two real users: an owner can create an organization and a brand and
+  read them back; the trigger grants OWNER; a stranger sees zero organizations and zero brands,
+  cannot insert into another organization, and an update against another organization's brand
+  affects zero rows. 10/10 checks passed and both users were deleted afterwards.
+- An unauthenticated client is denied on every table, and the RLS helpers have no RPC endpoint.
+- `social_accounts`: naming columns works, `select('*')` and `select('token_secret_ref')` are both
+  denied.
+- The first push failed on a real ordering defect that parsing had not caught, and the migrations
+  were corrected before the schema was rebuilt.
 
 ## Verification Run At Milestone 3
 - `npm run build --workspace @apex/web` builds all 12 routes.
 - Every web route returns 200 and an unknown post id returns 404, checked against the production
-  server, both before and after the fixture package was removed.
+  server.
 - Web renders with zero console errors or warnings, so there is no hydration mismatch.
 - `npx expo export --platform ios` bundles, and every mobile route was rendered through
   `expo start --web` with zero console errors.
@@ -53,7 +60,7 @@
 - NOT verified: the mobile app has never run on a real iOS or Android device or simulator.
   Rendering was checked through react-native-web, which does not exercise native layout.
 - NOT verified: no screen has been seen rendering a populated list, because there is no data
-  source. Only the empty states have actually been exercised.
+  source yet. Only the empty states have actually been exercised.
 
 ## Validation Criteria for MVP
 - Same account works on web/iOS/Android.

@@ -1,6 +1,6 @@
 /**
  * Formatting is pinned to UTC so the mobile app and the web app label the same
- * fixture with the same date, whatever the device timezone is.
+ * row with the same date, whatever the device timezone is.
  */
 const TIME_ZONE = 'UTC';
 

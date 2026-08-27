@@ -16,7 +16,7 @@ Use milestone prompts.
 
 ### Milestone 3
 
-“Implement the dark design system from docs/DESIGN_SYSTEM.md. Build the web shell/sidebar and mobile bottom navigation using mock data only.”
+“Implement the dark design system from docs/DESIGN_SYSTEM.md. Build the web shell/sidebar and mobile bottom navigation. Read through a data-access seam that returns empty results, and give every screen a real loading, empty and error state. Never add mock data.”
 
 ### Milestone 4
 

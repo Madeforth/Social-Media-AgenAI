@@ -1,11 +1,11 @@
 /**
- * Public Supabase configuration. Only the project URL and the anon key are ever
- * allowed on a client — the service role key and all provider secrets stay in
- * Supabase secrets and are read exclusively inside Edge Functions.
+ * Public Supabase configuration. Only the project URL and the publishable key
+ * are ever allowed on a client — the secret key and all provider credentials
+ * stay in Supabase secrets and are read exclusively inside Edge Functions.
  */
 export interface SupabasePublicConfig {
   url: string;
-  anonKey: string;
+  publishableKey: string;
 }
 
 export function assertSupabaseConfig(config: Partial<SupabasePublicConfig>): SupabasePublicConfig {
@@ -14,10 +14,11 @@ export function assertSupabaseConfig(config: Partial<SupabasePublicConfig>): Sup
       'Missing Supabase URL. Set NEXT_PUBLIC_SUPABASE_URL / EXPO_PUBLIC_SUPABASE_URL.',
     );
   }
-  if (!config.anonKey) {
+  if (!config.publishableKey) {
     throw new Error(
-      'Missing Supabase anon key. Set NEXT_PUBLIC_SUPABASE_ANON_KEY / EXPO_PUBLIC_SUPABASE_ANON_KEY.',
+      'Missing Supabase publishable key. Set NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY / ' +
+        'EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY.',
     );
   }
-  return { url: config.url, anonKey: config.anonKey };
+  return { url: config.url, publishableKey: config.publishableKey };
 }

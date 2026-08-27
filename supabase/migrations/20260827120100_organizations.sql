@@ -47,6 +47,64 @@ create trigger organizations_add_owner
   for each row
   execute function public.add_organization_owner();
 
+-- Only the trigger may run it. Without this revoke, PostgREST exposes a
+-- SECURITY DEFINER function at /rest/v1/rpc/add_organization_owner.
+revoke execute on function public.add_organization_owner() from public, anon, authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Access helpers
+--
+-- These are SECURITY DEFINER so that a policy on organization_members can ask
+-- about membership without re-entering that table's own RLS policy, which would
+-- recurse. They are STABLE and read-only, and they never accept a user id from
+-- the caller — the acting user always comes from auth.uid().
+--
+-- They are defined here, after the table exists: a `language sql` body is
+-- validated at creation time and cannot reference a table that is not there yet.
+-- ---------------------------------------------------------------------------
+
+create or replace function private.is_organization_member(p_organization_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1
+    from public.organization_members m
+    where m.organization_id = p_organization_id
+      and m.user_id = (select auth.uid())
+  );
+$$;
+
+create or replace function private.has_organization_role(
+  p_organization_id uuid,
+  p_roles public.organization_role[]
+)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1
+    from public.organization_members m
+    where m.organization_id = p_organization_id
+      and m.user_id = (select auth.uid())
+      and m.role = any (p_roles)
+  );
+$$;
+
+revoke execute on function private.is_organization_member(uuid) from public, anon;
+revoke execute on function private.has_organization_role(uuid, public.organization_role[])
+  from public, anon;
+
+grant execute on function private.is_organization_member(uuid) to authenticated;
+grant execute on function private.has_organization_role(uuid, public.organization_role[])
+  to authenticated;
+
 -- ---------------------------------------------------------------------------
 -- Row Level Security
 -- ---------------------------------------------------------------------------
@@ -59,7 +117,7 @@ alter table public.organization_members enable row level security;
 -- membership row.
 create policy organizations_select on public.organizations
   for select to authenticated
-  using (owner_user_id = (select auth.uid()) or public.is_organization_member(id));
+  using (owner_user_id = (select auth.uid()) or private.is_organization_member(id));
 
 create policy organizations_insert on public.organizations
   for insert to authenticated
@@ -67,21 +125,21 @@ create policy organizations_insert on public.organizations
 
 create policy organizations_update on public.organizations
   for update to authenticated
-  using (public.has_organization_role(id, array['OWNER', 'ADMIN']::public.organization_role[]))
-  with check (public.has_organization_role(id, array['OWNER', 'ADMIN']::public.organization_role[]));
+  using (private.has_organization_role(id, array['OWNER', 'ADMIN']::public.organization_role[]))
+  with check (private.has_organization_role(id, array['OWNER', 'ADMIN']::public.organization_role[]));
 
 create policy organizations_delete on public.organizations
   for delete to authenticated
-  using (public.has_organization_role(id, array['OWNER']::public.organization_role[]));
+  using (private.has_organization_role(id, array['OWNER']::public.organization_role[]));
 
 create policy organization_members_select on public.organization_members
   for select to authenticated
-  using (public.is_organization_member(organization_id));
+  using (private.is_organization_member(organization_id));
 
 create policy organization_members_insert on public.organization_members
   for insert to authenticated
   with check (
-    public.has_organization_role(
+    private.has_organization_role(
       organization_id,
       array['OWNER', 'ADMIN']::public.organization_role[]
     )
@@ -90,13 +148,13 @@ create policy organization_members_insert on public.organization_members
 create policy organization_members_update on public.organization_members
   for update to authenticated
   using (
-    public.has_organization_role(
+    private.has_organization_role(
       organization_id,
       array['OWNER', 'ADMIN']::public.organization_role[]
     )
   )
   with check (
-    public.has_organization_role(
+    private.has_organization_role(
       organization_id,
       array['OWNER', 'ADMIN']::public.organization_role[]
     )
@@ -105,7 +163,7 @@ create policy organization_members_update on public.organization_members
 create policy organization_members_delete on public.organization_members
   for delete to authenticated
   using (
-    public.has_organization_role(
+    private.has_organization_role(
       organization_id,
       array['OWNER', 'ADMIN']::public.organization_role[]
     )

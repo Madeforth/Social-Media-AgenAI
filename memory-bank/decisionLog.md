@@ -65,14 +65,8 @@ Decision: `packages/types/src/database.ts` holds the row shapes, and the domain 
 ## 2026-08-27 — Migrations Not Yet Executed
 Decision: Milestone 2 ships migrations verified only by parsing them with libpg_query, because neither Docker nor a local PostgreSQL is available on this machine and no Supabase project is provisioned. They must be applied against a real database before Milestone 3 depends on them.
 
-## 2026-08-27 — Temporary @apex/mocks Package
-Decision: fixtures live in their own workspace package rather than being duplicated inside each app. Web and mobile must show the same content while there is no backend, and duplicated fixtures would drift. The package is deliberately disposable and is deleted once screens read from Supabase.
-
-## 2026-08-27 — Deterministic Fixture Time
-Decision: every fixture timestamp derives from a fixed `MOCK_NOW` constant, and no fixture calls `Date.now()`. All date formatting is pinned to UTC. Without this the server-rendered and client-rendered output disagree and Next.js reports a hydration mismatch on every date on the page.
-
 ## 2026-08-27 — No Fabricated Metrics In The UI
-Decision: impressions, reach, engagement and profile visits are rendered as unavailable until an Instagram account is connected, and dashboard counters are counted from the fixtures. CLAUDE.md forbids fabricating metrics, and a placeholder number would be indistinguishable from a real one once the account is live. Both shells also carry a visible "Demo data" label.
+Decision: impressions, reach, engagement and profile visits are rendered as unavailable until an Instagram account is connected, and dashboard counters are derived from the posts themselves. CLAUDE.md forbids fabricating metrics, and a placeholder number would be indistinguishable from a real one once the account is live.
 
 ## 2026-08-27 — Hand-Written Icons Instead Of An Icon Library
 Decision: icons are hand-written SVG, shared in shape between the web app and the mobile app (which draws them through `react-native-svg`). The stack already renders SVG on both platforms, so an icon library would add a dependency for a dozen simple paths.
@@ -84,7 +78,22 @@ Decision: `react-native-web`, `react-dom` and `@expo/metro-runtime` are installe
 Decision: the mobile calendar renders a chronological agenda rather than a month grid. A 7x6 grid of tap targets does not survive a phone width at a usable size, and the mobile approval flow is optimised for one-handed use.
 
 ## 2026-08-27 — No Mock Data, Ever
-Decision: the project never contains mock data. The `@apex/mocks` package built during Milestone 3 was deleted the same day on the owner's instruction, and the rule is now principle 11 in CLAUDE.md. It covers fixture packages, sample rows, seed data, hardcoded example content and placeholder numbers, including temporary ones added while a backend is missing.
+Decision: the project never contains mock data, and this rule is principle 11 in CLAUDE.md. It covers fixture packages, sample rows, seed data, hardcoded example content and placeholder numbers, including temporary ones added while a backend is missing. Screens read through a data-access seam and render real loading, empty and error states instead.
 
 ## 2026-08-27 — Data Access Seam
 Decision: screens read through a single module per app — `apps/web/src/lib/data.ts` and `apps/mobile/src/lib/data.ts`. Today every reader returns an empty result, so the screens render their empty states. When Supabase exists only these bodies change. Web exposes async functions consumed by server components; mobile exposes hooks returning `{ data, loading, error }` so the screens already handle all three states.
+
+## 2026-08-27 — Supabase Project
+Decision: the project is `Apex Social AI`, ref `dxdbqikzbytenmdrkkgo`, in `eu-central-1` (Frankfurt) — the closest region to the owner, so user-facing latency wins over proximity to Gemini and the Meta API. It is a second project in the same organization; the pre-existing `Madeforth's Project` was left untouched.
+
+## 2026-08-27 — RLS Helpers Live In A `private` Schema
+Decision: the SECURITY DEFINER helpers were moved out of `public`. PostgREST exposes `public`, so a helper there is callable as an RPC endpoint; in `private` it is not, while policies still work because policy expressions run with the calling role's privileges and `authenticated` holds `USAGE` on the schema. Supabase's own advisor flagged the original placement.
+
+## 2026-08-27 — Write Policies Are Per-Command
+Decision: write policies are declared as separate `INSERT`, `UPDATE` and `DELETE` policies instead of one `FOR ALL`. A `FOR ALL` policy also matches `SELECT`, leaving two permissive read policies on the same table that Postgres must evaluate on every read.
+
+## 2026-08-27 — Publishable Key, Not The Legacy Anon JWT
+Decision: clients use the `sb_publishable_...` key and the environment variables are named `*_SUPABASE_PUBLISHABLE_KEY`. supabase-js 2.112 supports it, and the naming matches what is actually in the bundle. The legacy `service_role` JWT is still what the Auth admin API accepts — the new secret key was rejected with "Invalid API key" — so admin scripts use the JWT.
+
+## 2026-08-27 — Migration Ordering Caught Only By Executing
+Decision: helper functions are defined in the migration that creates the table they read, not up front. A `language sql` body is validated at creation time, so the original ordering failed on the first real push with `relation "public.organization_members" does not exist`. Parsing the SQL had not caught it — only running it did.

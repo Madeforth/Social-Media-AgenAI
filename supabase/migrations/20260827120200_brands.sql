@@ -69,6 +69,74 @@ create trigger brand_assets_set_updated_at
   execute function public.set_updated_at();
 
 -- ---------------------------------------------------------------------------
+-- Brand access helpers
+--
+-- SECURITY DEFINER for the same reason as the organization helpers, and defined
+-- after `brands` exists so the function body can be validated.
+--
+-- Role model: any member reads, EDITOR and above write content, ADMIN and above
+-- administer the brand.
+-- ---------------------------------------------------------------------------
+
+create or replace function private.can_read_brand(p_brand_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1
+    from public.brands b
+    join public.organization_members m on m.organization_id = b.organization_id
+    where b.id = p_brand_id
+      and m.user_id = (select auth.uid())
+  );
+$$;
+
+create or replace function private.can_write_brand(p_brand_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1
+    from public.brands b
+    join public.organization_members m on m.organization_id = b.organization_id
+    where b.id = p_brand_id
+      and m.user_id = (select auth.uid())
+      and m.role in ('OWNER', 'ADMIN', 'EDITOR')
+  );
+$$;
+
+create or replace function private.can_administer_brand(p_brand_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1
+    from public.brands b
+    join public.organization_members m on m.organization_id = b.organization_id
+    where b.id = p_brand_id
+      and m.user_id = (select auth.uid())
+      and m.role in ('OWNER', 'ADMIN')
+  );
+$$;
+
+revoke execute on function private.can_read_brand(uuid) from public, anon;
+revoke execute on function private.can_write_brand(uuid) from public, anon;
+revoke execute on function private.can_administer_brand(uuid) from public, anon;
+
+grant execute on function private.can_read_brand(uuid) to authenticated;
+grant execute on function private.can_write_brand(uuid) to authenticated;
+grant execute on function private.can_administer_brand(uuid) to authenticated;
+
+-- ---------------------------------------------------------------------------
 -- Row Level Security
 -- ---------------------------------------------------------------------------
 
@@ -78,12 +146,12 @@ alter table public.brand_assets enable row level security;
 
 create policy brands_select on public.brands
   for select to authenticated
-  using (public.is_organization_member(organization_id));
+  using (private.is_organization_member(organization_id));
 
 create policy brands_insert on public.brands
   for insert to authenticated
   with check (
-    public.has_organization_role(
+    private.has_organization_role(
       organization_id,
       array['OWNER', 'ADMIN']::public.organization_role[]
     )
@@ -92,13 +160,13 @@ create policy brands_insert on public.brands
 create policy brands_update on public.brands
   for update to authenticated
   using (
-    public.has_organization_role(
+    private.has_organization_role(
       organization_id,
       array['OWNER', 'ADMIN']::public.organization_role[]
     )
   )
   with check (
-    public.has_organization_role(
+    private.has_organization_role(
       organization_id,
       array['OWNER', 'ADMIN']::public.organization_role[]
     )
@@ -107,7 +175,7 @@ create policy brands_update on public.brands
 create policy brands_delete on public.brands
   for delete to authenticated
   using (
-    public.has_organization_role(
+    private.has_organization_role(
       organization_id,
       array['OWNER']::public.organization_role[]
     )
@@ -115,21 +183,37 @@ create policy brands_delete on public.brands
 
 create policy brand_guidelines_select on public.brand_guidelines
   for select to authenticated
-  using (public.can_read_brand(brand_id));
+  using (private.can_read_brand(brand_id));
 
-create policy brand_guidelines_write on public.brand_guidelines
-  for all to authenticated
-  using (public.can_write_brand(brand_id))
-  with check (public.can_write_brand(brand_id));
+create policy brand_guidelines_write_insert on public.brand_guidelines
+  for insert to authenticated
+  with check (private.can_write_brand(brand_id));
+
+create policy brand_guidelines_write_update on public.brand_guidelines
+  for update to authenticated
+  using (private.can_write_brand(brand_id))
+  with check (private.can_write_brand(brand_id));
+
+create policy brand_guidelines_write_delete on public.brand_guidelines
+  for delete to authenticated
+  using (private.can_write_brand(brand_id));
 
 create policy brand_assets_select on public.brand_assets
   for select to authenticated
-  using (public.can_read_brand(brand_id));
+  using (private.can_read_brand(brand_id));
 
-create policy brand_assets_write on public.brand_assets
-  for all to authenticated
-  using (public.can_write_brand(brand_id))
-  with check (public.can_write_brand(brand_id));
+create policy brand_assets_write_insert on public.brand_assets
+  for insert to authenticated
+  with check (private.can_write_brand(brand_id));
+
+create policy brand_assets_write_update on public.brand_assets
+  for update to authenticated
+  using (private.can_write_brand(brand_id))
+  with check (private.can_write_brand(brand_id));
+
+create policy brand_assets_write_delete on public.brand_assets
+  for delete to authenticated
+  using (private.can_write_brand(brand_id));
 
 revoke all on public.brands from anon;
 revoke all on public.brand_guidelines from anon;

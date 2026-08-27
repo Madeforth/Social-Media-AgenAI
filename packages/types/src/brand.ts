@@ -1,15 +1,15 @@
 import type { AssertEqual } from './common';
-import type { Enums, TableRow } from './database';
+import type { Enums, Tables } from './database';
 
-export type Organization = TableRow<'organizations'>;
+export type Organization = Tables<'organizations'>;
 
-export type OrganizationRole = Enums['organization_role'];
+export type OrganizationRole = Enums<'organization_role'>;
 
-export type OrganizationMember = TableRow<'organization_members'>;
+export type OrganizationMember = Tables<'organization_members'>;
 
-export type BrandStatus = Enums['brand_status'];
+export type BrandStatus = Enums<'brand_status'>;
 
-export type Brand = TableRow<'brands'>;
+export type Brand = Tables<'brands'>;
 
 export interface ToneOfVoice {
   attributes: string[];
@@ -44,7 +44,7 @@ export interface ContentPillar {
  * actually writes. PostgreSQL only guarantees that the array columns are arrays.
  */
 export type BrandGuidelines = Omit<
-  TableRow<'brand_guidelines'>,
+  Tables<'brand_guidelines'>,
   'tone_of_voice' | 'visual_rules' | 'copy_rules' | 'forbidden_claims' | 'content_pillars'
 > & {
   tone_of_voice: ToneOfVoice | null;
@@ -67,13 +67,13 @@ export const BRAND_ASSET_TYPES = [
   'STYLE_REFERENCE',
 ] as const;
 
-export type BrandAssetType = Enums['brand_asset_type'];
+export type BrandAssetType = Enums<'brand_asset_type'>;
 
 export const BRAND_ASSET_TYPE_ENUM_MATCHES: AssertEqual<
   BrandAssetType,
   (typeof BRAND_ASSET_TYPES)[number]
 > = true;
 
-export type BrandAsset = Omit<TableRow<'brand_assets'>, 'metadata'> & {
+export type BrandAsset = Omit<Tables<'brand_assets'>, 'metadata'> & {
   metadata: Record<string, unknown> | null;
 };

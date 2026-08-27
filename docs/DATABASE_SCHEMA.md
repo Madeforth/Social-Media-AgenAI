@@ -189,24 +189,41 @@ rather than by convention, and any change requires an intentional migration.
 chosen a format. The remaining strategy fields default to empty strings so the
 column stays non-null.
 
-### Access helpers
+### Access helpers live in a `private` schema
 
-RLS policies call four `SECURITY DEFINER` functions rather than inlining joins:
+RLS policies call five `SECURITY DEFINER` functions rather than inlining joins:
 `is_organization_member`, `has_organization_role`, `can_read_brand`,
 `can_write_brand` and `can_administer_brand`. They are `SECURITY DEFINER` so a
 policy on `organization_members` can ask about membership without re-entering
 that table's own policy, which would recurse. None of them accepts a user id —
 the acting user always comes from `auth.uid()`.
 
+They live in the `private` schema, not `public`. PostgREST only exposes
+`public`, so a helper in `private` has no RPC endpoint, while policies can still
+call it — policy expressions are evaluated with the calling role's privileges,
+which is why `authenticated` is granted `USAGE` on the schema. The same applies
+to `private.storage_object_brand_id`.
+
+`public.add_organization_owner()` is a `SECURITY DEFINER` trigger function, so
+`EXECUTE` is revoked from `public`, `anon` and `authenticated`; only the trigger
+runs it.
+
 Role model: any member reads, `EDITOR` and above write content, `ADMIN` and
 above manage brands and organizations, `OWNER` deletes.
+
+Write policies are declared per command (`INSERT`, `UPDATE`, `DELETE`) rather
+than as a single `FOR ALL`. A `FOR ALL` policy also matches `SELECT`, which
+would leave two permissive read policies on the same table and force Postgres to
+evaluate both on every read.
 
 ### Server-only writes
 
 `ai_generations`, `publication_jobs` and `post_metrics` have no client write
 policy. They are written by Edge Functions using the service role, which bypasses
 RLS. `social_accounts.token_secret_ref` is excluded from the `authenticated`
-column grant, so the reference never reaches a client at all.
+column grant, so the reference never reaches a client at all. Because that grant
+is column-level, `select('*')` on `social_accounts` fails — client code must
+name the columns it wants.
 
 ### Storage
 

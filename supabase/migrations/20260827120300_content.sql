@@ -117,21 +117,37 @@ alter table public.ai_generations enable row level security;
 
 create policy content_strategies_select on public.content_strategies
   for select to authenticated
-  using (public.can_read_brand(brand_id));
+  using (private.can_read_brand(brand_id));
 
-create policy content_strategies_write on public.content_strategies
-  for all to authenticated
-  using (public.can_write_brand(brand_id))
-  with check (public.can_write_brand(brand_id));
+create policy content_strategies_write_insert on public.content_strategies
+  for insert to authenticated
+  with check (private.can_write_brand(brand_id));
+
+create policy content_strategies_write_update on public.content_strategies
+  for update to authenticated
+  using (private.can_write_brand(brand_id))
+  with check (private.can_write_brand(brand_id));
+
+create policy content_strategies_write_delete on public.content_strategies
+  for delete to authenticated
+  using (private.can_write_brand(brand_id));
 
 create policy posts_select on public.posts
   for select to authenticated
-  using (public.can_read_brand(brand_id));
+  using (private.can_read_brand(brand_id));
 
-create policy posts_write on public.posts
-  for all to authenticated
-  using (public.can_write_brand(brand_id))
-  with check (public.can_write_brand(brand_id));
+create policy posts_write_insert on public.posts
+  for insert to authenticated
+  with check (private.can_write_brand(brand_id));
+
+create policy posts_write_update on public.posts
+  for update to authenticated
+  using (private.can_write_brand(brand_id))
+  with check (private.can_write_brand(brand_id));
+
+create policy posts_write_delete on public.posts
+  for delete to authenticated
+  using (private.can_write_brand(brand_id));
 
 create policy post_versions_select on public.post_versions
   for select to authenticated
@@ -140,18 +156,29 @@ create policy post_versions_select on public.post_versions
       select 1
       from public.posts p
       where p.id = post_versions.post_id
-        and public.can_read_brand(p.brand_id)
+        and private.can_read_brand(p.brand_id)
     )
   );
 
-create policy post_versions_write on public.post_versions
-  for all to authenticated
+create policy post_versions_insert on public.post_versions
+  for insert to authenticated
+  with check (
+    exists (
+      select 1
+      from public.posts p
+      where p.id = post_versions.post_id
+        and private.can_write_brand(p.brand_id)
+    )
+  );
+
+create policy post_versions_update on public.post_versions
+  for update to authenticated
   using (
     exists (
       select 1
       from public.posts p
       where p.id = post_versions.post_id
-        and public.can_write_brand(p.brand_id)
+        and private.can_write_brand(p.brand_id)
     )
   )
   with check (
@@ -159,7 +186,18 @@ create policy post_versions_write on public.post_versions
       select 1
       from public.posts p
       where p.id = post_versions.post_id
-        and public.can_write_brand(p.brand_id)
+        and private.can_write_brand(p.brand_id)
+    )
+  );
+
+create policy post_versions_delete on public.post_versions
+  for delete to authenticated
+  using (
+    exists (
+      select 1
+      from public.posts p
+      where p.id = post_versions.post_id
+        and private.can_write_brand(p.brand_id)
     )
   );
 
@@ -167,7 +205,7 @@ create policy post_versions_write on public.post_versions
 -- bypasses RLS. Clients may read their brand's history but never write it.
 create policy ai_generations_select on public.ai_generations
   for select to authenticated
-  using (public.can_read_brand(brand_id));
+  using (private.can_read_brand(brand_id));
 
 revoke all on public.content_strategies from anon;
 revoke all on public.posts from anon;

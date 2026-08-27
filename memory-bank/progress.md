@@ -103,9 +103,28 @@
   CLAUDE.md's V1 screen list and product principles now has a real (if not always fully verified
   live, see `memory-bank/userActionsNeeded.md`) implementation behind it.
 
+- Mobile brought to functional parity with web (2026-08-28, a full-app mock/dead-control audit
+  found mobile hadn't been touched since Milestone 4). Create screen's Generate button was hard
+  `disabled` with no brief input; the post detail screen's Revise/Approve buttons had no
+  `onPress`, and Regenerate/Edit/Schedule/Publish/Sync-metrics didn't exist at all; the More
+  screen's Brand Brain, Assets, Instagram and Notifications rows were static text with no
+  navigation, some showing hardcoded fake status ("Not connected", "Not configured") regardless
+  of the real data. All of it now calls the same Edge Functions and RLS-gated Supabase writes web
+  uses — a new `src/lib/functions.ts` mirrors the web server actions' fetch-with-access-token
+  pattern, and `src/lib/data.ts` gained the equivalent mutation functions. Five new screens:
+  `brand-brain.tsx` (edit form), `assets.tsx` (read-only list — upload needs
+  expo-image-picker/expo-file-system, not currently a dependency, so it's out of scope for this
+  pass), `notifications.tsx`, `connect-instagram.tsx`, `connect-gemini.tsx`, all registered in
+  `app/_layout.tsx`'s protected stack. Both iOS and Android `expo export` bundle cleanly;
+  full-workspace typecheck passes. **Not verified**: none of this has run on a real device or
+  simulator — same caveat as everything else mobile in this project — and the write paths
+  obviously share the same "not yet exercised with real Gemini/Meta credentials" gap as web.
+
 ## Not Started
 
-- Nothing scoped and unbuilt remains from CLAUDE.md. What's left is verification blocked on the
+- Mobile asset upload (needs new native dependencies — expo-image-picker or
+  expo-document-picker — not yet added).
+- Nothing else scoped and unbuilt remains from CLAUDE.md. What's left is verification blocked on the
   project owner's actions (Gemini/Meta credentials, native mobile testing) — see
   `memory-bank/userActionsNeeded.md` — plus the deliberate, documented scope cuts already recorded
   in this file and `docs/SECURITY.md` (cron-triggered auto-publish, Meta token refresh, upload

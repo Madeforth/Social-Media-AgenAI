@@ -1,22 +1,40 @@
 import { tokens } from '@apex/ui';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useAuth } from '@/auth/provider';
 import { SparkIcon } from '@/components/icons';
-import { Button, Card, EmptyState, ScreenTitle, SectionHeader } from '@/components/ui';
+import {
+  Banner,
+  Button,
+  Card,
+  EmptyState,
+  Field,
+  ScreenTitle,
+  SectionHeader,
+} from '@/components/ui';
 import { useI18n } from '@/i18n/provider';
-import { useBrandGuidelines } from '@/lib/data';
+import { generatePost, useBrandGuidelines, useCurrentBrand } from '@/lib/data';
 
 type Mode = 'ai_suggestion' | 'custom_brief';
 
 export default function CreateScreen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { dictionary } = useI18n();
   const copy = dictionary.create;
-  const [mode, setMode] = useState<Mode>('ai_suggestion');
+  const { session } = useAuth();
+  const brand = useCurrentBrand();
   const guidelines = useBrandGuidelines();
   const pillars = guidelines.data?.content_pillars ?? [];
+
+  const [mode, setMode] = useState<Mode>('ai_suggestion');
+  const [brief, setBrief] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
+
   const modes: Array<{ id: Mode; title: string; description: string }> = [
     {
       id: 'ai_suggestion',
@@ -30,6 +48,22 @@ export default function CreateScreen() {
     },
   ];
 
+  async function handleGenerate() {
+    if (!brand.data || submitting) return;
+    setSubmitting(true);
+    setErrorCode(null);
+    const result = await generatePost(session, brand.data.id, {
+      brief: mode === 'custom_brief' ? brief.trim() : undefined,
+    });
+    setSubmitting(false);
+    if (result.postId) {
+      setBrief('');
+      router.push(`/posts/${result.postId}`);
+    } else {
+      setErrorCode(result.errorCode);
+    }
+  }
+
   return (
     <ScrollView
       style={styles.screen}
@@ -39,6 +73,13 @@ export default function CreateScreen() {
       ]}
     >
       <ScreenTitle title={copy.title} subtitle={copy.subtitle} />
+
+      {errorCode ? (
+        <Banner
+          tone="error"
+          text={copy.errors[errorCode as keyof typeof copy.errors] ?? copy.errors.failed}
+        />
+      ) : null}
 
       <View style={styles.modes}>
         {modes.map((option) => {
@@ -64,6 +105,17 @@ export default function CreateScreen() {
         })}
       </View>
 
+      {mode === 'custom_brief' ? (
+        <Field
+          label={copy.briefLabel}
+          placeholder={copy.briefPlaceholder}
+          value={brief}
+          onChangeText={setBrief}
+          multiline
+          maxLength={2000}
+        />
+      ) : null}
+
       <View style={styles.section}>
         <SectionHeader title={copy.contentPillar} />
         <Card>
@@ -84,8 +136,12 @@ export default function CreateScreen() {
         <Text style={styles.hint}>{copy.balanceHint}</Text>
       </View>
 
-      <Button label={copy.generate} variant="primary" disabled />
-      <Text style={styles.footnote}>{copy.disabledNotice}</Text>
+      <Button
+        label={submitting ? copy.generating : copy.generate}
+        variant="primary"
+        disabled={!brand.data || submitting}
+        onPress={() => void handleGenerate()}
+      />
     </ScrollView>
   );
 }
@@ -128,10 +184,4 @@ const styles = StyleSheet.create({
   pillarDescription: { color: tokens.color.textSecondary, fontSize: tokens.fontSize.xs },
   pillarShare: { color: tokens.color.accent, fontSize: tokens.fontSize.xs },
   hint: { color: tokens.color.textMuted, fontSize: tokens.fontSize.xs, lineHeight: 17 },
-  footnote: {
-    color: tokens.color.textMuted,
-    fontSize: tokens.fontSize.xs,
-    textAlign: 'center',
-    lineHeight: 17,
-  },
 });

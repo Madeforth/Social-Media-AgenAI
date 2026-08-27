@@ -1,52 +1,91 @@
 import { tokens } from '@apex/ui';
-import { useState } from 'react';
+import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/auth/provider';
 import { ChevronRightIcon } from '@/components/icons';
-import { Button, Card, ScreenTitle, SectionHeader } from '@/components/ui';
+import { Button, Card, Field, ScreenTitle, SectionHeader } from '@/components/ui';
 import type { Locale } from '@/i18n/dictionary';
 import { useI18n } from '@/i18n/provider';
 import {
   createOrganizationAndBrand,
+  updateBrand,
   useBrandAssets,
   useBrandGuidelines,
   useCurrentBrand,
+  useGeminiKeyConnected,
+  useNotifications,
+  useSocialAccount,
 } from '@/lib/data';
 
 interface Entry {
   title: string;
   detail: string;
+  onPress?: () => void;
 }
 
 export default function MoreScreen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { locale, dictionary, setLocale } = useI18n();
   const copy = dictionary.more;
   const { session, signOut } = useAuth();
   const brand = useCurrentBrand();
   const guidelines = useBrandGuidelines();
   const assets = useBrandAssets();
+  const socialAccount = useSocialAccount();
+  const geminiConnected = useGeminiKeyConnected();
+  const notifications = useNotifications();
   const [brandName, setBrandName] = useState('');
   const [creating, setCreating] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [savingBrand, setSavingBrand] = useState(false);
+
+  useEffect(() => {
+    if (brand.data) {
+      setEditName(brand.data.name);
+      setEditDescription(brand.data.description ?? '');
+    }
+  }, [brand.data]);
 
   const pillarCount = guidelines.data?.content_pillars.length ?? 0;
+  const unreadCount = notifications.data.filter((n) => !n.read_at).length;
 
   const brandEntries: Entry[] = [
     {
       title: copy.brandBrain,
       detail: pillarCount === 0 ? copy.notDefinedYet : copy.pillarCount(pillarCount),
+      onPress: () => router.push('/brand-brain'),
     },
     {
       title: copy.assets,
       detail: assets.data.length === 0 ? copy.noAssetsYet : copy.assetCount(assets.data.length),
+      onPress: () => router.push('/assets'),
     },
   ];
 
   const settingsEntries: Entry[] = [
-    { title: copy.instagram, detail: copy.notConnected },
-    { title: copy.notifications, detail: copy.notConfigured },
+    {
+      title: copy.instagram,
+      detail:
+        socialAccount.data?.status === 'CONNECTED'
+          ? copy.connectedAs(socialAccount.data.account_name)
+          : copy.notConnected,
+      onPress: () => router.push('/connect-instagram'),
+    },
+    {
+      title: copy.gemini,
+      detail: geminiConnected.data ? copy.geminiConnected : copy.geminiNotConnected,
+      onPress: () => router.push('/connect-gemini'),
+    },
+    {
+      title: copy.notifications,
+      detail: unreadCount > 0 ? copy.unreadCount(unreadCount) : copy.noUnread,
+      onPress: () => router.push('/notifications'),
+    },
   ];
 
   async function handleCreateBrand() {
@@ -55,6 +94,13 @@ export default function MoreScreen() {
     const { error } = await createOrganizationAndBrand(brandName.trim(), session.user.id);
     setCreating(false);
     if (!error) setBrandName('');
+  }
+
+  async function handleSaveBrand() {
+    if (!brand.data || !editName.trim() || savingBrand) return;
+    setSavingBrand(true);
+    await updateBrand(brand.data.id, editName.trim(), editDescription.trim());
+    setSavingBrand(false);
   }
 
   return (
@@ -89,7 +135,23 @@ export default function MoreScreen() {
               label={copy.createBrand}
               variant="primary"
               disabled={!brandName.trim() || creating}
-              onPress={handleCreateBrand}
+              onPress={() => void handleCreateBrand()}
+            />
+          </Card>
+        ) : null}
+        {brand.data ? (
+          <Card style={styles.languageCard}>
+            <Field label={copy.editBrandNameLabel} value={editName} onChangeText={setEditName} />
+            <Field
+              label={copy.editBrandDescriptionLabel}
+              value={editDescription}
+              onChangeText={setEditDescription}
+            />
+            <Button
+              label={copy.save}
+              variant="primary"
+              disabled={!editName.trim() || savingBrand}
+              onPress={() => void handleSaveBrand()}
             />
           </Card>
         ) : null}
@@ -165,13 +227,20 @@ function LanguageOption({
 
 function Row({ entry, divided }: { entry: Entry; divided: boolean }) {
   return (
-    <View style={[styles.row, divided && styles.rowDivider]}>
+    <Pressable
+      onPress={entry.onPress}
+      style={({ pressed }) => [
+        styles.row,
+        divided && styles.rowDivider,
+        pressed && entry.onPress ? styles.rowPressed : undefined,
+      ]}
+    >
       <View style={styles.rowBody}>
         <Text style={styles.rowTitle}>{entry.title}</Text>
         <Text style={styles.rowDetail}>{entry.detail}</Text>
       </View>
       <ChevronRightIcon color={tokens.color.textMuted} size={16} />
-    </View>
+    </Pressable>
   );
 }
 
@@ -215,6 +284,7 @@ const styles = StyleSheet.create({
     gap: tokens.space.md,
     padding: tokens.space.md,
   },
+  rowPressed: { opacity: 0.7 },
   rowDivider: { borderTopWidth: 1, borderTopColor: tokens.color.border },
   rowBody: { flex: 1, gap: 2 },
   rowTitle: { color: tokens.color.textPrimary, fontSize: tokens.fontSize.base },

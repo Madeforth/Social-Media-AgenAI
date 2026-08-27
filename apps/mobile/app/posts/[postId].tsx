@@ -1,20 +1,65 @@
 import { tokens } from '@apex/ui';
 import { Stack, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { useAuth } from '@/auth/provider';
 import { CreativePreview } from '@/components/creative-preview';
 import { StatusChip } from '@/components/status-chip';
-import { Button, Card, EmptyState } from '@/components/ui';
-import type { Locale } from '@/i18n/dictionary';
+import { Banner, Button, Card, EmptyState, Field } from '@/components/ui';
+import type { Locale, MobileDictionary } from '@/i18n/dictionary';
 import { useI18n } from '@/i18n/provider';
-import { usePost } from '@/lib/data';
+import {
+  approvePost,
+  editPostVersion,
+  generateImage,
+  generatePost,
+  getPostImageUrl,
+  publishPost,
+  requestRevision,
+  schedulePost,
+  syncMetrics,
+  usePost,
+} from '@/lib/data';
 
 /** The immersive review screen: visual first, details below, actions pinned. */
 export default function PostDetailScreen() {
   const { locale, dictionary } = useI18n();
   const copy = dictionary.postDetail;
+  const { session } = useAuth();
   const { postId } = useLocalSearchParams<{ postId: string }>();
-  const { data: post, loading, error } = usePost(postId ?? '');
+  const { data: post, loading, error, refetch } = usePost(postId ?? '');
+
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [editHeadline, setEditHeadline] = useState('');
+  const [editCaption, setEditCaption] = useState('');
+  const [editCta, setEditCta] = useState('');
+  const [editHashtags, setEditHashtags] = useState('');
+  const [revisionNote, setRevisionNote] = useState('');
+  const [scheduleInput, setScheduleInput] = useState('');
+  const [busy, setBusy] = useState<string | null>(null);
+  const [genErrorCode, setGenErrorCode] = useState<string | null>(null);
+  const [imageErrorCode, setImageErrorCode] = useState<string | null>(null);
+  const [publishFailed, setPublishFailed] = useState(false);
+
+  useEffect(() => {
+    if (!post?.version.image_storage_path) {
+      setImageUrl(null);
+      return;
+    }
+    let active = true;
+    getPostImageUrl(post.version.image_storage_path).then((url) => {
+      if (active) setImageUrl(url);
+    });
+    return () => {
+      active = false;
+    };
+  }, [post?.version.image_storage_path]);
+
+  useEffect(() => {
+    if (post?.scheduled_at) setScheduleInput(post.scheduled_at.slice(0, 16).replace('T', ' '));
+  }, [post?.scheduled_at]);
 
   if (loading) {
     return (
@@ -43,6 +88,84 @@ export default function PostDetailScreen() {
     );
   }
 
+  const canApprove = post.status === 'READY' || post.status === 'REVISION';
+  const canRequestRevision = post.status === 'READY';
+  const canSchedule = post.status === 'APPROVED' || post.status === 'SCHEDULED';
+  const canPublish = post.status === 'APPROVED' || post.status === 'SCHEDULED';
+
+  async function run(key: string, action: () => Promise<void>) {
+    setBusy(key);
+    try {
+      await action();
+      refetch();
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  function startEdit() {
+    setEditHeadline(post!.version.headline);
+    setEditCaption(post!.version.caption);
+    setEditCta(post!.version.cta);
+    setEditHashtags(post!.version.hashtags.join(' '));
+    setEditing(true);
+  }
+
+  async function handleSaveEdit() {
+    setBusy('edit');
+    await editPostVersion(post!.id, post!.current_version_id, {
+      headline: editHeadline.trim(),
+      caption: editCaption.trim(),
+      cta: editCta.trim(),
+      hashtags: editHashtags
+        .split(/[\n ]+/)
+        .map((tag) => tag.trim())
+        .filter(Boolean),
+    });
+    setBusy(null);
+    setEditing(false);
+    refetch();
+  }
+
+  async function handleRegenerate() {
+    setBusy('regenerate');
+    setGenErrorCode(null);
+    const result = await generatePost(session, post!.brand_id, {
+      postId: post!.id,
+      brief: revisionNote.trim() || undefined,
+    });
+    setBusy(null);
+    if (result.errorCode) setGenErrorCode(result.errorCode);
+    else {
+      setRevisionNote('');
+      refetch();
+    }
+  }
+
+  async function handleGenerateImage() {
+    setBusy('image');
+    setImageErrorCode(null);
+    const result = await generateImage(session, post!.id);
+    setBusy(null);
+    if (result.errorCode) setImageErrorCode(result.errorCode);
+    else refetch();
+  }
+
+  async function handleSchedule() {
+    const iso = new Date(scheduleInput.replace(' ', 'T')).toISOString();
+    if (Number.isNaN(new Date(iso).getTime())) return;
+    await run('schedule', () => schedulePost(post!.id, iso));
+  }
+
+  async function handlePublish() {
+    setBusy('publish');
+    setPublishFailed(false);
+    const result = await publishPost(session, post!.id);
+    setBusy(null);
+    if (!result.ok) setPublishFailed(true);
+    else refetch();
+  }
+
   return (
     <View style={styles.screen}>
       <Stack.Screen
@@ -56,7 +179,7 @@ export default function PostDetailScreen() {
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.preview}>
-          <CreativePreview post={post} />
+          <CreativePreview post={post} imageUrl={imageUrl} />
         </View>
 
         <View style={styles.metaRow}>
@@ -68,64 +191,200 @@ export default function PostDetailScreen() {
           </Text>
         </View>
 
-        <Card style={styles.card}>
-          <Field
-            label={copy.headline}
-            value={post.version.headline}
-            emptyLabel={dictionary.common.notGeneratedYet}
-            locale={locale}
+        {genErrorCode ? (
+          <Banner
+            tone="error"
+            text={
+              copy.genErrors[genErrorCode as keyof typeof copy.genErrors] ?? copy.genErrors.failed
+            }
           />
-          <Field
-            label={copy.caption}
-            value={post.version.caption}
-            emptyLabel={dictionary.common.notGeneratedYet}
-            locale={locale}
+        ) : null}
+        {imageErrorCode ? (
+          <Banner
+            tone="error"
+            text={
+              copy.imageErrors[imageErrorCode as keyof typeof copy.imageErrors] ??
+              copy.imageErrors.failed
+            }
           />
+        ) : null}
+        {publishFailed ? <Banner tone="error" text={copy.publishError} /> : null}
+
+        <Card style={styles.actionsCard}>
           <Field
-            label={copy.callToAction}
-            value={post.version.cta}
-            emptyLabel={dictionary.common.notGeneratedYet}
-            locale={locale}
+            label={copy.revisionNoteLabel}
+            placeholder={copy.revisionNotePlaceholder}
+            value={revisionNote}
+            onChangeText={setRevisionNote}
+            multiline
           />
-          <Field
-            label={copy.hashtags}
-            value={post.version.hashtags.join(' ')}
-            emptyLabel={dictionary.common.notGeneratedYet}
-            locale={locale}
-          />
-          <Field
-            label={copy.creativeDirection}
-            value={post.version.creative_direction}
-            emptyLabel={dictionary.common.notGeneratedYet}
-            locale={locale}
-            last
+          <Button
+            label={copy.regenerate}
+            disabled={busy !== null}
+            onPress={() => void handleRegenerate()}
           />
         </Card>
+
+        {editing ? (
+          <Card style={styles.actionsCard}>
+            <Field label={copy.headline} value={editHeadline} onChangeText={setEditHeadline} />
+            <Field
+              label={copy.caption}
+              value={editCaption}
+              onChangeText={setEditCaption}
+              multiline
+            />
+            <Field label={copy.callToAction} value={editCta} onChangeText={setEditCta} />
+            <Field
+              label={copy.hashtags}
+              hint={copy.hashtagsHint}
+              value={editHashtags}
+              onChangeText={setEditHashtags}
+              multiline
+            />
+            <View style={styles.row}>
+              <Button
+                label={copy.cancel}
+                style={styles.flexButton}
+                onPress={() => setEditing(false)}
+              />
+              <Button
+                label={copy.save}
+                variant="primary"
+                style={styles.flexButton}
+                disabled={busy !== null}
+                onPress={() => void handleSaveEdit()}
+              />
+            </View>
+          </Card>
+        ) : (
+          <Card style={styles.card}>
+            <Field2
+              label={copy.headline}
+              value={post.version.headline}
+              locale={locale}
+              dictionary={dictionary}
+            />
+            <Field2
+              label={copy.caption}
+              value={post.version.caption}
+              locale={locale}
+              dictionary={dictionary}
+            />
+            <Field2
+              label={copy.callToAction}
+              value={post.version.cta}
+              locale={locale}
+              dictionary={dictionary}
+            />
+            <Field2
+              label={copy.hashtags}
+              value={post.version.hashtags.join(' ')}
+              locale={locale}
+              dictionary={dictionary}
+            />
+            <Field2
+              label={copy.creativeDirection}
+              value={post.version.creative_direction}
+              locale={locale}
+              dictionary={dictionary}
+              last
+            />
+          </Card>
+        )}
 
         <Text style={styles.generated}>
           {post.version.created_by === 'AI' ? copy.aiGenerated : copy.editedByYou}
         </Text>
+
+        <Card style={styles.actionsCard}>
+          <Button
+            label={imageUrl ? copy.regenerateImage : copy.generateImage}
+            disabled={busy !== null}
+            onPress={() => void handleGenerateImage()}
+          />
+        </Card>
+
+        {canSchedule ? (
+          <Card style={styles.actionsCard}>
+            <Text style={styles.sectionLabel}>{copy.scheduleTitle}</Text>
+            <Text style={styles.meta}>
+              {post.scheduled_at
+                ? `${copy.publishAt}: ${new Date(post.scheduled_at).toLocaleString(
+                    locale === 'tr' ? 'tr-TR' : 'en-GB',
+                  )}`
+                : copy.notScheduled}
+            </Text>
+            <Field
+              label={copy.scheduleDateLabel}
+              placeholder={copy.scheduleDatePlaceholder}
+              value={scheduleInput}
+              onChangeText={setScheduleInput}
+            />
+            <Button
+              label={post.status === 'SCHEDULED' ? copy.rescheduleButton : copy.scheduleButton}
+              variant="primary"
+              disabled={busy !== null || !scheduleInput.trim()}
+              onPress={() => void handleSchedule()}
+            />
+          </Card>
+        ) : null}
+
+        {post.status === 'PUBLISHED' ? (
+          <Button
+            label={copy.syncMetrics}
+            disabled={busy !== null}
+            onPress={() => void run('sync', () => syncMetrics(session, post.id))}
+          />
+        ) : null}
       </ScrollView>
 
       <View style={styles.actions}>
-        <Button label={copy.revise} style={styles.flexButton} />
-        <Button label={copy.approve} variant="primary" style={styles.flexButton} />
+        {canRequestRevision ? (
+          <Button
+            label={copy.revise}
+            style={styles.flexButton}
+            disabled={busy !== null}
+            onPress={() => void run('revise', () => requestRevision(post.id))}
+          />
+        ) : null}
+        {!editing ? (
+          <Button label={copy.edit} style={styles.flexButton} onPress={startEdit} />
+        ) : null}
+        {canApprove ? (
+          <Button
+            label={copy.approve}
+            variant="primary"
+            style={styles.flexButton}
+            disabled={busy !== null}
+            onPress={() => void run('approve', () => approvePost(post.id))}
+          />
+        ) : null}
+        {canPublish ? (
+          <Button
+            label={copy.publishNow}
+            variant="primary"
+            style={styles.flexButton}
+            disabled={busy !== null}
+            onPress={() => void handlePublish()}
+          />
+        ) : null}
       </View>
     </View>
   );
 }
 
-function Field({
+function Field2({
   label,
   value,
-  emptyLabel,
   locale,
+  dictionary,
   last = false,
 }: {
   label: string;
   value: string;
-  emptyLabel: string;
   locale: Locale;
+  dictionary: MobileDictionary;
   last?: boolean;
 }) {
   return (
@@ -133,7 +392,9 @@ function Field({
       <Text style={styles.fieldLabel}>
         {label.toLocaleUpperCase(locale === 'tr' ? 'tr-TR' : 'en-GB')}
       </Text>
-      <Text style={value ? styles.fieldValue : styles.fieldEmpty}>{value || emptyLabel}</Text>
+      <Text style={value ? styles.fieldValue : styles.fieldEmpty}>
+        {value || dictionary.common.notGeneratedYet}
+      </Text>
     </View>
   );
 }
@@ -145,6 +406,13 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.sm, flexWrap: 'wrap' },
   meta: { color: tokens.color.textMuted, fontSize: tokens.fontSize.xs },
   card: {},
+  actionsCard: { padding: tokens.space.md, gap: tokens.space.sm },
+  sectionLabel: {
+    color: tokens.color.textPrimary,
+    fontSize: tokens.fontSize.sm,
+    fontWeight: tokens.fontWeight.medium,
+  },
+  row: { flexDirection: 'row', gap: tokens.space.sm },
   field: { padding: tokens.space.md, gap: 6 },
   fieldDivider: { borderBottomWidth: 1, borderBottomColor: tokens.color.border },
   fieldLabel: { color: tokens.color.textMuted, fontSize: 10, letterSpacing: 1.2 },
@@ -153,11 +421,12 @@ const styles = StyleSheet.create({
   generated: { color: tokens.color.textMuted, fontSize: tokens.fontSize.xs, textAlign: 'center' },
   actions: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: tokens.space.sm,
     padding: tokens.space.md,
     borderTopWidth: 1,
     borderTopColor: tokens.color.border,
     backgroundColor: tokens.color.surface,
   },
-  flexButton: { flex: 1 },
+  flexButton: { flex: 1, minWidth: 100 },
 });

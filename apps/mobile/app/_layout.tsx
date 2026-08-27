@@ -20,6 +20,11 @@ function Navigation() {
       <Stack.Protected guard={Boolean(session)}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="posts/[postId]" />
+        <Stack.Screen name="brand-brain" />
+        <Stack.Screen name="assets" />
+        <Stack.Screen name="notifications" />
+        <Stack.Screen name="connect-instagram" />
+        <Stack.Screen name="connect-gemini" />
       </Stack.Protected>
       <Stack.Protected guard={!session}>
         <Stack.Screen name="sign-in" />

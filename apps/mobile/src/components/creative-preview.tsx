@@ -1,6 +1,6 @@
 import type { PostWithVersion } from '@apex/types';
 import { tokens } from '@apex/ui';
-import { StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import { Image, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 
 import { useI18n } from '@/i18n/provider';
 
@@ -22,11 +22,21 @@ interface Props {
   post: PostWithVersion;
   style?: ViewStyle;
   compact?: boolean;
+  imageUrl?: string | null;
 }
 
-export function CreativePreview({ post, style, compact = false }: Props) {
+export function CreativePreview({ post, style, compact = false, imageUrl }: Props) {
   const { dictionary } = useI18n();
   const headline = post.version.headline;
+
+  if (imageUrl) {
+    return (
+      <View style={[styles.frame, styles.imageFrame, style]}>
+        <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="cover" />
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.frame, { backgroundColor: groundFor(post.id) }, style]}>
       <Text
@@ -56,6 +66,8 @@ const styles = StyleSheet.create({
     borderColor: tokens.color.border,
     overflow: 'hidden',
   },
+  imageFrame: { padding: 0, backgroundColor: tokens.color.surfaceRaised },
+  image: { width: '100%', height: '100%' },
   headline: {
     color: 'rgba(255,255,255,0.9)',
     fontSize: tokens.fontSize.xl,

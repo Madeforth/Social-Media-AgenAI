@@ -1,7 +1,10 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 
-import './globals.css';
+import { locales, type Locale } from '@/i18n/config';
+import { getDictionary } from '@/i18n/get-dictionary';
+
+import '../globals.css';
 
 const inter = Inter({
   variable: '--font-inter',
@@ -20,14 +23,29 @@ const inter = Inter({
  */
 export const dynamic = 'force-dynamic';
 
-export const metadata: Metadata = {
-  title: 'Apex Social AI',
-  description: 'AI-native social media operating system.',
-};
+export function generateStaticParams() {
+  return locales.map((locale) => ({ locale }));
+}
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+interface LocaleLayoutProps {
+  children: React.ReactNode;
+  params: Promise<{ locale: Locale }>;
+}
+
+export async function generateMetadata({ params }: LocaleLayoutProps): Promise<Metadata> {
+  const { locale } = await params;
+  const dict = await getDictionary(locale);
+  return {
+    title: 'Apex Social AI',
+    description: dict.meta.rootDescription,
+  };
+}
+
+export default async function RootLayout({ children, params }: LocaleLayoutProps) {
+  const { locale } = await params;
+
   return (
-    <html lang="en" className={`${inter.variable} h-full`}>
+    <html lang={locale} className={`${inter.variable} h-full`}>
       <body className="flex min-h-full flex-col bg-bg text-text-primary">{children}</body>
     </html>
   );

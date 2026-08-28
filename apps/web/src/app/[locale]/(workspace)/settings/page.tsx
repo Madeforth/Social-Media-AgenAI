@@ -254,24 +254,37 @@ export default async function SettingsPage({ params, searchParams }: PageParams)
         <CardDivider />
         <div className="divide-y divide-border-subtle">
           {brand ? (
-            <form action={updateBrand} className="flex flex-wrap items-end gap-3 px-5 py-4">
+            <form action={updateBrand} className="flex flex-col gap-4 px-5 py-4">
               <input type="hidden" name="locale" value={locale} />
               <input type="hidden" name="brandId" value={brand.id} />
-              <FieldLabel label={copy.brand.editNameLabel}>
-                <Input name="name" defaultValue={brand.name} required />
-              </FieldLabel>
-              <div className="min-w-0 flex-1">
-                <FieldLabel label={copy.brand.editDescriptionLabel}>
-                  <Input
-                    name="description"
-                    defaultValue={brand.description ?? ''}
-                    placeholder={copy.brand.editDescriptionPlaceholder}
-                  />
+              <div className="flex flex-wrap items-end gap-3">
+                <FieldLabel label={copy.brand.editNameLabel}>
+                  <Input name="name" defaultValue={brand.name} required />
                 </FieldLabel>
+                <div className="min-w-0 flex-1">
+                  <FieldLabel label={copy.brand.editDescriptionLabel}>
+                    <Input
+                      name="description"
+                      defaultValue={brand.description ?? ''}
+                      placeholder={copy.brand.editDescriptionPlaceholder}
+                    />
+                  </FieldLabel>
+                </div>
               </div>
-              <Button type="submit" variant="primary">
-                {copy.brand.save}
-              </Button>
+              <FieldLabel label={copy.brand.appUrlLabel} hint={copy.brand.appUrlHint}>
+                <Input
+                  name="appUrl"
+                  type="url"
+                  inputMode="url"
+                  defaultValue={brand.app_url ?? ''}
+                  placeholder={copy.brand.appUrlPlaceholder}
+                />
+              </FieldLabel>
+              <div>
+                <Button type="submit" variant="primary">
+                  {copy.brand.save}
+                </Button>
+              </div>
             </form>
           ) : (
             <form

@@ -99,7 +99,7 @@ Deno.serve(async (req) => {
 
   const { data: brand } = await userClient
     .from('brands')
-    .select('id, organization_id, name')
+    .select('id, organization_id, name, app_url')
     .eq('id', brandId)
     .maybeSingle();
   if (!brand) return json(404, { error: 'brand not found' });
@@ -198,6 +198,28 @@ Deno.serve(async (req) => {
         'blank line write "— Türkçe —" followed by the complete Turkish translation of that same ' +
         'caption. Both languages must convey the same message — this is not a partial or ' +
         'summarized translation.',
+    );
+  }
+
+  // The link is re-validated here even though the column has a scheme check:
+  // this value ends up in published copy, and `javascript:` or `data:` must
+  // never reach a caption. Anything that does not look like a plain http(s)
+  // URL is treated as absent.
+  const appUrl =
+    typeof brand.app_url === 'string' && /^https?:\/\/[^\s]+$/i.test(brand.app_url.trim())
+      ? brand.app_url.trim()
+      : null;
+
+  if (appUrl) {
+    directives.push(
+      `The brand's app link is ${appUrl}. End the caption with it on its own final line, ` +
+        'after the call to action. Reproduce it character for character — never shorten it, ' +
+        'never wrap it in markdown, and never invent a different URL.',
+    );
+  } else {
+    directives.push(
+      'This brand has no app link. Write the caption without any URL, and do not invent one or ' +
+        'refer the reader to a link that is not there.',
     );
   }
 

@@ -75,10 +75,21 @@ export async function updateBrand(formData: FormData): Promise<void> {
   const name = String(formData.get('name') ?? '').trim();
   if (!brandId || !name) redirect(`/${locale}/settings`);
 
+  // Validated here as well as by the column's own check constraint. This value
+  // is written by a user and ends up in published copy, so anything that is not
+  // a plain http(s) URL — `javascript:` above all — is dropped rather than
+  // stored and later echoed into a caption.
+  const rawAppUrl = String(formData.get('appUrl') ?? '').trim();
+  const appUrl = /^https?:\/\/[^\s]+$/i.test(rawAppUrl) ? rawAppUrl : null;
+
   const supabase = await getServerSupabase();
   await supabase
     .from('brands')
-    .update({ name, description: String(formData.get('description') ?? '').trim() || null })
+    .update({
+      name,
+      description: String(formData.get('description') ?? '').trim() || null,
+      app_url: appUrl,
+    })
     .eq('id', brandId);
 
   revalidatePath(`/${locale}`, 'layout');

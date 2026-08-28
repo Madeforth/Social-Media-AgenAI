@@ -389,6 +389,10 @@ export const tr: Dictionary = {
       newBrand: 'Yeni marka',
       brandNameLabel: 'Marka adı',
       brandNamePlaceholder: 'örn. Apex Flow',
+      appUrlLabel: 'Uygulama linki',
+      appUrlHint:
+        'Üretilen açıklamaların sonuna eklenir. Boş bırakırsan açıklama linksiz yazılır — yapay zekaya link uydurmaması söyleniyor.',
+      appUrlPlaceholder: 'https://apexflow.app',
     },
     account: {
       title: 'Hesap',

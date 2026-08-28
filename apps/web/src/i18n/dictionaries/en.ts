@@ -384,6 +384,10 @@ export const en: Dictionary = {
       newBrand: 'New brand',
       brandNameLabel: 'Brand name',
       brandNamePlaceholder: 'e.g. Apex Flow',
+      appUrlLabel: 'App link',
+      appUrlHint:
+        'Added to the end of generated captions. Leave it empty and captions are written without a link — the AI is told not to invent one.',
+      appUrlPlaceholder: 'https://apexflow.app',
     },
     account: {
       title: 'Account',

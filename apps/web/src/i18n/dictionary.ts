@@ -303,6 +303,9 @@ export interface Dictionary {
       newBrand: string;
       brandNameLabel: string;
       brandNamePlaceholder: string;
+      appUrlLabel: string;
+      appUrlHint: string;
+      appUrlPlaceholder: string;
     };
     account: {
       title: string;

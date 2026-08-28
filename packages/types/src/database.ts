@@ -281,6 +281,7 @@ export type Database = {
       }
       brands: {
         Row: {
+          app_url: string | null
           created_at: string
           description: string | null
           id: string
@@ -291,6 +292,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          app_url?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -301,6 +303,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          app_url?: string | null
           created_at?: string
           description?: string | null
           id?: string

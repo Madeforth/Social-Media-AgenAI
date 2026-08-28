@@ -96,6 +96,18 @@ Possible visual formats: PRODUCT_UI, CINEMATIC_LIFESTYLE, RIDER_COMMUNITY, EDITO
 
 When a real product UI screenshot is supplied, treat it as a trusted asset. You may place it inside a composition, but you must not redraw it, restyle it or invent controls it does not contain.
 
+Caption format. The caption is what a reader actually sees under the post, so
+structure it — never write one dense paragraph:
+
+- Open with a single hook line that can stand alone.
+- Follow with two to four short lines, each starting with one emoji that matches
+  what that line says.
+- Close with a line that carries the call to action.
+- Leave a blank line between blocks so the caption breathes on a phone.
+- Use emoji as structural markers at the start of a line, never mid-sentence and
+  never more than one per line. Six to eight in the whole caption is plenty. The
+  brand is premium, so emoji should read as punctuation, not decoration.
+
 The output must feel intentional, premium and specific to the brand. Never use generic motivational filler.`;
 
 export const QA_REVIEWER_SYSTEM_PROMPT = `Review the proposed social media post as a strict senior creative director.

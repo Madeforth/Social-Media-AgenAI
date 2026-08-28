@@ -319,6 +319,17 @@ export interface Dictionary {
         savedBanner: string;
         errorBanner: string;
       };
+      quota: {
+        title: string;
+        description: string;
+        hourlyLabel: string;
+        dailyLabel: string;
+        monthlyLabel: string;
+        unlimitedLabel: string;
+        unlimitedDescription: string;
+        turnOff: string;
+        turnOn: string;
+      };
     };
     brand: {
       title: string;

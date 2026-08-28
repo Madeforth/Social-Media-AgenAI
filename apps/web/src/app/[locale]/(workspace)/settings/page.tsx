@@ -13,12 +13,18 @@ import {
   deleteAiProvider,
   createOrganizationAndBrand,
   signOutAction,
+  setAiQuotaUnlimited,
   setAiRouting,
   setConnectionModels,
   updateBrand,
 } from '@/lib/actions';
 import { getCurrentUser } from '@/lib/auth';
-import { getAiProviderStateWithModels, getCurrentBrand, getSocialAccount } from '@/lib/data';
+import {
+  getAiProviderStateWithModels,
+  getAiQuotaStatus,
+  getCurrentBrand,
+  getSocialAccount,
+} from '@/lib/data';
 import { getI18n } from '@/i18n/get-dictionary';
 import { formatDate } from '@/lib/format';
 
@@ -62,17 +68,19 @@ function Row({
 export default async function SettingsPage({ params, searchParams }: PageParams) {
   const { locale } = await params;
   const { igConnected, igError, igSynced, providerSaved, providerError } = await searchParams;
-  const [brand, user, socialAccount, aiState, { dictionary, locale: activeLocale }] =
+  const [brand, user, socialAccount, aiState, quota, { dictionary, locale: activeLocale }] =
     await Promise.all([
       getCurrentBrand(),
       getCurrentUser(),
       getSocialAccount(),
       getAiProviderStateWithModels(),
+      getAiQuotaStatus(),
       getI18n(locale),
     ]);
   const copy = dictionary.settings;
   const igCopy = copy.integrations.instagram;
   const aiCopy = copy.integrations.ai;
+  const quotaCopy = copy.integrations.quota;
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6">
@@ -393,6 +401,51 @@ export default async function SettingsPage({ params, searchParams }: PageParams)
           </div>
         </div>
       </Card>
+
+      {quota ? (
+        <Card>
+          <CardHeader title={quotaCopy.title} />
+          <CardDivider />
+          <div className="flex flex-col gap-4 p-5">
+            <p className="text-xs text-text-secondary">{quotaCopy.description}</p>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.12em] text-text-muted">
+                  {quotaCopy.hourlyLabel}
+                </p>
+                <p className="mt-1 text-sm text-text-primary">{quota.hourlyLimit}</p>
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.12em] text-text-muted">
+                  {quotaCopy.dailyLabel}
+                </p>
+                <p className="mt-1 text-sm text-text-primary">{quota.dailyLimit}</p>
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.12em] text-text-muted">
+                  {quotaCopy.monthlyLabel}
+                </p>
+                <p className="mt-1 text-sm text-text-primary">{quota.monthlyLimit}</p>
+              </div>
+            </div>
+            <Row
+              title={quotaCopy.unlimitedLabel}
+              description={quotaCopy.unlimitedDescription}
+              action={
+                <form action={setAiQuotaUnlimited}>
+                  <input type="hidden" name="locale" value={locale} />
+                  <input type="hidden" name="unlimited" value={(!quota.unlimited).toString()} />
+                  <SubmitButton
+                    label={quota.unlimited ? quotaCopy.turnOn : quotaCopy.turnOff}
+                    pendingLabel={dictionary.pending.saveButton}
+                    variant={quota.unlimited ? 'primary' : 'secondary'}
+                  />
+                </form>
+              }
+            />
+          </div>
+        </Card>
+      ) : null}
 
       <Card>
         <CardHeader title={copy.brand.title} />

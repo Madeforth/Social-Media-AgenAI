@@ -409,6 +409,19 @@ export const tr: Dictionary = {
         savedBanner: 'Yapay zeka sağlayıcıları güncellendi.',
         errorBanner: 'Bu değişiklik kaydedilemedi.',
       },
+      quota: {
+        title: 'Üretim limiti',
+        description:
+          'Veritabanında zorlanan, organizasyon başına yapay zeka çağrı tavanı — kaçak bir retry döngüsüne veya çalınmış bir oturumun sınırsız harcamasına karşı korur.',
+        hourlyLabel: 'Saatlik',
+        dailyLabel: 'Günlük',
+        monthlyLabel: 'Aylık',
+        unlimitedLabel: 'Limit kapalı',
+        unlimitedDescription:
+          'Bu kapalıyken üretim yukarıdaki tavanları yok sayar. Hesapla ilgili başka hiçbir şey değişmez — bu anahtar yalnızca limite dokunur, başka hiçbir ayara değil.',
+        turnOff: 'Limiti kapat',
+        turnOn: 'Limiti aç',
+      },
     },
     brand: {
       title: 'Marka',

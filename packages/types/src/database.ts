@@ -20,7 +20,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.17"
+    PostgrestVersion: "14.5"
   }
   graphql_public: {
     Tables: {
@@ -157,6 +157,7 @@ export type Database = {
           hourly_limit: number
           monthly_limit: number
           organization_id: string
+          unlimited: boolean
           updated_at: string
         }
         Insert: {
@@ -165,6 +166,7 @@ export type Database = {
           hourly_limit?: number
           monthly_limit?: number
           organization_id: string
+          unlimited?: boolean
           updated_at?: string
         }
         Update: {
@@ -173,6 +175,7 @@ export type Database = {
           hourly_limit?: number
           monthly_limit?: number
           organization_id?: string
+          unlimited?: boolean
           updated_at?: string
         }
         Relationships: [

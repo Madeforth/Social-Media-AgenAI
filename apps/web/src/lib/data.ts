@@ -128,6 +128,34 @@ export interface AiProviderStateWithModels extends Omit<AiProviderState, 'connec
 }
 
 /** Every AI connection this organization holds, and which one does which job. */
+export interface AiQuotaStatus {
+  hourlyLimit: number;
+  dailyLimit: number;
+  monthlyLimit: number;
+  unlimited: boolean;
+}
+
+/** Read-only: the client can flip `unlimited` (see actions.ts) but never the numeric limits. */
+export async function getAiQuotaStatus(): Promise<AiQuotaStatus | null> {
+  const brand = await getCurrentBrand();
+  if (!brand) return null;
+
+  const supabase = await getServerSupabase();
+  const { data } = await supabase
+    .from('ai_quotas')
+    .select('hourly_limit, daily_limit, monthly_limit, unlimited')
+    .eq('organization_id', brand.organization_id)
+    .maybeSingle();
+
+  if (!data) return null;
+  return {
+    hourlyLimit: data.hourly_limit,
+    dailyLimit: data.daily_limit,
+    monthlyLimit: data.monthly_limit,
+    unlimited: data.unlimited,
+  };
+}
+
 export async function getAiProviderState(): Promise<AiProviderState | null> {
   return callAiProviders<AiProviderState>({ action: 'list' });
 }

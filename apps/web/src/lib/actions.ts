@@ -96,6 +96,30 @@ export async function updateBrand(formData: FormData): Promise<void> {
   redirect(`/${locale}/settings`);
 }
 
+/**
+ * Flips the org's AI generation quota on/off. Scoped as narrowly as the
+ * database migration that backs it: this writes only the `unlimited` column
+ * (`ai_quotas.unlimited`) — the client holds no grant on `hourly_limit`,
+ * `daily_limit` or `monthly_limit` at all, so this action, however it's
+ * called, can never touch those.
+ */
+export async function setAiQuotaUnlimited(formData: FormData): Promise<void> {
+  const locale = targetLocale(formData);
+  const brand = await getCurrentBrand();
+  if (!brand) redirect(`/${locale}/settings`);
+
+  const unlimited = String(formData.get('unlimited') ?? '') === 'true';
+
+  const supabase = await getServerSupabase();
+  await supabase
+    .from('ai_quotas')
+    .update({ unlimited })
+    .eq('organization_id', brand.organization_id);
+
+  revalidatePath(`/${locale}/settings`);
+  redirect(`/${locale}/settings`);
+}
+
 export async function signOutAction(formData: FormData): Promise<void> {
   const locale = String(formData.get('locale') ?? defaultLocale);
   const supabase = await getServerSupabase();
@@ -226,7 +250,9 @@ function errorDetail(result: { error?: unknown; failures?: unknown }): string | 
     .join(' — ')
     .trim();
   if (detail.length === 0) return null;
-  return detail.length > ERROR_DETAIL_LIMIT ? `${detail.slice(0, ERROR_DETAIL_LIMIT - 1)}…` : detail;
+  return detail.length > ERROR_DETAIL_LIMIT
+    ? `${detail.slice(0, ERROR_DETAIL_LIMIT - 1)}…`
+    : detail;
 }
 
 /** A redirect target carrying the error code and, when there is one, its detail. */

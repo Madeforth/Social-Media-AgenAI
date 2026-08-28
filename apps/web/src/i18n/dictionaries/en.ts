@@ -403,6 +403,19 @@ export const en: Dictionary = {
         savedBanner: 'AI providers updated.',
         errorBanner: 'Could not save that change.',
       },
+      quota: {
+        title: 'Generation limit',
+        description:
+          'A per-organization cap on AI calls, enforced in the database — protects against a runaway retry loop or a stolen session spending without limit.',
+        hourlyLabel: 'Hourly',
+        dailyLabel: 'Daily',
+        monthlyLabel: 'Monthly',
+        unlimitedLabel: 'Limit is off',
+        unlimitedDescription:
+          'Generation ignores the caps above while this is off. Nothing else about the account changes — this switch touches only the limit, never any other setting.',
+        turnOff: 'Turn limit off',
+        turnOn: 'Turn limit on',
+      },
     },
     brand: {
       title: 'Brand',

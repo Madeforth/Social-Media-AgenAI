@@ -367,6 +367,15 @@ export const tr: Dictionary = {
         formSubmit: 'Bağla',
         connectedBanner: 'Instagram hesabı bağlandı.',
         errorBanner: 'Token doğrulanamadı veya kaydedilemedi. Hesap ID ve tokenı kontrol et.',
+        syncProfile: 'Profili oku',
+        syncProfileHint:
+          'Hesabın biyografisini ve son on iki açıklamasını marka bağlamına çeker; böylece yapay zeka isimden tahmin etmek yerine bu hesabın gerçekte ne olduğundan yazar.',
+        syncedBanner: 'Instagram profili okundu.',
+        lastSynced: (date: string) => `Son okuma ${date}`,
+        neverSynced:
+          'Hiç okunmadı. Yapay zekanın bu hesabın neye benzediğine dair hiçbir bilgisi yok.',
+        bioStored: 'biyografi kayıtlı',
+        followers: 'takipçi',
       },
       ai: {
         title: 'Yapay zeka sağlayıcıları',

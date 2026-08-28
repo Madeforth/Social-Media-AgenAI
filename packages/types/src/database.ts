@@ -413,6 +413,47 @@ export type Database = {
           },
         ]
       }
+      instagram_media: {
+        Row: {
+          caption: string | null
+          external_media_id: string
+          id: string
+          media_type: string | null
+          permalink: string | null
+          posted_at: string | null
+          social_account_id: string
+          synced_at: string
+        }
+        Insert: {
+          caption?: string | null
+          external_media_id: string
+          id?: string
+          media_type?: string | null
+          permalink?: string | null
+          posted_at?: string | null
+          social_account_id: string
+          synced_at?: string
+        }
+        Update: {
+          caption?: string | null
+          external_media_id?: string
+          id?: string
+          media_type?: string | null
+          permalink?: string | null
+          posted_at?: string | null
+          social_account_id?: string
+          synced_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instagram_media_social_account_id_fkey"
+            columns: ["social_account_id"]
+            isOneToOne: false
+            referencedRelation: "social_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           body: string
@@ -744,39 +785,54 @@ export type Database = {
       social_accounts: {
         Row: {
           account_name: string
+          biography: string | null
           brand_id: string
           created_at: string
           external_account_id: string
+          followers_count: number | null
           id: string
+          media_count: number | null
           platform: Database["public"]["Enums"]["social_platform"]
+          profile_synced_at: string | null
           status: Database["public"]["Enums"]["social_account_status"]
           token_expires_at: string | null
           token_secret_ref: string
           updated_at: string
+          website: string | null
         }
         Insert: {
           account_name: string
+          biography?: string | null
           brand_id: string
           created_at?: string
           external_account_id: string
+          followers_count?: number | null
           id?: string
+          media_count?: number | null
           platform: Database["public"]["Enums"]["social_platform"]
+          profile_synced_at?: string | null
           status?: Database["public"]["Enums"]["social_account_status"]
           token_expires_at?: string | null
           token_secret_ref: string
           updated_at?: string
+          website?: string | null
         }
         Update: {
           account_name?: string
+          biography?: string | null
           brand_id?: string
           created_at?: string
           external_account_id?: string
+          followers_count?: number | null
           id?: string
+          media_count?: number | null
           platform?: Database["public"]["Enums"]["social_platform"]
+          profile_synced_at?: string | null
           status?: Database["public"]["Enums"]["social_account_status"]
           token_expires_at?: string | null
           token_secret_ref?: string
           updated_at?: string
+          website?: string | null
         }
         Relationships: [
           {

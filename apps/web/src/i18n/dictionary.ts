@@ -283,6 +283,13 @@ export interface Dictionary {
         formSubmit: string;
         connectedBanner: string;
         errorBanner: string;
+        syncProfile: string;
+        syncProfileHint: string;
+        syncedBanner: string;
+        lastSynced: (date: string) => string;
+        neverSynced: string;
+        bioStored: string;
+        followers: string;
       };
       ai: {
         title: string;

@@ -180,7 +180,9 @@ export async function getSocialAccount(): Promise<SocialAccount | null> {
   const { data } = await supabase
     .from('social_accounts')
     .select(
-      'id, brand_id, platform, account_name, external_account_id, status, token_expires_at, created_at, updated_at',
+      // Named column by column, never `*`: `token_secret_ref` has no client
+      // grant, and selecting everything is refused outright.
+      'id, brand_id, platform, account_name, external_account_id, status, token_expires_at, created_at, updated_at, biography, website, followers_count, media_count, profile_synced_at',
     )
     .eq('brand_id', brand.id)
     .eq('platform', 'INSTAGRAM')

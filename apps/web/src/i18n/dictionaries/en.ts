@@ -362,6 +362,14 @@ export const en: Dictionary = {
         formSubmit: 'Connect',
         connectedBanner: 'Instagram account connected.',
         errorBanner: 'Could not verify or save that token. Double-check the account ID and token.',
+        syncProfile: 'Read profile',
+        syncProfileHint:
+          'Pulls the account bio and the last twelve captions in as brand context, so the AI writes from what this account already is rather than guessing from its name.',
+        syncedBanner: 'Instagram profile read.',
+        lastSynced: (date: string) => `Last read ${date}`,
+        neverSynced: 'Never read. The AI has no idea what this account already looks like.',
+        bioStored: 'bio stored',
+        followers: 'followers',
       },
       ai: {
         title: 'AI providers',

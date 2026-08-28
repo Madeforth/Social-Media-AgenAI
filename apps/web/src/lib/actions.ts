@@ -582,6 +582,53 @@ export async function setConnectionModels(formData: FormData): Promise<void> {
   providerRedirect(locale, errorCode);
 }
 
+/**
+ * Pulls the connected account's bio and recent captions in as brand context.
+ *
+ * On demand rather than on a schedule: this feeds a prompt, and a snapshot from
+ * this morning is as useful as one from this second.
+ */
+export async function syncInstagramProfile(formData: FormData): Promise<void> {
+  const locale = targetLocale(formData);
+  const brand = await getCurrentBrand();
+  if (!brand) redirect(`/${locale}/settings`);
+
+  const supabase = await getServerSupabase();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session) redirect(`/${locale}/sign-in`);
+
+  let errorMessage: string | null = null;
+
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/sync-instagram-profile`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ brand_id: brand.id }),
+      },
+    );
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => null)) as { error?: unknown } | null;
+      errorMessage = (typeof payload?.error === 'string' ? payload.error : 'failed').slice(0, 300);
+    }
+  } catch {
+    errorMessage = 'network';
+  }
+
+  revalidatePath(`/${locale}/settings`);
+  redirect(
+    errorMessage
+      ? `/${locale}/settings?igError=${encodeURIComponent(errorMessage)}`
+      : `/${locale}/settings?igSynced=1`,
+  );
+}
+
 /** Validates and stores a pasted long-lived Instagram access token (Milestone 9, V1 connect flow). */
 export async function connectInstagram(formData: FormData): Promise<void> {
   const locale = targetLocale(formData);

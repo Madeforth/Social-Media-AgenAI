@@ -141,15 +141,39 @@ Deno.serve(async (req) => {
     INPUT_LIMITS.brief,
   );
 
-  const [{ data: guidelines }, { data: recentPosts }] = await Promise.all([
-    serviceClient.from('brand_guidelines').select('*').eq('brand_id', brandId).maybeSingle(),
-    serviceClient
-      .from('posts')
-      .select('concept_title, content_pillar, visual_format, created_at')
-      .eq('brand_id', brandId)
-      .order('created_at', { ascending: false })
-      .limit(10),
-  ]);
+  const [{ data: guidelines }, { data: recentPosts }, { data: instagramProfile }] =
+    await Promise.all([
+      serviceClient.from('brand_guidelines').select('*').eq('brand_id', brandId).maybeSingle(),
+      serviceClient
+        .from('posts')
+        .select('concept_title, content_pillar, visual_format, created_at')
+        .eq('brand_id', brandId)
+        .order('created_at', { ascending: false })
+        .limit(10),
+      serviceClient
+        .from('social_accounts')
+        .select('id, biography')
+        .eq('brand_id', brandId)
+        .eq('platform', 'INSTAGRAM')
+        .maybeSingle(),
+    ]);
+
+  // Captions the account has actually published. Only fetched when a snapshot
+  // exists, so a brand that has never synced pays nothing for this.
+  let instagramCaptions = '';
+  if (instagramProfile?.id) {
+    const { data: media } = await serviceClient
+      .from('instagram_media')
+      .select('caption, posted_at')
+      .eq('social_account_id', instagramProfile.id)
+      .not('caption', 'is', null)
+      .order('posted_at', { ascending: false })
+      .limit(8);
+    instagramCaptions = (media ?? [])
+      .map((row: { caption: string | null }) => row.caption)
+      .filter((caption): caption is string => Boolean(caption))
+      .join('\n---\n');
+  }
 
   const field = (value: unknown) =>
     sanitizeUserText(
@@ -173,6 +197,12 @@ Deno.serve(async (req) => {
     { label: 'FORBIDDEN_CLAIMS', content: field(guidelines?.forbidden_claims) },
     { label: 'CONTENT_PILLARS', content: field(guidelines?.content_pillars) },
     { label: 'RECENT_POSTS', content: field(recentPosts) },
+    // What the account already looks like on Instagram. Better evidence than a
+    // half-filled form: the bio is what the brand claims to be, and real
+    // captions show how it actually sounds. Both are other people's text, which
+    // is exactly why they sit inside the untrusted boundary.
+    { label: 'INSTAGRAM_BIO', content: field(instagramProfile?.biography) },
+    { label: 'INSTAGRAM_RECENT_CAPTIONS', content: field(instagramCaptions) },
     { label: 'BRIEF', content: brief.text },
   ];
 

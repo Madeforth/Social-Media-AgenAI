@@ -8,6 +8,7 @@ import { SubmitButton } from '@/components/ui/submit-button';
 import {
   addAiProvider,
   connectInstagram,
+  syncInstagramProfile,
   deleteAiProvider,
   createOrganizationAndBrand,
   signOutAction,
@@ -18,12 +19,14 @@ import {
 import { getCurrentUser } from '@/lib/auth';
 import { getAiProviderStateWithModels, getCurrentBrand, getSocialAccount } from '@/lib/data';
 import { getI18n } from '@/i18n/get-dictionary';
+import { formatDate } from '@/lib/format';
 
 interface PageParams {
   params: Promise<{ locale: string }>;
   searchParams: Promise<{
     igConnected?: string;
     igError?: string;
+    igSynced?: string;
     providerSaved?: string;
     providerError?: string;
   }>;
@@ -57,14 +60,15 @@ function Row({
 
 export default async function SettingsPage({ params, searchParams }: PageParams) {
   const { locale } = await params;
-  const { igConnected, igError, providerSaved, providerError } = await searchParams;
-  const [brand, user, socialAccount, aiState, { dictionary }] = await Promise.all([
-    getCurrentBrand(),
-    getCurrentUser(),
-    getSocialAccount(),
-    getAiProviderStateWithModels(),
-    getI18n(locale),
-  ]);
+  const { igConnected, igError, igSynced, providerSaved, providerError } = await searchParams;
+  const [brand, user, socialAccount, aiState, { dictionary, locale: activeLocale }] =
+    await Promise.all([
+      getCurrentBrand(),
+      getCurrentUser(),
+      getSocialAccount(),
+      getAiProviderStateWithModels(),
+      getI18n(locale),
+    ]);
   const copy = dictionary.settings;
   const igCopy = copy.integrations.instagram;
   const aiCopy = copy.integrations.ai;
@@ -106,17 +110,53 @@ export default async function SettingsPage({ params, searchParams }: PageParams)
               {igCopy.connectedBanner}
             </p>
           ) : null}
-          {igError ? (
-            <p className="mx-5 mt-4 rounded-md border border-red-900/50 bg-red-950/30 px-3 py-2 text-xs text-red-300">
-              {igCopy.errorBanner}
+          {igSynced ? (
+            <p className="mx-5 mt-4 rounded-md border border-accent/30 bg-accent-soft px-3 py-2 text-xs text-accent">
+              {igCopy.syncedBanner}
             </p>
           ) : null}
+          {igError ? (
+            <div className="mx-5 mt-4 rounded-md border border-red-900/50 bg-red-950/30 px-3 py-2">
+              <p className="text-xs text-red-300">{igCopy.errorBanner}</p>
+              {igError !== 'failed' && igError !== 'network' ? (
+                <p className="mt-1 break-words text-xs text-red-200/80">{igError}</p>
+              ) : null}
+            </div>
+          ) : null}
           {socialAccount?.status === 'CONNECTED' ? (
-            <Row
-              title={igCopy.title}
-              description={igCopy.connected(socialAccount.account_name)}
-              action={<span className="text-xs text-text-muted">{copy.account.signedInAs}</span>}
-            />
+            <div className="flex flex-col gap-3 px-5 py-4">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="text-sm text-text-primary">{igCopy.title}</p>
+                  <p className="mt-0.5 text-xs text-text-secondary">
+                    {igCopy.connected(socialAccount.account_name)}
+                  </p>
+                </div>
+                <form action={syncInstagramProfile} className="flex flex-col items-end gap-2">
+                  <input type="hidden" name="locale" value={locale} />
+                  <SubmitButton
+                    label={igCopy.syncProfile}
+                    pendingLabel={dictionary.pending.syncButton}
+                    variant="secondary"
+                    size="sm"
+                  />
+                </form>
+              </div>
+
+              <p className="text-xs text-text-muted">{igCopy.syncProfileHint}</p>
+
+              {socialAccount.profile_synced_at ? (
+                <p className="text-xs text-text-secondary">
+                  {igCopy.lastSynced(formatDate(socialAccount.profile_synced_at, activeLocale))}
+                  {socialAccount.biography ? ` · ${igCopy.bioStored}` : ''}
+                  {typeof socialAccount.followers_count === 'number'
+                    ? ` · ${socialAccount.followers_count} ${igCopy.followers}`
+                    : ''}
+                </p>
+              ) : (
+                <p className="text-xs text-text-muted">{igCopy.neverSynced}</p>
+              )}
+            </div>
           ) : (
             <div className="px-5 py-4">
               <p className="text-sm text-text-primary">{igCopy.title}</p>

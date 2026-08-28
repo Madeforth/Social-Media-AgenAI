@@ -221,7 +221,7 @@ export async function generatePost(formData: FormData): Promise<void> {
           brief: brief || undefined,
           forced_content_pillar: forcedContentPillar || undefined,
           forced_visual_format: forcedVisualFormat || undefined,
-          language: language === 'tr' ? 'Turkish' : language === 'en' ? 'English' : undefined,
+          language: language || undefined,
         }),
       },
     );

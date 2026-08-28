@@ -141,7 +141,7 @@ export const en: Dictionary = {
       publishDate: 'Publish date',
       language: 'Language',
     },
-    languages: { english: 'English', turkish: 'Türkçe' },
+    languages: { english: 'English', turkish: 'Türkçe', both: 'Turkish + English' },
     fieldsNotice: 'Leave a field on "let the AI decide" to skip it.',
     generateButton: 'Generate content',
     generatingButton: 'Generating…',
@@ -427,7 +427,7 @@ export const en: Dictionary = {
     },
   },
   signIn: {
-    title: 'Sign in to Apex Social AI',
+    title: 'Sign in to Madeforth Social AI',
     subtitle: 'Use your Google account to continue.',
     continueWithGoogle: 'Continue with Google',
   },

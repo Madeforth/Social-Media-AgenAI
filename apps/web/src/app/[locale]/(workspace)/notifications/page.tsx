@@ -17,7 +17,7 @@ interface PageParams {
 export async function generateMetadata({ params }: PageParams) {
   const { locale } = await params;
   const { dictionary } = await getI18n(locale);
-  return { title: `${dictionary.notificationsPage.title} · Apex Social AI` };
+  return { title: `${dictionary.notificationsPage.title} · Madeforth Social AI` };
 }
 
 export default async function NotificationsPage({ params }: PageParams) {

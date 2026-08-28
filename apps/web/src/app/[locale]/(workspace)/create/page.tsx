@@ -21,7 +21,7 @@ interface PageParams {
 export async function generateMetadata({ params }: PageParams) {
   const { locale } = await params;
   const { dictionary } = await getI18n(locale);
-  return { title: `${dictionary.meta.create} · Apex Social AI` };
+  return { title: `${dictionary.meta.create} · Madeforth Social AI` };
 }
 
 function FieldShell({
@@ -170,6 +170,7 @@ export default async function CreatePage({
                 <select name="language" defaultValue={locale} className={INPUT_CLASS}>
                   <option value="en">{copy.languages.english}</option>
                   <option value="tr">{copy.languages.turkish}</option>
+                  <option value="both">{copy.languages.both}</option>
                 </select>
               </FieldShell>
             </div>

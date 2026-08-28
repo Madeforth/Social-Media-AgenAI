@@ -28,7 +28,7 @@ export function Topbar({ brandName, userEmail, labels, unreadNotificationCount }
         <div className="flex items-center gap-2.5 lg:hidden">
           <ApexMarkIcon className="h-5 w-5 text-accent" />
           <span className="text-sm font-semibold tracking-wide text-text-primary">
-            {brandName ?? 'APEX SOCIAL AI'}
+            {brandName ?? 'MADEFORTH SOCIAL AI'}
           </span>
         </div>
 

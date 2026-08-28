@@ -1,4 +1,4 @@
-# CLAUDE.md — Apex Social AI
+# CLAUDE.md — Madeforth Social AI
 
 ## Role
 

@@ -41,7 +41,7 @@ export function Sidebar({ brandName, labels }: SidebarProps) {
       <div className="flex items-center gap-2.5 px-5 py-5">
         <ApexMarkIcon className="h-6 w-6 text-accent" />
         <span className="text-sm font-semibold tracking-wide text-text-primary">
-          APEX SOCIAL AI
+          MADEFORTH SOCIAL AI
         </span>
       </div>
 

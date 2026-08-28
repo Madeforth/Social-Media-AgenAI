@@ -171,7 +171,7 @@ export const en: MobileDictionary = {
     publishError: 'Publishing failed. Check the connected account and try again.',
   },
   signIn: {
-    title: 'Sign in to Apex Social AI',
+    title: 'Sign in to Madeforth Social AI',
     subtitle: 'Use your Google account to continue.',
     continueWithGoogle: 'Continue with Google',
   },
@@ -414,7 +414,7 @@ export const tr: MobileDictionary = {
     publishError: 'Yayınlama başarısız oldu. Bağlı hesabı kontrol edip tekrar dene.',
   },
   signIn: {
-    title: "Apex Social AI'a giriş yap",
+    title: "Madeforth Social AI'a giriş yap",
     subtitle: 'Devam etmek için Google hesabını kullan.',
     continueWithGoogle: 'Google ile devam et',
   },

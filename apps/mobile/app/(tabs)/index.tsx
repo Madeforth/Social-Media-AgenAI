@@ -33,7 +33,7 @@ export default function HomeScreen() {
       <View style={styles.header}>
         <View style={styles.brand}>
           <ApexMarkIcon color={tokens.color.accent} size={20} />
-          <Text style={styles.brandName}>{brand.data?.name ?? 'Apex Social AI'}</Text>
+          <Text style={styles.brandName}>{brand.data?.name ?? 'Madeforth Social AI'}</Text>
         </View>
       </View>
 

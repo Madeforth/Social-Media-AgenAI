@@ -36,7 +36,9 @@ interface PageParams {
 export async function generateMetadata({ params }: PageParams) {
   const { locale, postId } = await params;
   const [post, i18n] = await Promise.all([getPost(postId), getI18n(locale)]);
-  return { title: `${post?.concept_title ?? i18n.dictionary.meta.postFallback} · Apex Social AI` };
+  return {
+    title: `${post?.concept_title ?? i18n.dictionary.meta.postFallback} · Madeforth Social AI`,
+  };
 }
 
 function Field({

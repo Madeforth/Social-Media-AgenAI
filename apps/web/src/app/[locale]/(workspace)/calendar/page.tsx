@@ -16,7 +16,7 @@ interface PageParams {
 export async function generateMetadata({ params }: PageParams) {
   const { locale } = await params;
   const { dictionary } = await getI18n(locale);
-  return { title: `${dictionary.meta.calendar} · Apex Social AI` };
+  return { title: `${dictionary.meta.calendar} · Madeforth Social AI` };
 }
 
 /** The date a post occupies on the calendar: when it published, else when it is due. */

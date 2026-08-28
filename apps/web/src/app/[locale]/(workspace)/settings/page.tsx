@@ -28,7 +28,7 @@ interface PageParams {
 export async function generateMetadata({ params }: PageParams) {
   const { locale } = await params;
   const { dictionary } = await getI18n(locale);
-  return { title: `${dictionary.meta.settings} · Apex Social AI` };
+  return { title: `${dictionary.meta.settings} · Madeforth Social AI` };
 }
 
 function Row({

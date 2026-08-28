@@ -15,7 +15,7 @@ interface PageParams {
 export async function generateMetadata({ params }: PageParams) {
   const { locale } = await params;
   const { dictionary } = await getI18n(locale);
-  return { title: `${dictionary.brandBrain.editForm.title} · Apex Social AI` };
+  return { title: `${dictionary.brandBrain.editForm.title} · Madeforth Social AI` };
 }
 
 const lines = (values: string[] | undefined): string => (values ?? []).join('\n');
@@ -32,7 +32,10 @@ export default async function EditBrandBrainPage({ params }: PageParams) {
   if (!brand) redirect(`/${locale}/settings`);
 
   const pillarLines = (guidelines?.content_pillars ?? [])
-    .map((pillar) => `${pillar.name} | ${pillar.description} | ${Math.round(pillar.target_share * 100)}`)
+    .map(
+      (pillar) =>
+        `${pillar.name} | ${pillar.description} | ${Math.round(pillar.target_share * 100)}`,
+    )
     .join('\n');
 
   return (
@@ -89,7 +92,10 @@ export default async function EditBrandBrainPage({ params }: PageParams) {
                 <Textarea name="toneDont" defaultValue={lines(guidelines?.tone_of_voice?.dont)} />
               </FieldLabel>
               <FieldLabel label={copy.fields.copyLanguage}>
-                <Input name="copyLanguage" defaultValue={guidelines?.copy_rules?.language ?? locale} />
+                <Input
+                  name="copyLanguage"
+                  defaultValue={guidelines?.copy_rules?.language ?? locale}
+                />
               </FieldLabel>
               <FieldLabel label={copy.fields.readingLevel}>
                 <Input
@@ -140,10 +146,7 @@ export default async function EditBrandBrainPage({ params }: PageParams) {
           <CardDivider />
           <div className="p-5">
             <FieldLabel label={copy.fields.forbiddenClaims} hint={copy.listHint}>
-              <Textarea
-                name="forbiddenClaims"
-                defaultValue={lines(guidelines?.forbidden_claims)}
-              />
+              <Textarea name="forbiddenClaims" defaultValue={lines(guidelines?.forbidden_claims)} />
             </FieldLabel>
           </div>
         </Card>

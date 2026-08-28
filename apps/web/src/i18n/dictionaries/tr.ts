@@ -143,7 +143,7 @@ export const tr: Dictionary = {
       publishDate: 'Yayın tarihi',
       language: 'Dil',
     },
-    languages: { english: 'İngilizce', turkish: 'Türkçe' },
+    languages: { english: 'İngilizce', turkish: 'Türkçe', both: 'Türkçe + İngilizce' },
     fieldsNotice: 'Bir alanı "Yapay zeka karar versin" olarak bırakmak onu atlar.',
     generateButton: 'İçerik oluştur',
     generatingButton: 'Oluşturuluyor…',
@@ -432,7 +432,7 @@ export const tr: Dictionary = {
     },
   },
   signIn: {
-    title: "Apex Social AI'a giriş yap",
+    title: "Madeforth Social AI'a giriş yap",
     subtitle: 'Devam etmek için Google hesabını kullan.',
     continueWithGoogle: 'Google ile devam et',
   },

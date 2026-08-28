@@ -32,7 +32,7 @@ interface PageParams {
 export async function generateMetadata({ params }: PageParams) {
   const { locale } = await params;
   const { dictionary } = await getI18n(locale);
-  return { title: `${dictionary.meta.dashboard} · Apex Social AI` };
+  return { title: `${dictionary.meta.dashboard} · Madeforth Social AI` };
 }
 
 function UpcomingRow({

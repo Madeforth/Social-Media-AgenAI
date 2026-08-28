@@ -29,7 +29,7 @@ function isAuthorizedBySiteBasicAuth(request: NextRequest): boolean {
 function siteBasicAuthChallenge(): NextResponse {
   return new NextResponse('Authentication required', {
     status: 401,
-    headers: { 'www-authenticate': 'Basic realm="Apex Social AI"' },
+    headers: { 'www-authenticate': 'Basic realm="Madeforth Social AI"' },
   });
 }
 

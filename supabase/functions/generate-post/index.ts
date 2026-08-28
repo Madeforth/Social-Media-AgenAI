@@ -187,10 +187,19 @@ Deno.serve(async (req) => {
     directives.push(`The content pillar MUST be exactly: ${forcedContentPillar}`);
   if (forcedVisualFormat)
     directives.push(`The visual_format MUST be exactly: ${forcedVisualFormat}`);
-  if (language)
+  if (language === 'tr') {
+    directives.push('Write every copy field (headline, supporting_copy, caption, cta) in Turkish.');
+  } else if (language === 'en') {
+    directives.push('Write every copy field (headline, supporting_copy, caption, cta) in English.');
+  } else if (language === 'both') {
     directives.push(
-      `Write every copy field (headline, supporting_copy, caption, cta) in ${language}.`,
+      'Write headline, supporting_copy and cta in English only.',
+      'For caption specifically: write the full caption in English first, then on its own new ' +
+        'blank line write "— Türkçe —" followed by the complete Turkish translation of that same ' +
+        'caption. Both languages must convey the same message — this is not a partial or ' +
+        'summarized translation.',
     );
+  }
 
   const userPrompt = [renderUntrusted(untrustedBlocks), ...directives].join('\n\n');
 

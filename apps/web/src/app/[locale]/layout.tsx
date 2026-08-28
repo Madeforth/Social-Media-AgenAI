@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: LocaleLayoutProps): Promise<M
   const { locale } = await params;
   const dict = await getDictionary(locale);
   return {
-    title: 'Apex Social AI',
+    title: 'Madeforth Social AI',
     description: dict.meta.rootDescription,
   };
 }

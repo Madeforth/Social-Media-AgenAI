@@ -82,12 +82,12 @@ export const ChevronRightIcon = (props: IconProps) => (
 export const ApexMarkIcon = ({ size = 22, color }: IconProps) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
-      d="M12 3l8 18h-4.2L12 11.6 8.2 21H4z"
+      d="M4 20V4l8 10 8-10v16"
       stroke={color}
-      strokeWidth={1.6}
+      strokeWidth={1.8}
+      strokeLinecap="round"
       strokeLinejoin="round"
     />
-    <Path d="M9.6 15h4.8" stroke={color} strokeWidth={1.6} strokeLinecap="round" />
   </Svg>
 );
 

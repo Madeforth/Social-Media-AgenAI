@@ -102,7 +102,7 @@ export interface Dictionary {
       publishDate: string;
       language: string;
     };
-    languages: { english: string; turkish: string };
+    languages: { english: string; turkish: string; both: string };
     fieldsNotice: string;
     generateButton: string;
     generatingButton: string;

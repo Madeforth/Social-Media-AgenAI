@@ -1,4 +1,4 @@
-# Apex Social AI — Project Starter Pack
+# Madeforth Social AI — Project Starter Pack
 
 A serverless-first, AI-native social media operating system for web, iOS and Android.
 

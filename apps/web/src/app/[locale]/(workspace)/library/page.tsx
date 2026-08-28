@@ -20,7 +20,7 @@ interface PageParams {
 export async function generateMetadata({ params }: PageParams) {
   const { locale } = await params;
   const { dictionary } = await getI18n(locale);
-  return { title: `${dictionary.meta.library} · Apex Social AI` };
+  return { title: `${dictionary.meta.library} · Madeforth Social AI` };
 }
 
 function isPostStatus(value: string | undefined): value is PostStatus {

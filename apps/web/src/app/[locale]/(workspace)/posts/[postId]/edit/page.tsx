@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: PageParams) {
   const { locale, postId } = await params;
   const [post, { dictionary }] = await Promise.all([getPost(postId), getI18n(locale)]);
   return {
-    title: `${dictionary.postDetail.edit} · ${post?.concept_title ?? dictionary.meta.postFallback} · Apex Social AI`,
+    title: `${dictionary.postDetail.edit} · ${post?.concept_title ?? dictionary.meta.postFallback} · Madeforth Social AI`,
   };
 }
 

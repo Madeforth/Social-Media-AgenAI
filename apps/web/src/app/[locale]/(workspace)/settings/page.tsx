@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardDivider, CardHeader } from '@/components/ui/card';
 import { FieldLabel, Input, Select } from '@/components/ui/field';
 import { PageHeader } from '@/components/ui/page-header';
+import { PendingBar } from '@/components/ui/pending-bar';
+import { SubmitButton } from '@/components/ui/submit-button';
 import {
   connectGemini,
   connectInstagram,
@@ -142,9 +144,10 @@ export default async function SettingsPage({ params, searchParams }: PageParams)
                     <Input name="accessToken" type="password" required />
                   </FieldLabel>
                   <div className="sm:col-span-3">
-                    <Button type="submit" variant="primary">
-                      {igCopy.formSubmit}
-                    </Button>
+                    <SubmitButton
+                      label={igCopy.formSubmit}
+                      pendingLabel={dictionary.pending.verifyButton}
+                    />
                   </div>
                 </form>
               ) : null}
@@ -218,8 +221,16 @@ export default async function SettingsPage({ params, searchParams }: PageParams)
                       </FieldLabel>
                     </div>
                     <p className="text-xs text-text-muted">{modelCopy.imageBillingNote}</p>
+                    <PendingBar
+                      message={dictionary.pending.verifying}
+                      elapsedSuffix={dictionary.pending.elapsedSuffix}
+                    />
                     <div>
-                      <Button type="submit">{modelCopy.submit}</Button>
+                      <SubmitButton
+                        label={modelCopy.submit}
+                        pendingLabel={dictionary.pending.verifyButton}
+                        variant="secondary"
+                      />
                     </div>
                   </form>
                 ) : (
@@ -239,9 +250,10 @@ export default async function SettingsPage({ params, searchParams }: PageParams)
                       <Input name="apiKey" type="password" required />
                     </FieldLabel>
                   </div>
-                  <Button type="submit" variant="primary">
-                    {geminiCopy.formSubmit}
-                  </Button>
+                  <SubmitButton
+                    label={geminiCopy.formSubmit}
+                    pendingLabel={dictionary.pending.verifyButton}
+                  />
                 </form>
               ) : null}
             </div>

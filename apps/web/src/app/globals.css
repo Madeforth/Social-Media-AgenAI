@@ -52,3 +52,29 @@ body {
   background: var(--apex-accent-soft);
   color: var(--apex-text-primary);
 }
+
+/*
+ * Indeterminate progress sweep. Used by PendingBar while a server action runs.
+ * It sweeps rather than fills because nothing here reports real progress — the
+ * request is one call that either returns or does not.
+ */
+@keyframes apex-indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
+}
+
+.animate-indeterminate {
+  animation: apex-indeterminate 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-indeterminate {
+    animation: none;
+    width: 100%;
+    opacity: 0.5;
+  }
+}

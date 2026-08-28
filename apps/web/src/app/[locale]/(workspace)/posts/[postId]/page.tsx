@@ -13,6 +13,8 @@ import { Button, ButtonLink } from '@/components/ui/button';
 import { Card, CardDivider, CardHeader } from '@/components/ui/card';
 import { CreativePreview } from '@/components/ui/creative-preview';
 import { StatusChip } from '@/components/ui/status-chip';
+import { PendingBar } from '@/components/ui/pending-bar';
+import { SubmitButton } from '@/components/ui/submit-button';
 import { getI18n } from '@/i18n/get-dictionary';
 import {
   approvePost,
@@ -125,38 +127,44 @@ export default async function PostDetailPage({ params, searchParams }: PageParam
             <form action={requestRevision}>
               <input type="hidden" name="locale" value={locale} />
               <input type="hidden" name="postId" value={post.id} />
-              <Button type="submit" size="md">
-                {copy.requestRevision}
-              </Button>
+              <SubmitButton
+                label={copy.requestRevision}
+                pendingLabel={dictionary.pending.saveButton}
+                variant="secondary"
+              />
             </form>
           ) : null}
           {canApprove ? (
             <form action={approvePost}>
               <input type="hidden" name="locale" value={locale} />
               <input type="hidden" name="postId" value={post.id} />
-              <Button type="submit" variant="primary" size="md">
-                <CheckIcon className="h-4 w-4" />
-                {copy.approve}
-              </Button>
+              <SubmitButton
+                label={copy.approve}
+                pendingLabel={dictionary.pending.saveButton}
+                icon={<CheckIcon className="h-4 w-4" />}
+              />
             </form>
           ) : null}
           {canPublish ? (
             <form action={publishPost}>
               <input type="hidden" name="locale" value={locale} />
               <input type="hidden" name="postId" value={post.id} />
-              <Button type="submit" variant="primary" size="md">
-                {copy.publishNow}
-              </Button>
+              <SubmitButton
+                label={copy.publishNow}
+                pendingLabel={dictionary.pending.publishButton}
+              />
             </form>
           ) : null}
           {post.status === 'PUBLISHED' ? (
             <form action={syncMetrics}>
               <input type="hidden" name="locale" value={locale} />
               <input type="hidden" name="postId" value={post.id} />
-              <Button type="submit" size="md">
-                <RefreshIcon className="h-4 w-4" />
-                {copy.syncMetrics}
-              </Button>
+              <SubmitButton
+                label={copy.syncMetrics}
+                pendingLabel={dictionary.pending.syncButton}
+                variant="secondary"
+                icon={<RefreshIcon className="h-4 w-4" />}
+              />
             </form>
           ) : null}
         </div>
@@ -198,11 +206,20 @@ export default async function PostDetailPage({ params, searchParams }: PageParam
               className="mt-1.5 w-full resize-none rounded-md border border-border-subtle bg-surface-raised px-3 py-2 text-sm text-text-primary outline-none placeholder:text-text-muted focus:border-accent"
             />
           </label>
-          <Button type="submit" size="md">
-            <RefreshIcon className="h-4 w-4" />
-            {copy.regenerate}
-          </Button>
+          <SubmitButton
+            label={copy.regenerate}
+            pendingLabel={dictionary.pending.generateButton}
+            variant="secondary"
+            icon={<RefreshIcon className="h-4 w-4" />}
+          />
         </form>
+        <div className="px-5 pb-5">
+          <PendingBar
+            message={dictionary.pending.generating}
+            elapsedSuffix={dictionary.pending.elapsedSuffix}
+            slowNotice={dictionary.pending.slowNotice}
+          />
+        </div>
       </Card>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,420px)_1fr]">
@@ -219,13 +236,21 @@ export default async function PostDetailPage({ params, searchParams }: PageParam
               {copy.uiAssetNotice}
             </p>
           ) : null}
-          <form action={generateImage}>
+          <form action={generateImage} className="flex flex-col gap-3">
             <input type="hidden" name="locale" value={locale} />
             <input type="hidden" name="postId" value={post.id} />
-            <Button type="submit" variant="secondary" className="w-full">
-              <SparkIcon className="h-4 w-4" />
-              {imageUrl ? copy.regenerateImage : copy.generateImage}
-            </Button>
+            <SubmitButton
+              label={imageUrl ? copy.regenerateImage : copy.generateImage}
+              pendingLabel={dictionary.pending.imageButton}
+              variant="secondary"
+              className="w-full"
+              icon={<SparkIcon className="h-4 w-4" />}
+            />
+            <PendingBar
+              message={dictionary.pending.generatingImage}
+              elapsedSuffix={dictionary.pending.elapsedSuffix}
+              slowNotice={dictionary.pending.slowNotice}
+            />
           </form>
         </div>
 

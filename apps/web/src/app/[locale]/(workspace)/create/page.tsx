@@ -2,9 +2,10 @@ import { VISUAL_FORMATS } from '@apex/types';
 
 import { PencilIcon, SparkIcon } from '@/components/icons';
 import { LocaleLink } from '@/components/locale-link';
-import { Button } from '@/components/ui/button';
 import { Card, CardDivider, CardHeader } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
+import { PendingBar } from '@/components/ui/pending-bar';
+import { SubmitButton } from '@/components/ui/submit-button';
 import { getI18n } from '@/i18n/get-dictionary';
 import { generatePost } from '@/lib/actions';
 import { cn } from '@/lib/cn';
@@ -177,12 +178,20 @@ export default async function CreatePage({
           </div>
 
           <CardDivider />
-          <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-            <p className="text-xs text-text-muted">{copy.fieldsNotice}</p>
-            <Button type="submit" variant="primary">
-              <SparkIcon className="h-4 w-4" />
-              {copy.generateButton}
-            </Button>
+          <div className="flex flex-col gap-4 px-5 py-4">
+            <PendingBar
+              message={dictionary.pending.generating}
+              elapsedSuffix={dictionary.pending.elapsedSuffix}
+              slowNotice={dictionary.pending.slowNotice}
+            />
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs text-text-muted">{copy.fieldsNotice}</p>
+              <SubmitButton
+                label={copy.generateButton}
+                pendingLabel={dictionary.pending.generateButton}
+                icon={<SparkIcon className="h-4 w-4" />}
+              />
+            </div>
           </div>
         </form>
       </Card>

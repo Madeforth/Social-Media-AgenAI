@@ -14,6 +14,24 @@ export interface Dictionary {
     postFallback: string;
     rootDescription: string;
   };
+  pending: {
+    elapsedSuffix: string;
+    slowNotice: string;
+    generating: string;
+    generatingImage: string;
+    publishing: string;
+    syncing: string;
+    verifying: string;
+    saving: string;
+    uploading: string;
+    generateButton: string;
+    imageButton: string;
+    publishButton: string;
+    syncButton: string;
+    verifyButton: string;
+    saveButton: string;
+    uploadButton: string;
+  };
   nav: {
     primaryNavigation: string;
     dashboard: string;

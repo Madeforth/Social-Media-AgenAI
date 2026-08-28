@@ -61,9 +61,17 @@ export interface ContentProposal {
 // From packages/ai/src/models.ts
 // ---------------------------------------------------------------------------
 
-export const GEMINI_TEXT_MODEL = 'gemini-2.5-pro';
-export const GEMINI_FAST_TEXT_MODEL = 'gemini-2.5-flash';
-export const GEMINI_IMAGE_MODEL = 'gemini-2.5-flash-image';
+// Fallbacks. An organization's own choice in `ai_provider_keys` wins when set.
+//
+// Pinning broke this once: `gemini-2.5-pro` and `gemini-2.5-flash` were retired
+// mid-flight with "no longer available to new users". Verify any replacement
+// with a real generateContent call — ListModels still advertises dead models.
+export const GEMINI_TEXT_MODEL = 'gemini-3.6-flash';
+export const GEMINI_FAST_TEXT_MODEL = 'gemini-3.1-flash-lite';
+
+// Image generation needs a billed key; every image model returns 429 on the
+// free tier.
+export const GEMINI_IMAGE_MODEL = 'gemini-3.1-flash-image';
 export const AI_PROVIDER = 'google' as const;
 
 // ---------------------------------------------------------------------------
@@ -428,6 +436,31 @@ export async function resolveGeminiApiKey(
   }
 
   return Deno.env.get('GEMINI_API_KEY') ?? null;
+}
+
+/**
+ * The models this organization runs on.
+ *
+ * Falls back to the code defaults when the organization has not chosen, so an
+ * org that never opens Settings keeps working. Reads through the client it is
+ * given — callers pass the service-role client, since `ai_provider_keys` has no
+ * client write policy and the choice is server-side configuration.
+ */
+export async function resolveGeminiModels(
+  client: any,
+  organizationId: string,
+): Promise<{ textModel: string; imageModel: string }> {
+  const { data } = await client
+    .from('ai_provider_keys')
+    .select('text_model, image_model')
+    .eq('organization_id', organizationId)
+    .eq('provider', 'GEMINI')
+    .maybeSingle();
+
+  return {
+    textModel: data?.text_model ?? GEMINI_TEXT_MODEL,
+    imageModel: data?.image_model ?? GEMINI_IMAGE_MODEL,
+  };
 }
 
 export function findForbiddenClaims(

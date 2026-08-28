@@ -84,6 +84,54 @@ export async function getGeminiKeyConnected(): Promise<boolean> {
   return Boolean(data);
 }
 
+export interface GeminiModelOptions {
+  text: string[];
+  image: string[];
+  selected: { text_model: string | null; image_model: string | null };
+  defaults: { text_model: string; image_model: string };
+}
+
+/**
+ * The Gemini models this organization's own key can reach.
+ *
+ * Listed live rather than hardcoded: Google retires model ids without warning —
+ * `gemini-2.5-pro` and `gemini-2.5-flash` both went to 404 mid-flight — and a
+ * dropdown built from a stale constant would offer a model that fails on use.
+ *
+ * Returns null when the list cannot be fetched (no key, or the API refused).
+ * The caller renders the saved selection anyway, since a listing failure does
+ * not invalidate a choice that is already stored.
+ */
+export async function getGeminiModelOptions(): Promise<GeminiModelOptions | null> {
+  const brand = await getCurrentBrand();
+  if (!brand) return null;
+
+  const supabase = await getServerSupabase();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session) return null;
+
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/gemini-models`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ action: 'list', brand_id: brand.id }),
+        cache: 'no-store',
+      },
+    );
+    if (!response.ok) return null;
+    return (await response.json()) as GeminiModelOptions;
+  } catch {
+    return null;
+  }
+}
+
 /** The brand's connected Instagram account, if any. Never selects `token_secret_ref`. */
 export async function getSocialAccount(): Promise<SocialAccount | null> {
   const brand = await getCurrentBrand();

@@ -4,7 +4,11 @@ import {
   createServerClient as createSupabaseSsrServerClient,
   type CookieMethodsServer,
 } from '@supabase/ssr';
-import { createClient, type SupabaseClient, type SupabaseClientOptions } from '@supabase/supabase-js';
+import {
+  createClient,
+  type SupabaseClient,
+  type SupabaseClientOptions,
+} from '@supabase/supabase-js';
 
 import { assertSupabaseConfig, type SupabasePublicConfig } from './env';
 

@@ -360,6 +360,21 @@ export const tr: Dictionary = {
         formSubmit: 'Bağla',
         connectedBanner: 'Gemini API anahtarı bağlandı.',
         errorBanner: 'Anahtar doğrulanamadı veya kaydedilemedi.',
+        models: {
+          title: 'Modeller',
+          description:
+            'Bu organizasyonun hangi Gemini modelleriyle çalışacağı. Liste doğrudan senin anahtarından çekiliyor, böylece kullanımdan kaldırılan bir model üretim sırasında patlamak yerine buradan kayboluyor. Metin modeli kaydedilmeden önce gerçek bir çağrıyla sınanıyor.',
+          textLabel: 'Metin ve strateji',
+          imageLabel: 'Görsel üretimi',
+          useDefault: 'Varsayılanı kullan',
+          defaultSuffix: 'varsayılan',
+          submit: 'Modelleri kaydet',
+          savedBanner: 'Model seçimi kaydedildi.',
+          errorBanner: 'Seçim kaydedilemedi.',
+          listError: 'Anahtarınla model listesi alınamadı. Kayıtlı seçim geçerliliğini koruyor.',
+          imageBillingNote:
+            'Görsel modelleri, bu anahtarın bağlı olduğu Google hesabında faturalandırma açık olmasını gerektiriyor. Açık değilse her görsel modeli kota hatası döndürür.',
+        },
       },
     },
     brand: {

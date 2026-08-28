@@ -276,6 +276,19 @@ export interface Dictionary {
         formSubmit: string;
         connectedBanner: string;
         errorBanner: string;
+        models: {
+          title: string;
+          description: string;
+          textLabel: string;
+          imageLabel: string;
+          useDefault: string;
+          defaultSuffix: string;
+          submit: string;
+          savedBanner: string;
+          errorBanner: string;
+          listError: string;
+          imageBillingNote: string;
+        };
       };
     };
     brand: {

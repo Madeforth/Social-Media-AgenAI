@@ -2,17 +2,23 @@ import { PlugIcon } from '@/components/icons';
 import { LocaleLink } from '@/components/locale-link';
 import { Button } from '@/components/ui/button';
 import { Card, CardDivider, CardHeader } from '@/components/ui/card';
-import { FieldLabel, Input } from '@/components/ui/field';
+import { FieldLabel, Input, Select } from '@/components/ui/field';
 import { PageHeader } from '@/components/ui/page-header';
 import {
   connectGemini,
   connectInstagram,
   createOrganizationAndBrand,
+  selectGeminiModels,
   signOutAction,
   updateBrand,
 } from '@/lib/actions';
 import { getCurrentUser } from '@/lib/auth';
-import { getCurrentBrand, getGeminiKeyConnected, getSocialAccount } from '@/lib/data';
+import {
+  getCurrentBrand,
+  getGeminiKeyConnected,
+  getGeminiModelOptions,
+  getSocialAccount,
+} from '@/lib/data';
 import { getI18n } from '@/i18n/get-dictionary';
 
 interface PageParams {
@@ -22,6 +28,8 @@ interface PageParams {
     igError?: string;
     geminiConnected?: string;
     geminiError?: string;
+    modelsSaved?: string;
+    modelsError?: string;
   }>;
 }
 
@@ -53,17 +61,21 @@ function Row({
 
 export default async function SettingsPage({ params, searchParams }: PageParams) {
   const { locale } = await params;
-  const { igConnected, igError, geminiConnected, geminiError } = await searchParams;
-  const [brand, user, socialAccount, geminiKeyConnected, { dictionary }] = await Promise.all([
-    getCurrentBrand(),
-    getCurrentUser(),
-    getSocialAccount(),
-    getGeminiKeyConnected(),
-    getI18n(locale),
-  ]);
+  const { igConnected, igError, geminiConnected, geminiError, modelsSaved, modelsError } =
+    await searchParams;
+  const [brand, user, socialAccount, geminiKeyConnected, modelOptions, { dictionary }] =
+    await Promise.all([
+      getCurrentBrand(),
+      getCurrentUser(),
+      getSocialAccount(),
+      getGeminiKeyConnected(),
+      getGeminiModelOptions(),
+      getI18n(locale),
+    ]);
   const copy = dictionary.settings;
   const igCopy = copy.integrations.instagram;
   const geminiCopy = copy.integrations.gemini;
+  const modelCopy = geminiCopy.models;
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6">
@@ -149,11 +161,72 @@ export default async function SettingsPage({ params, searchParams }: PageParams)
             </p>
           ) : null}
           {geminiKeyConnected ? (
-            <Row
-              title={geminiCopy.title}
-              description={geminiCopy.connected}
-              action={<span className="text-xs text-text-muted">{geminiCopy.serverSide}</span>}
-            />
+            <>
+              <Row
+                title={geminiCopy.title}
+                description={geminiCopy.connected}
+                action={<span className="text-xs text-text-muted">{geminiCopy.serverSide}</span>}
+              />
+              <div className="px-5 py-4">
+                <p className="text-sm text-text-primary">{modelCopy.title}</p>
+                <p className="mt-0.5 text-xs text-text-secondary">{modelCopy.description}</p>
+
+                {modelsSaved ? (
+                  <p className="mt-3 rounded-md border border-accent/30 bg-accent-soft px-3 py-2 text-xs text-accent">
+                    {modelCopy.savedBanner}
+                  </p>
+                ) : null}
+                {modelsError ? (
+                  <p className="mt-3 rounded-md border border-red-900/50 bg-red-950/30 px-3 py-2 text-xs text-red-300">
+                    {modelCopy.errorBanner}
+                  </p>
+                ) : null}
+
+                {modelOptions ? (
+                  <form action={selectGeminiModels} className="mt-4 flex flex-col gap-4">
+                    <input type="hidden" name="locale" value={locale} />
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <FieldLabel label={modelCopy.textLabel}>
+                        <Select
+                          name="textModel"
+                          defaultValue={modelOptions.selected.text_model ?? ''}
+                        >
+                          <option value="">
+                            {`${modelCopy.useDefault} (${modelOptions.defaults.text_model})`}
+                          </option>
+                          {modelOptions.text.map((model) => (
+                            <option key={model} value={model}>
+                              {model}
+                            </option>
+                          ))}
+                        </Select>
+                      </FieldLabel>
+                      <FieldLabel label={modelCopy.imageLabel}>
+                        <Select
+                          name="imageModel"
+                          defaultValue={modelOptions.selected.image_model ?? ''}
+                        >
+                          <option value="">
+                            {`${modelCopy.useDefault} (${modelOptions.defaults.image_model})`}
+                          </option>
+                          {modelOptions.image.map((model) => (
+                            <option key={model} value={model}>
+                              {model}
+                            </option>
+                          ))}
+                        </Select>
+                      </FieldLabel>
+                    </div>
+                    <p className="text-xs text-text-muted">{modelCopy.imageBillingNote}</p>
+                    <div>
+                      <Button type="submit">{modelCopy.submit}</Button>
+                    </div>
+                  </form>
+                ) : (
+                  <p className="mt-3 text-xs text-text-muted">{modelCopy.listError}</p>
+                )}
+              </div>
+            </>
           ) : (
             <div className="px-5 py-4">
               <p className="text-sm text-text-primary">{geminiCopy.title}</p>

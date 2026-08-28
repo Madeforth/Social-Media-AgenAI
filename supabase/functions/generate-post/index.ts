@@ -15,10 +15,10 @@ import {
   CONTENT_PROPOSAL_SCHEMA,
   CREATIVE_DIRECTOR_SYSTEM_PROMPT,
   findForbiddenClaims,
-  GEMINI_TEXT_MODEL,
   INPUT_LIMITS,
   renderUntrusted,
   resolveGeminiApiKey,
+  resolveGeminiModels,
   sanitizeUserText,
   validateContentProposal,
   VISUAL_FORMATS,
@@ -203,6 +203,10 @@ Deno.serve(async (req) => {
 
   const userPrompt = [renderUntrusted(untrustedBlocks), ...directives].join('\n\n');
 
+  // Resolved before the audit row is written, so the row records the model the
+  // call actually used rather than the compiled-in default.
+  const { textModel } = await resolveGeminiModels(serviceClient, brand.organization_id);
+
   // 5. Write the ai_generations row so the call is counted whether or not it
   // succeeds — an uncounted failure is a free retry for an attacker.
   const startedAt = Date.now();
@@ -212,7 +216,7 @@ Deno.serve(async (req) => {
       brand_id: brandId,
       generation_type: 'POST_PROPOSAL',
       provider: AI_PROVIDER,
-      model: GEMINI_TEXT_MODEL,
+      model: textModel,
       input_json: { brief: brief.text, regenerating_post_id: regeneratingPostId },
     })
     .select('id')
@@ -236,7 +240,7 @@ Deno.serve(async (req) => {
   let geminiJson: unknown;
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_TEXT_MODEL}:generateContent?key=${geminiApiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${textModel}:generateContent?key=${geminiApiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -349,7 +353,7 @@ Deno.serve(async (req) => {
       creative_direction: proposal.creative_direction,
       generation_prompt: proposal.generation_prompt,
       created_by: 'AI',
-      model_name: GEMINI_TEXT_MODEL,
+      model_name: textModel,
       model_metadata: {
         rationale: proposal.rationale,
         qa_notes: proposal.qa_notes,

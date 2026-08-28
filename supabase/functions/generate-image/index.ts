@@ -9,11 +9,11 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import {
   AI_PROVIDER,
   assertUntrustedSize,
-  GEMINI_IMAGE_MODEL,
   IMAGE_PROMPT_GUARDRAIL,
   INPUT_LIMITS,
   renderUntrusted,
   resolveGeminiApiKey,
+  resolveGeminiModels,
   sanitizeUserText,
   type UntrustedBlock,
 } from '../_shared/ai.ts';
@@ -148,6 +148,10 @@ Deno.serve(async (req) => {
 
   const imagePrompt = `${renderUntrusted(untrustedBlocks)}\n\n${IMAGE_PROMPT_GUARDRAIL}`;
 
+  // Resolved before the audit row, so the row records the model actually used
+  // rather than the compiled-in default.
+  const { imageModel } = await resolveGeminiModels(serviceClient, brand.organization_id);
+
   // 5. Write the ai_generations row before calling Gemini.
   const startedAt = Date.now();
   const { data: generationRow, error: generationInsertError } = await serviceClient
@@ -157,7 +161,7 @@ Deno.serve(async (req) => {
       post_id: post.id,
       generation_type: 'IMAGE',
       provider: AI_PROVIDER,
-      model: GEMINI_IMAGE_MODEL,
+      model: imageModel,
       input_json: { post_version_id: version.id },
     })
     .select('id')
@@ -182,7 +186,7 @@ Deno.serve(async (req) => {
   let imageBytes: Uint8Array;
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_IMAGE_MODEL}:generateContent?key=${geminiApiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${imageModel}:generateContent?key=${geminiApiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

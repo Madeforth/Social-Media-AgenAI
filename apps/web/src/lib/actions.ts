@@ -497,6 +497,56 @@ export async function connectGemini(formData: FormData): Promise<void> {
   );
 }
 
+/**
+ * Stores which Gemini models this organization runs on.
+ *
+ * The Edge Function makes a real call against the chosen text model before
+ * saving it, so an id that Google still lists but no longer serves is rejected
+ * here rather than at generation time.
+ */
+export async function selectGeminiModels(formData: FormData): Promise<void> {
+  const locale = targetLocale(formData);
+  const brand = await getCurrentBrand();
+  if (!brand) redirect(`/${locale}/settings`);
+
+  const supabase = await getServerSupabase();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session) redirect(`/${locale}/sign-in`);
+
+  let errorCode: string | null = null;
+
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/gemini-models`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          action: 'select',
+          brand_id: brand.id,
+          text_model: String(formData.get('textModel') ?? '').trim(),
+          image_model: String(formData.get('imageModel') ?? '').trim(),
+        }),
+      },
+    );
+    if (!response.ok) errorCode = 'failed';
+  } catch {
+    errorCode = 'network';
+  }
+
+  revalidatePath(`/${locale}/settings`);
+  redirect(
+    errorCode
+      ? `/${locale}/settings?modelsError=${errorCode}`
+      : `/${locale}/settings?modelsSaved=1`,
+  );
+}
+
 /** Validates and stores a pasted long-lived Instagram access token (Milestone 9, V1 connect flow). */
 export async function connectInstagram(formData: FormData): Promise<void> {
   const locale = targetLocale(formData);

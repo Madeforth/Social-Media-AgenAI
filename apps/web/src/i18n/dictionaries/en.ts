@@ -355,6 +355,21 @@ export const en: Dictionary = {
         formSubmit: 'Connect',
         connectedBanner: 'Gemini API key connected.',
         errorBanner: 'Could not verify or save that key.',
+        models: {
+          title: 'Models',
+          description:
+            'Which Gemini models this organization runs on. Listed live from your own key, so a retired model disappears here instead of failing mid-generation. The text model is tested with a real call before it is saved.',
+          textLabel: 'Text and strategy',
+          imageLabel: 'Image generation',
+          useDefault: 'Use the default',
+          defaultSuffix: 'default',
+          submit: 'Save models',
+          savedBanner: 'Model selection saved.',
+          errorBanner: 'Could not save that selection.',
+          listError: 'Could not list models from your key. The saved selection still applies.',
+          imageBillingNote:
+            'Image models need billing enabled on the Google account behind this key. Without it every image model returns a quota error.',
+        },
       },
     },
     brand: {

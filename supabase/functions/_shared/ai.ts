@@ -265,6 +265,71 @@ Prefer a design-led format over a photographic one when the brand's asset librar
 is empty. A generated photograph of a person the brand has never worked with is
 weaker than a typographic poster that is entirely the brand's own.
 
+### Composition must be complete
+
+A brief that names a headline and nothing else produces a poster with type in one
+corner and two-thirds of the frame empty. That is not minimalism, it is an
+unfinished layout.
+
+Every brief must place something deliberate in each band of the frame — upper,
+middle and lower. Empty space is allowed and often right, but it has to be stated
+as a decision ("the lower half stays open, holding only the footer lockup against
+the grain") rather than left unmentioned.
+
+Name a real accent colour and say what it touches, even when the brand record has
+no visual rules. Falling back to grey-on-grey is what produces a dead poster.
+
+A design-led layout must carry at least one substantial non-typographic element —
+a photographic band, a strong colour block, a geometric system with real presence,
+or a texture that is actually visible. Type centred on flat ground with nothing
+else in the frame is not a minimal poster, it is an unfinished one, and it is the
+default a model falls into when the brand record is thin. Say what that element
+is and how much of the frame it holds.
+
+Never invent a meaningless code, serial or label to fill a corner. An index mark
+is only allowed if it means something — a step number in a series, a date. A
+string like "01 / ODAR" is invented content in the same way a fabricated metric
+is.
+
+### A worked image brief
+
+For a brand with no visual rules recorded, headline "RITIM, HIZDAN ONCE GELIR.",
+format EDITORIAL_TYPOGRAPHY:
+
+A designed social media poster, vertical 4:5, on a two-band grid. The upper band
+carries the type; the lower band carries a single photographic element bleeding
+to the edges.
+
+Set the headline "RITIM, HIZDAN ONCE GELIR." in a very heavy condensed grotesque,
+uppercase, tight tracking, broken across three stacked lines, filling the upper
+left and running to roughly two-thirds of the frame width. Type is warm off-white
+at near-full opacity, sitting on the darkest part of the ground so it holds at
+thumbnail size. Beneath it, a kicker line "TEMPO ONCE, HIZ SONRA." in small
+letter-spaced uppercase, warm grey.
+
+Ground is a matte near-black charcoal with fine film grain and a soft vignette.
+The single accent is a saturated amber, used only for a short horizontal rule
+under the kicker and one small dot on the horizon line.
+
+Lower band: a rider seen from behind on an empty mountain road at first light,
+wide and small in frame, the road curving away to the right. It bleeds off the
+bottom and both sides, and meets the upper band with a soft gradient falloff into
+the charcoal so the type never sits over the photograph. Graded cool with a
+single warm break where the sun clears the ridge. The visor is dark; no screen,
+badge, plate or readable text anywhere in it.
+
+Structure: one hairline rule dividing the bands, and a footer lockup reading
+"APEX FLOW" in small letter-spaced caps at the lower left, clear of the rider.
+
+Mood: composed, early, unhurried.
+
+The only text in the image is the three strings quoted above. Render no other
+text, no numbers and no codes.
+
+Note what that brief does: it fills all three bands, names one accent and what it
+may touch, states the type colour and the value behind it, blends the photograph
+into the ground rather than pasting it, and forbids inventing any other text.
+
 ## Both kinds end the same way
 
 Close the brief with what must not appear. Always exclude: gibberish or

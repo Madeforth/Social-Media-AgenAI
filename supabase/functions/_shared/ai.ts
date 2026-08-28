@@ -787,57 +787,213 @@ export function findForbiddenClaims(
   });
 }
 
-/**
- * An org may paste its own Gemini key from Settings (`connect-gemini`), stored
- * in Vault like any other provider secret. Falls back to the project-wide
- * `GEMINI_API_KEY` secret set the old way (`supabase secrets set`), so both
- * paths keep working. `client` is a Supabase service-role client — typed
- * loosely here since this file has no dependency on `@supabase/supabase-js`'s
- * types.
- */
-// deno-lint-ignore no-explicit-any
-export async function resolveGeminiApiKey(
-  client: any,
-  organizationId: string,
-): Promise<string | null> {
-  const { data: keyRow } = await client
+export type AiProvider = 'GEMINI' | 'IDEOGRAM';
+
+export interface ProviderConnection {
+  id: string;
+  provider: AiProvider;
+  label: string;
+  apiKey: string;
+  /** For Gemini, a model id. Unused by Ideogram, which has no text API. */
+  textModel: string;
+  /** For Gemini a model id; for Ideogram the rendering speed, which is what it bills on. */
+  imageModel: string;
+}
+
+interface ProviderRow {
+  id: string;
+  provider: AiProvider;
+  label: string;
+  secret_ref: string;
+  text_model: string | null;
+  image_model: string | null;
+}
+
+const IDEOGRAM_DEFAULT_RENDERING_SPEED = 'BALANCED';
+
+async function hydrate(client: any, row: ProviderRow): Promise<ProviderConnection | null> {
+  const { data: secret } = await client.rpc('read_provider_secret', {
+    p_secret_id: row.secret_ref,
+  });
+  if (typeof secret !== 'string' || secret.length === 0) return null;
+
+  return {
+    id: row.id,
+    provider: row.provider,
+    label: row.label,
+    apiKey: secret,
+    textModel: row.text_model ?? GEMINI_TEXT_MODEL,
+    imageModel:
+      row.image_model ??
+      (row.provider === 'IDEOGRAM' ? IDEOGRAM_DEFAULT_RENDERING_SPEED : GEMINI_IMAGE_MODEL),
+  };
+}
+
+async function loadConnections(client: any, organizationId: string): Promise<ProviderRow[]> {
+  const { data } = await client
     .from('ai_provider_keys')
-    .select('secret_ref')
+    .select('id, provider, label, secret_ref, text_model, image_model')
     .eq('organization_id', organizationId)
-    .eq('provider', 'GEMINI')
+    .order('created_at', { ascending: true });
+  return (data ?? []) as ProviderRow[];
+}
+
+async function loadRouting(client: any, organizationId: string) {
+  const { data } = await client
+    .from('ai_routing')
+    .select('text_provider_key_id, image_provider_key_id')
+    .eq('organization_id', organizationId)
     .maybeSingle();
-
-  if (keyRow?.secret_ref) {
-    const { data: secret } = await client.rpc('read_provider_secret', {
-      p_secret_id: keyRow.secret_ref,
-    });
-    if (typeof secret === 'string' && secret.length > 0) return secret;
-  }
-
-  return Deno.env.get('GEMINI_API_KEY') ?? null;
+  return data as {
+    text_provider_key_id: string | null;
+    image_provider_key_id: string | null;
+  } | null;
 }
 
 /**
- * The models this organization runs on.
+ * The connection that writes copy.
  *
- * Falls back to the code defaults when the organization has not chosen, so an
- * org that never opens Settings keeps working. Reads through the client it is
- * given — callers pass the service-role client, since `ai_provider_keys` has no
- * client write policy and the choice is server-side configuration.
+ * Only Gemini can do this — Ideogram has no text API — so a routing choice that
+ * points somewhere else is ignored rather than obeyed. Falls back to the first
+ * Gemini connection, then to a project-wide GEMINI_API_KEY secret, so an
+ * organization that never opens Settings keeps working.
  */
-export async function resolveGeminiModels(
+export async function resolveTextProvider(
   client: any,
   organizationId: string,
-): Promise<{ textModel: string; imageModel: string }> {
-  const { data } = await client
-    .from('ai_provider_keys')
-    .select('text_model, image_model')
-    .eq('organization_id', organizationId)
-    .eq('provider', 'GEMINI')
-    .maybeSingle();
+): Promise<ProviderConnection | null> {
+  const [rows, routing] = await Promise.all([
+    loadConnections(client, organizationId),
+    loadRouting(client, organizationId),
+  ]);
 
+  const routed = rows.find(
+    (row) => row.id === routing?.text_provider_key_id && row.provider === 'GEMINI',
+  );
+  const chosen = routed ?? rows.find((row) => row.provider === 'GEMINI');
+  if (chosen) {
+    const hydrated = await hydrate(client, chosen);
+    if (hydrated) return hydrated;
+  }
+
+  const envKey = Deno.env.get('GEMINI_API_KEY');
+  if (!envKey) return null;
   return {
-    textModel: data?.text_model ?? GEMINI_TEXT_MODEL,
-    imageModel: data?.image_model ?? GEMINI_IMAGE_MODEL,
+    id: 'project-secret',
+    provider: 'GEMINI',
+    label: 'Project secret',
+    apiKey: envKey,
+    textModel: GEMINI_TEXT_MODEL,
+    imageModel: GEMINI_IMAGE_MODEL,
   };
+}
+
+/** The connection that draws. Either provider can, so any routed one is honoured. */
+export async function resolveImageProvider(
+  client: any,
+  organizationId: string,
+): Promise<ProviderConnection | null> {
+  const [rows, routing] = await Promise.all([
+    loadConnections(client, organizationId),
+    loadRouting(client, organizationId),
+  ]);
+
+  const routed = rows.find((row) => row.id === routing?.image_provider_key_id);
+  const chosen = routed ?? rows.find((row) => row.provider === 'GEMINI') ?? rows[0];
+  if (chosen) {
+    const hydrated = await hydrate(client, chosen);
+    if (hydrated) return hydrated;
+  }
+
+  const envKey = Deno.env.get('GEMINI_API_KEY');
+  if (!envKey) return null;
+  return {
+    id: 'project-secret',
+    provider: 'GEMINI',
+    label: 'Project secret',
+    apiKey: envKey,
+    textModel: GEMINI_TEXT_MODEL,
+    imageModel: GEMINI_IMAGE_MODEL,
+  };
+}
+
+function base64ToBytes(base64: string): Uint8Array {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+/**
+ * Draws one 4:5 image and returns its bytes, whichever provider is connected.
+ *
+ * Both paths are pinned to 4:5. Left unset, Gemini returns landscape and
+ * Ideogram returns 1:1, and neither fits an Instagram feed post or the review
+ * screen.
+ */
+export async function generateImageBytes(
+  connection: ProviderConnection,
+  prompt: string,
+): Promise<Uint8Array> {
+  if (connection.provider === 'IDEOGRAM') {
+    // multipart/form-data, and the key travels in an Api-Key header rather than
+    // a bearer token.
+    const form = new FormData();
+    form.append('prompt', prompt);
+    // `4x5`, not `4:5`. The API's own error lists the accepted values and the
+    // colon form is not among them; documentation and third-party guides say
+    // otherwise, and sending the colon form fails the whole call.
+    form.append('aspect_ratio', '4x5');
+    form.append('rendering_speed', connection.imageModel);
+    // Ideogram rewrites the prompt by default. The brief is written deliberately
+    // — palette, type treatment, what may not appear — so rewriting it is the
+    // one thing we do not want.
+    form.append('magic_prompt', 'OFF');
+    form.append('style_type', 'AUTO');
+    form.append('num_images', '1');
+
+    const response = await fetch('https://api.ideogram.ai/v1/ideogram-v3/generate', {
+      method: 'POST',
+      headers: { 'Api-Key': connection.apiKey },
+      body: form,
+    });
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Ideogram request failed: ${response.status} ${text.slice(0, 500)}`);
+    }
+    const payload = await response.json();
+    const url = payload?.data?.[0]?.url;
+    if (typeof url !== 'string') throw new Error('Ideogram response had no image url');
+
+    // The returned link expires, so the bytes are pulled immediately rather than
+    // stored as a reference.
+    const image = await fetch(url);
+    if (!image.ok) throw new Error(`could not download the Ideogram image: ${image.status}`);
+    return new Uint8Array(await image.arrayBuffer());
+  }
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${connection.imageModel}:generateContent?key=${connection.apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: {
+          responseModalities: ['IMAGE'],
+          imageConfig: { aspectRatio: '4:5', imageSize: '2K' },
+        },
+      }),
+    },
+  );
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Gemini request failed: ${response.status} ${text.slice(0, 500)}`);
+  }
+  const payload = await response.json();
+  const parts = payload?.candidates?.[0]?.content?.parts ?? [];
+  const base64 = parts.find((part: { inlineData?: { data?: string } }) => part?.inlineData?.data)
+    ?.inlineData?.data;
+  if (typeof base64 !== 'string') throw new Error('Gemini response had no image data');
+  return base64ToBytes(base64);
 }

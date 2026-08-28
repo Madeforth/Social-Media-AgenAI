@@ -17,8 +17,7 @@ import {
   findForbiddenClaims,
   INPUT_LIMITS,
   renderUntrusted,
-  resolveGeminiApiKey,
-  resolveGeminiModels,
+  resolveTextProvider,
   sanitizeUserText,
   validateContentProposal,
   VISUAL_FORMATS,
@@ -227,7 +226,11 @@ Deno.serve(async (req) => {
 
   // Resolved before the audit row is written, so the row records the model the
   // call actually used rather than the compiled-in default.
-  const { textModel } = await resolveGeminiModels(serviceClient, brand.organization_id);
+  const textProvider = await resolveTextProvider(serviceClient, brand.organization_id);
+  if (!textProvider) {
+    return json(503, { error: 'No AI provider is connected — add one in Settings' });
+  }
+  const textModel = textProvider.textModel;
 
   // 5. Write the ai_generations row so the call is counted whether or not it
   // succeeds — an uncounted failure is a free retry for an attacker.
@@ -253,16 +256,10 @@ Deno.serve(async (req) => {
       .update({ output_json: output, duration_ms: Date.now() - startedAt })
       .eq('id', generationRow.id);
 
-  const geminiApiKey = await resolveGeminiApiKey(serviceClient, brand.organization_id);
-  if (!geminiApiKey) {
-    await recordFailure({ error: 'no Gemini API key configured for this brand or project' });
-    return json(503, { error: 'Gemini is not configured yet — connect a key in Settings' });
-  }
-
   let geminiJson: unknown;
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${textModel}:generateContent?key=${geminiApiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${textModel}:generateContent?key=${textProvider.apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

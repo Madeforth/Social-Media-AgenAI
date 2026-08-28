@@ -7,13 +7,12 @@
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import {
-  AI_PROVIDER,
   assertUntrustedSize,
   IMAGE_PROMPT_GUARDRAIL,
   INPUT_LIMITS,
   renderUntrusted,
-  resolveGeminiApiKey,
-  resolveGeminiModels,
+  generateImageBytes,
+  resolveImageProvider,
   sanitizeUserText,
   type UntrustedBlock,
 } from '../_shared/ai.ts';
@@ -25,13 +24,6 @@ function json(status: number, body: unknown): Response {
     status,
     headers: { 'Content-Type': 'application/json' },
   });
-}
-
-function base64ToBytes(base64: string): Uint8Array {
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return bytes;
 }
 
 Deno.serve(async (req) => {
@@ -150,9 +142,12 @@ Deno.serve(async (req) => {
 
   // Resolved before the audit row, so the row records the model actually used
   // rather than the compiled-in default.
-  const { imageModel } = await resolveGeminiModels(serviceClient, brand.organization_id);
+  const imageProvider = await resolveImageProvider(serviceClient, brand.organization_id);
+  if (!imageProvider) {
+    return json(503, { error: 'No AI provider is connected — add one in Settings' });
+  }
 
-  // 5. Write the ai_generations row before calling Gemini.
+  // 5. Write the ai_generations row before calling the provider.
   const startedAt = Date.now();
   const { data: generationRow, error: generationInsertError } = await serviceClient
     .from('ai_generations')
@@ -160,8 +155,8 @@ Deno.serve(async (req) => {
       brand_id: brand.id,
       post_id: post.id,
       generation_type: 'IMAGE',
-      provider: AI_PROVIDER,
-      model: imageModel,
+      provider: imageProvider.provider.toLowerCase(),
+      model: imageProvider.imageModel,
       input_json: { post_version_id: version.id },
     })
     .select('id')
@@ -176,59 +171,20 @@ Deno.serve(async (req) => {
       .update({ output_json: output, duration_ms: Date.now() - startedAt })
       .eq('id', generationRow.id);
 
-  const geminiApiKey = await resolveGeminiApiKey(serviceClient, brand.organization_id);
-  if (!geminiApiKey) {
-    await recordFailure({ error: 'no Gemini API key configured for this brand or project' });
-    return json(503, { error: 'Gemini is not configured yet — connect a key in Settings' });
-  }
-
-  // 6. Call Gemini, persist the image, then update the audit row with the outcome.
-  //
-  // The aspect ratio is not optional. Without imageConfig the model picks its
-  // own — measured at 1408x768, landscape — which then sits cropped inside a
-  // 4:5 portrait preview and is the wrong shape for an Instagram feed post.
-  // 4:5 measured back as 928x1152 at 1K and 1856x2304 at 2K.
-  //
-  // imageSize is attempted at 2K and retried without it on failure: the
-  // flash-lite image models only support 1K, and an organization is free to
-  // select one of those in Settings.
-  const callGemini = (config: Record<string, unknown>) =>
-    fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${imageModel}:generateContent?key=${geminiApiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: imagePrompt }] }],
-          generationConfig: {
-            responseModalities: ['IMAGE'],
-            imageConfig: { aspectRatio: '4:5', ...config },
-          },
-        }),
-      },
-    );
-
+  // 6. Draw, persist, then update the audit row with the outcome. The provider
+  // difference lives in the shared module: Gemini answers with inline base64,
+  // Ideogram answers with an expiring URL that has to be fetched immediately.
+  // Both are pinned to 4:5 — left unset Gemini returns landscape and Ideogram
+  // returns a square, and neither fits an Instagram feed post.
   let imageBytes: Uint8Array;
   try {
-    let response = await callGemini({ imageSize: '2K' });
-    if (!response.ok) {
-      response = await callGemini({});
-    }
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Gemini request failed: ${response.status} ${errorText.slice(0, 500)}`);
-    }
-    const payload = await response.json();
-    const parts = payload?.candidates?.[0]?.content?.parts ?? [];
-    const imagePart = parts.find(
-      (part: { inlineData?: { data?: string } }) => part?.inlineData?.data,
-    );
-    const base64 = imagePart?.inlineData?.data;
-    if (typeof base64 !== 'string') throw new Error('Gemini response had no image data');
-    imageBytes = base64ToBytes(base64);
+    imageBytes = await generateImageBytes(imageProvider, imagePrompt);
   } catch (error) {
-    await recordFailure({ error: error instanceof Error ? error.message : 'unknown Gemini error' });
-    return json(502, { error: 'the Gemini image call failed' });
+    await recordFailure({
+      provider: imageProvider.provider,
+      error: error instanceof Error ? error.message : 'unknown provider error',
+    });
+    return json(502, { error: 'the image generation call failed' });
   }
 
   const storagePath = `${brand.id}/${post.id}/${version.id}.png`;

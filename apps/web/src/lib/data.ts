@@ -69,40 +69,26 @@ export async function getBrandGuidelines(): Promise<BrandGuidelines | null> {
 }
 
 /** Whether this brand's organization has connected its own Gemini API key. */
-export async function getGeminiKeyConnected(): Promise<boolean> {
-  const brand = await getCurrentBrand();
-  if (!brand) return false;
 
-  const supabase = await getServerSupabase();
-  const { data } = await supabase
-    .from('ai_provider_keys')
-    .select('id')
-    .eq('organization_id', brand.organization_id)
-    .eq('provider', 'GEMINI')
-    .maybeSingle();
-
-  return Boolean(data);
+export interface AiConnection {
+  id: string;
+  provider: 'GEMINI' | 'IDEOGRAM';
+  label: string;
+  text_model: string | null;
+  image_model: string | null;
+  created_at: string;
 }
 
-export interface GeminiModelOptions {
-  text: string[];
-  image: string[];
-  selected: { text_model: string | null; image_model: string | null };
+export interface AiProviderState {
+  connections: AiConnection[];
+  routing: { text_provider_key_id: string | null; image_provider_key_id: string | null };
+  limit: number;
+  providers: Array<'GEMINI' | 'IDEOGRAM'>;
+  ideogram_rendering_speeds: string[];
   defaults: { text_model: string; image_model: string };
 }
 
-/**
- * The Gemini models this organization's own key can reach.
- *
- * Listed live rather than hardcoded: Google retires model ids without warning —
- * `gemini-2.5-pro` and `gemini-2.5-flash` both went to 404 mid-flight — and a
- * dropdown built from a stale constant would offer a model that fails on use.
- *
- * Returns null when the list cannot be fetched (no key, or the API refused).
- * The caller renders the saved selection anyway, since a listing failure does
- * not invalidate a choice that is already stored.
- */
-export async function getGeminiModelOptions(): Promise<GeminiModelOptions | null> {
+async function callAiProviders<T>(body: Record<string, unknown>): Promise<T | null> {
   const brand = await getCurrentBrand();
   if (!brand) return null;
 
@@ -114,22 +100,43 @@ export async function getGeminiModelOptions(): Promise<GeminiModelOptions | null
 
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/gemini-models`,
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/ai-providers`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ action: 'list', brand_id: brand.id }),
+        body: JSON.stringify({ brand_id: brand.id, ...body }),
         cache: 'no-store',
       },
     );
     if (!response.ok) return null;
-    return (await response.json()) as GeminiModelOptions;
+    return (await response.json()) as T;
   } catch {
     return null;
   }
+}
+
+/** Every AI connection this organization holds, and which one does which job. */
+export async function getAiProviderState(): Promise<AiProviderState | null> {
+  return callAiProviders<AiProviderState>({ action: 'list' });
+}
+
+/**
+ * The models one connection can reach.
+ *
+ * Fetched per connection rather than for all of them, because each Gemini
+ * lookup is a network call and only the routed connections have their model
+ * shown as a choice.
+ */
+export async function getConnectionModels(
+  connectionId: string,
+): Promise<{ text: string[]; image: string[] } | null> {
+  return callAiProviders<{ text: string[]; image: string[] }>({
+    action: 'models',
+    connection_id: connectionId,
+  });
 }
 
 /** The brand's connected Instagram account, if any. Never selects `token_secret_ref`. */

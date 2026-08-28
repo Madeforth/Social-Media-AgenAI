@@ -111,8 +111,9 @@ export type Database = {
           created_at: string
           id: string
           image_model: string | null
+          label: string
           organization_id: string
-          provider: string
+          provider: Database["public"]["Enums"]["ai_provider"]
           secret_ref: string
           text_model: string | null
           updated_at: string
@@ -121,8 +122,9 @@ export type Database = {
           created_at?: string
           id?: string
           image_model?: string | null
+          label: string
           organization_id: string
-          provider: string
+          provider: Database["public"]["Enums"]["ai_provider"]
           secret_ref: string
           text_model?: string | null
           updated_at?: string
@@ -131,8 +133,9 @@ export type Database = {
           created_at?: string
           id?: string
           image_model?: string | null
+          label?: string
           organization_id?: string
-          provider?: string
+          provider?: Database["public"]["Enums"]["ai_provider"]
           secret_ref?: string
           text_model?: string | null
           updated_at?: string
@@ -178,6 +181,52 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: true
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_routing: {
+        Row: {
+          created_at: string
+          image_provider_key_id: string | null
+          organization_id: string
+          text_provider_key_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          image_provider_key_id?: string | null
+          organization_id: string
+          text_provider_key_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          image_provider_key_id?: string | null
+          organization_id?: string
+          text_provider_key_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_routing_image_provider_key_id_fkey"
+            columns: ["image_provider_key_id"]
+            isOneToOne: false
+            referencedRelation: "ai_provider_keys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_routing_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_routing_text_provider_key_id_fkey"
+            columns: ["text_provider_key_id"]
+            isOneToOne: false
+            referencedRelation: "ai_provider_keys"
             referencedColumns: ["id"]
           },
         ]
@@ -763,6 +812,7 @@ export type Database = {
       }
     }
     Enums: {
+      ai_provider: "GEMINI" | "IDEOGRAM"
       brand_asset_type:
         | "LOGO"
         | "PRODUCT_UI"
@@ -943,6 +993,7 @@ export const Constants = {
   },
   public: {
     Enums: {
+      ai_provider: ["GEMINI", "IDEOGRAM"],
       brand_asset_type: [
         "LOGO",
         "PRODUCT_UI",

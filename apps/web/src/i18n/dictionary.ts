@@ -284,29 +284,28 @@ export interface Dictionary {
         connectedBanner: string;
         errorBanner: string;
       };
-      gemini: {
+      ai: {
         title: string;
         description: string;
-        serverSide: string;
-        connected: string;
-        formApiKey: string;
-        formApiKeyHint: string;
-        formSubmit: string;
-        connectedBanner: string;
+        provider: string;
+        label: string;
+        labelHint: string;
+        apiKey: string;
+        apiKeyHint: string;
+        add: string;
+        remove: string;
+        save: string;
+        noneYet: string;
+        limitReached: string;
+        renderingSpeed: string;
+        routingDescription: string;
+        textJob: string;
+        textJobHint: string;
+        imageJob: string;
+        automatic: string;
+        saveRouting: string;
+        savedBanner: string;
         errorBanner: string;
-        models: {
-          title: string;
-          description: string;
-          textLabel: string;
-          imageLabel: string;
-          useDefault: string;
-          defaultSuffix: string;
-          submit: string;
-          savedBanner: string;
-          errorBanner: string;
-          listError: string;
-          imageBillingNote: string;
-        };
       };
     };
     brand: {

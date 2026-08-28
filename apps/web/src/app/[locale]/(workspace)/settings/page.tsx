@@ -4,23 +4,19 @@ import { Button } from '@/components/ui/button';
 import { Card, CardDivider, CardHeader } from '@/components/ui/card';
 import { FieldLabel, Input, Select } from '@/components/ui/field';
 import { PageHeader } from '@/components/ui/page-header';
-import { PendingBar } from '@/components/ui/pending-bar';
 import { SubmitButton } from '@/components/ui/submit-button';
 import {
-  connectGemini,
+  addAiProvider,
   connectInstagram,
+  deleteAiProvider,
   createOrganizationAndBrand,
-  selectGeminiModels,
   signOutAction,
+  setAiRouting,
+  setConnectionModels,
   updateBrand,
 } from '@/lib/actions';
 import { getCurrentUser } from '@/lib/auth';
-import {
-  getCurrentBrand,
-  getGeminiKeyConnected,
-  getGeminiModelOptions,
-  getSocialAccount,
-} from '@/lib/data';
+import { getCurrentBrand, getAiProviderState, getSocialAccount } from '@/lib/data';
 import { getI18n } from '@/i18n/get-dictionary';
 
 interface PageParams {
@@ -28,10 +24,8 @@ interface PageParams {
   searchParams: Promise<{
     igConnected?: string;
     igError?: string;
-    geminiConnected?: string;
-    geminiError?: string;
-    modelsSaved?: string;
-    modelsError?: string;
+    providerSaved?: string;
+    providerError?: string;
   }>;
 }
 
@@ -63,21 +57,17 @@ function Row({
 
 export default async function SettingsPage({ params, searchParams }: PageParams) {
   const { locale } = await params;
-  const { igConnected, igError, geminiConnected, geminiError, modelsSaved, modelsError } =
-    await searchParams;
-  const [brand, user, socialAccount, geminiKeyConnected, modelOptions, { dictionary }] =
-    await Promise.all([
-      getCurrentBrand(),
-      getCurrentUser(),
-      getSocialAccount(),
-      getGeminiKeyConnected(),
-      getGeminiModelOptions(),
-      getI18n(locale),
-    ]);
+  const { igConnected, igError, providerSaved, providerError } = await searchParams;
+  const [brand, user, socialAccount, aiState, { dictionary }] = await Promise.all([
+    getCurrentBrand(),
+    getCurrentUser(),
+    getSocialAccount(),
+    getAiProviderState(),
+    getI18n(locale),
+  ]);
   const copy = dictionary.settings;
   const igCopy = copy.integrations.instagram;
-  const geminiCopy = copy.integrations.gemini;
-  const modelCopy = geminiCopy.models;
+  const aiCopy = copy.integrations.ai;
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6">
@@ -153,111 +143,155 @@ export default async function SettingsPage({ params, searchParams }: PageParams)
               ) : null}
             </div>
           )}
-          {geminiConnected ? (
+          {providerSaved ? (
             <p className="mx-5 mt-4 rounded-md border border-accent/30 bg-accent-soft px-3 py-2 text-xs text-accent">
-              {geminiCopy.connectedBanner}
+              {aiCopy.savedBanner}
             </p>
           ) : null}
-          {geminiError ? (
+          {providerError ? (
             <p className="mx-5 mt-4 rounded-md border border-red-900/50 bg-red-950/30 px-3 py-2 text-xs text-red-300">
-              {geminiCopy.errorBanner}
+              {aiCopy.errorBanner}
             </p>
           ) : null}
-          {geminiKeyConnected ? (
-            <>
-              <Row
-                title={geminiCopy.title}
-                description={geminiCopy.connected}
-                action={<span className="text-xs text-text-muted">{geminiCopy.serverSide}</span>}
-              />
-              <div className="px-5 py-4">
-                <p className="text-sm text-text-primary">{modelCopy.title}</p>
-                <p className="mt-0.5 text-xs text-text-secondary">{modelCopy.description}</p>
 
-                {modelsSaved ? (
-                  <p className="mt-3 rounded-md border border-accent/30 bg-accent-soft px-3 py-2 text-xs text-accent">
-                    {modelCopy.savedBanner}
-                  </p>
-                ) : null}
-                {modelsError ? (
-                  <p className="mt-3 rounded-md border border-red-900/50 bg-red-950/30 px-3 py-2 text-xs text-red-300">
-                    {modelCopy.errorBanner}
-                  </p>
-                ) : null}
-
-                {modelOptions ? (
-                  <form action={selectGeminiModels} className="mt-4 flex flex-col gap-4">
-                    <input type="hidden" name="locale" value={locale} />
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <FieldLabel label={modelCopy.textLabel}>
-                        <Select
-                          name="textModel"
-                          defaultValue={modelOptions.selected.text_model ?? ''}
-                        >
-                          <option value="">
-                            {`${modelCopy.useDefault} (${modelOptions.defaults.text_model})`}
-                          </option>
-                          {modelOptions.text.map((model) => (
-                            <option key={model} value={model}>
-                              {model}
-                            </option>
-                          ))}
-                        </Select>
-                      </FieldLabel>
-                      <FieldLabel label={modelCopy.imageLabel}>
-                        <Select
-                          name="imageModel"
-                          defaultValue={modelOptions.selected.image_model ?? ''}
-                        >
-                          <option value="">
-                            {`${modelCopy.useDefault} (${modelOptions.defaults.image_model})`}
-                          </option>
-                          {modelOptions.image.map((model) => (
-                            <option key={model} value={model}>
-                              {model}
-                            </option>
-                          ))}
-                        </Select>
-                      </FieldLabel>
-                    </div>
-                    <p className="text-xs text-text-muted">{modelCopy.imageBillingNote}</p>
-                    <PendingBar
-                      message={dictionary.pending.verifying}
-                      elapsedSuffix={dictionary.pending.elapsedSuffix}
-                    />
-                    <div>
-                      <SubmitButton
-                        label={modelCopy.submit}
-                        pendingLabel={dictionary.pending.verifyButton}
-                        variant="secondary"
-                      />
-                    </div>
-                  </form>
-                ) : (
-                  <p className="mt-3 text-xs text-text-muted">{modelCopy.listError}</p>
-                )}
-              </div>
-            </>
-          ) : (
-            <div className="px-5 py-4">
-              <p className="text-sm text-text-primary">{geminiCopy.title}</p>
-              <p className="mt-0.5 text-xs text-text-secondary">{geminiCopy.description}</p>
-              {brand ? (
-                <form action={connectGemini} className="mt-4 flex flex-wrap items-end gap-3">
-                  <input type="hidden" name="locale" value={locale} />
-                  <div className="min-w-0 flex-1">
-                    <FieldLabel label={geminiCopy.formApiKey} hint={geminiCopy.formApiKeyHint}>
-                      <Input name="apiKey" type="password" required />
-                    </FieldLabel>
-                  </div>
-                  <SubmitButton
-                    label={geminiCopy.formSubmit}
-                    pendingLabel={dictionary.pending.verifyButton}
-                  />
-                </form>
-              ) : null}
+          <div className="flex flex-col gap-5 px-5 py-4">
+            <div>
+              <p className="text-sm text-text-primary">{aiCopy.title}</p>
+              <p className="mt-0.5 text-xs text-text-secondary">{aiCopy.description}</p>
             </div>
-          )}
+
+            {aiState && aiState.connections.length > 0 ? (
+              <ul className="flex flex-col gap-2">
+                {aiState.connections.map((connection) => (
+                  <li
+                    key={connection.id}
+                    className="flex flex-wrap items-end justify-between gap-3 rounded-md border border-border-subtle bg-surface-raised px-3 py-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm text-text-primary">{connection.label}</p>
+                      <p className="mt-0.5 text-xs text-text-muted">
+                        {connection.provider}
+                        {connection.provider === 'IDEOGRAM'
+                          ? ` · ${connection.image_model ?? 'BALANCED'}`
+                          : ''}
+                      </p>
+                    </div>
+                    <div className="flex items-end gap-2">
+                      {connection.provider === 'IDEOGRAM' ? (
+                        <form action={setConnectionModels} className="flex items-end gap-2">
+                          <input type="hidden" name="locale" value={locale} />
+                          <input type="hidden" name="connectionId" value={connection.id} />
+                          <FieldLabel label={aiCopy.renderingSpeed}>
+                            <Select
+                              name="imageModel"
+                              defaultValue={connection.image_model ?? 'BALANCED'}
+                            >
+                              {aiState.ideogram_rendering_speeds.map((speed) => (
+                                <option key={speed} value={speed}>
+                                  {speed}
+                                </option>
+                              ))}
+                            </Select>
+                          </FieldLabel>
+                          <SubmitButton
+                            label={aiCopy.save}
+                            pendingLabel={dictionary.pending.saveButton}
+                            variant="secondary"
+                            size="sm"
+                          />
+                        </form>
+                      ) : null}
+                      <form action={deleteAiProvider}>
+                        <input type="hidden" name="locale" value={locale} />
+                        <input type="hidden" name="connectionId" value={connection.id} />
+                        <SubmitButton
+                          label={aiCopy.remove}
+                          pendingLabel={dictionary.pending.saveButton}
+                          variant="ghost"
+                          size="sm"
+                        />
+                      </form>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-xs text-text-muted">{aiCopy.noneYet}</p>
+            )}
+
+            {aiState && aiState.connections.length < aiState.limit ? (
+              <form action={addAiProvider} className="flex flex-wrap items-end gap-3">
+                <input type="hidden" name="locale" value={locale} />
+                <FieldLabel label={aiCopy.provider}>
+                  <Select name="provider" defaultValue="GEMINI">
+                    {aiState.providers.map((provider) => (
+                      <option key={provider} value={provider}>
+                        {provider}
+                      </option>
+                    ))}
+                  </Select>
+                </FieldLabel>
+                <FieldLabel label={aiCopy.label} hint={aiCopy.labelHint}>
+                  <Input name="label" required maxLength={40} />
+                </FieldLabel>
+                <div className="min-w-0 flex-1">
+                  <FieldLabel label={aiCopy.apiKey} hint={aiCopy.apiKeyHint}>
+                    <Input name="apiKey" type="password" required />
+                  </FieldLabel>
+                </div>
+                <SubmitButton label={aiCopy.add} pendingLabel={dictionary.pending.verifyButton} />
+              </form>
+            ) : aiState ? (
+              <p className="text-xs text-text-muted">{aiCopy.limitReached}</p>
+            ) : null}
+
+            {aiState && aiState.connections.length > 0 ? (
+              <form
+                action={setAiRouting}
+                className="flex flex-col gap-3 border-t border-border-subtle pt-4"
+              >
+                <input type="hidden" name="locale" value={locale} />
+                <p className="text-xs text-text-secondary">{aiCopy.routingDescription}</p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <FieldLabel label={aiCopy.textJob} hint={aiCopy.textJobHint}>
+                    <Select
+                      name="textProvider"
+                      defaultValue={aiState.routing.text_provider_key_id ?? ''}
+                    >
+                      <option value="">{aiCopy.automatic}</option>
+                      {aiState.connections
+                        .filter((connection) => connection.provider === 'GEMINI')
+                        .map((connection) => (
+                          <option key={connection.id} value={connection.id}>
+                            {connection.label}
+                          </option>
+                        ))}
+                    </Select>
+                  </FieldLabel>
+                  <FieldLabel label={aiCopy.imageJob}>
+                    <Select
+                      name="imageProvider"
+                      defaultValue={aiState.routing.image_provider_key_id ?? ''}
+                    >
+                      <option value="">{aiCopy.automatic}</option>
+                      {aiState.connections.map((connection) => (
+                        <option key={connection.id} value={connection.id}>
+                          {connection.label} · {connection.provider}
+                        </option>
+                      ))}
+                    </Select>
+                  </FieldLabel>
+                </div>
+                <div>
+                  <SubmitButton
+                    label={aiCopy.saveRouting}
+                    pendingLabel={dictionary.pending.saveButton}
+                    variant="secondary"
+                  />
+                </div>
+              </form>
+            ) : null}
+          </div>
         </div>
       </Card>
 

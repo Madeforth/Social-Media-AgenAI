@@ -466,9 +466,17 @@ export async function editPostVersion(formData: FormData): Promise<void> {
   redirect(`/${locale}/posts/${postId}`);
 }
 
-/** Validates and stores a pasted Gemini API key, so a project owner never needs CLI access. */
-export async function connectGemini(formData: FormData): Promise<void> {
-  const locale = targetLocale(formData);
+/**
+ * Posts one configuration change to the `ai-providers` Edge Function.
+ *
+ * Everything about providers goes through that one endpoint, which is where the
+ * key is verified, the five-connection ceiling is applied and the rule that only
+ * Gemini can generate text is enforced. Nothing here touches the tables.
+ */
+async function callAiProviders(
+  body: Record<string, unknown>,
+  locale: string,
+): Promise<string | null> {
   const brand = await getCurrentBrand();
   if (!brand) redirect(`/${locale}/settings`);
 
@@ -478,84 +486,85 @@ export async function connectGemini(formData: FormData): Promise<void> {
   } = await supabase.auth.getSession();
   if (!session) redirect(`/${locale}/sign-in`);
 
-  let errorCode: string | null = null;
-
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/connect-gemini`,
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/ai-providers`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({
-          brand_id: brand.id,
-          api_key: String(formData.get('apiKey') ?? '').trim(),
-        }),
+        body: JSON.stringify({ brand_id: brand.id, ...body }),
       },
     );
-    if (!response.ok) errorCode = 'failed';
+    return response.ok ? null : 'failed';
   } catch {
-    errorCode = 'network';
+    return 'network';
   }
+}
 
+function providerRedirect(locale: string, errorCode: string | null): never {
   revalidatePath(`/${locale}/settings`);
   redirect(
     errorCode
-      ? `/${locale}/settings?geminiError=${errorCode}`
-      : `/${locale}/settings?geminiConnected=1`,
+      ? `/${locale}/settings?providerError=${errorCode}`
+      : `/${locale}/settings?providerSaved=1`,
   );
 }
 
-/**
- * Stores which Gemini models this organization runs on.
- *
- * The Edge Function makes a real call against the chosen text model before
- * saving it, so an id that Google still lists but no longer serves is rejected
- * here rather than at generation time.
- */
-export async function selectGeminiModels(formData: FormData): Promise<void> {
+/** Adds one named provider connection. The key is verified before it is stored. */
+export async function addAiProvider(formData: FormData): Promise<void> {
   const locale = targetLocale(formData);
-  const brand = await getCurrentBrand();
-  if (!brand) redirect(`/${locale}/settings`);
-
-  const supabase = await getServerSupabase();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (!session) redirect(`/${locale}/sign-in`);
-
-  let errorCode: string | null = null;
-
-  try {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/gemini-models`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          action: 'select',
-          brand_id: brand.id,
-          text_model: String(formData.get('textModel') ?? '').trim(),
-          image_model: String(formData.get('imageModel') ?? '').trim(),
-        }),
-      },
-    );
-    if (!response.ok) errorCode = 'failed';
-  } catch {
-    errorCode = 'network';
-  }
-
-  revalidatePath(`/${locale}/settings`);
-  redirect(
-    errorCode
-      ? `/${locale}/settings?modelsError=${errorCode}`
-      : `/${locale}/settings?modelsSaved=1`,
+  const errorCode = await callAiProviders(
+    {
+      action: 'add',
+      provider: String(formData.get('provider') ?? '').trim(),
+      label: String(formData.get('label') ?? '').trim(),
+      api_key: String(formData.get('apiKey') ?? '').trim(),
+    },
+    locale,
   );
+  providerRedirect(locale, errorCode);
+}
+
+/** Removes a connection. Any routing that pointed at it is nulled by the database. */
+export async function deleteAiProvider(formData: FormData): Promise<void> {
+  const locale = targetLocale(formData);
+  const errorCode = await callAiProviders(
+    { action: 'delete', connection_id: String(formData.get('connectionId') ?? '') },
+    locale,
+  );
+  providerRedirect(locale, errorCode);
+}
+
+/** Chooses which connection writes copy and which one draws. */
+export async function setAiRouting(formData: FormData): Promise<void> {
+  const locale = targetLocale(formData);
+  const errorCode = await callAiProviders(
+    {
+      action: 'route',
+      text_provider_key_id: String(formData.get('textProvider') ?? '') || null,
+      image_provider_key_id: String(formData.get('imageProvider') ?? '') || null,
+    },
+    locale,
+  );
+  providerRedirect(locale, errorCode);
+}
+
+/** Sets the model, or for Ideogram the rendering speed, on one connection. */
+export async function setConnectionModels(formData: FormData): Promise<void> {
+  const locale = targetLocale(formData);
+  const errorCode = await callAiProviders(
+    {
+      action: 'set_models',
+      connection_id: String(formData.get('connectionId') ?? ''),
+      text_model: String(formData.get('textModel') ?? '').trim(),
+      image_model: String(formData.get('imageModel') ?? '').trim(),
+    },
+    locale,
+  );
+  providerRedirect(locale, errorCode);
 }
 
 /** Validates and stores a pasted long-lived Instagram access token (Milestone 9, V1 connect flow). */

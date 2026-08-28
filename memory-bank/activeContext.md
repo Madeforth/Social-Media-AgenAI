@@ -2,33 +2,70 @@
 
 ## Current Phase
 
-All nine numbered milestones are closed, plus basic analytics and notifications — the full
-generation → review → schedule → publish loop exists end to end on **web**, deployed to
-`https://socialai.madeforth.net`. This was built in one long autonomous overnight session
-(2026-08-27 23:00 → 2026-08-28); see the per-milestone `feat:` commits on `main` for the detailed
-narrative each one carries. **Mobile was not touched** — everything below Milestone 4 (Brand Brain
-writes, Create-with-AI wiring, approval/scheduling, publishing, analytics, notifications) is
-web-only. Bringing mobile to parity is the natural next scope of work.
+All nine numbered milestones are closed, plus basic analytics, notifications, and (as of
+2026-08-28 daytime, a separate session working with real provider credentials) the AI/publishing
+path has now actually been exercised end to end and hardened against what real calls exposed.
+Mobile was brought to parity with web in the overnight session; the daytime session's provider
+work landed on web only (Settings' AI-provider UI, prompt/model fixes) — check whether mobile's
+generate/image calls need the same fixes before assuming parity still holds.
 
-Three things are true simultaneously right now:
+What the daytime session (commits `83b2b74`..`fbe6f33`, all `Co-Authored-By: Claude Opus 5`) found
+and fixed, working against live Gemini and Ideogram keys:
 
-1. Every screen in CLAUDE.md's V1 list has a real implementation behind it — no more disabled
-   forms or static placeholders.
-2. Almost none of the AI/publishing path has been exercised with real provider calls, because
-   `GEMINI_API_KEY` and a working Meta app are both still pending — see
-   `memory-bank/userActionsNeeded.md`, which is the actual punch list.
-3. A handful of things were deliberately scoped out rather than built blind overnight (cron-driven
-   auto-publish being the main one) — see `docs/SECURITY.md`'s Milestone 9 section and
-   `memory-bank/progress.md` for the reasoning on each.
+- The pinned Gemini model constants (`gemini-2.5-pro`/`-flash`) were retired by Google — generation
+  was dead on arrival until this was caught via the `ai_generations` audit row. Fixed by making
+  model choice per-connection instead of a compiled-in default (see below).
+- `ai_provider_keys` became a real multi-provider system: an organization can hold up to five named
+  connections (DB-trigger-enforced), a separate routing table decides which connection writes text
+  and which draws images, and `connect-gemini`/`gemini-models` were deleted in favor of one
+  `ai-providers` Edge Function. Settings has model-choice dropdowns per connection.
+- The image prompt was being wrapped in `renderUntrusted` (the text-model containment scheme) —
+  wrong for a model that draws the words it's handed rather than reading instructions, so it drew
+  the boundary markers and preamble as visible poster text. Removed for images.
+- Generated images now pin `imageConfig.aspectRatio: "4:5"` (was defaulting to landscape and
+  getting cropped by the preview) and the preview switched to `object-contain`.
+- Output validation was rejecting entire valid proposals over recoverable defects — a hashtag
+  missing its `#`, a field a few characters over its limit. Both are now repaired in place and
+  recorded as an adjustment (visible in `qa_notes`) rather than discarding the whole generation
+  (which still burned a quota call). Field length limits themselves were also wrong (one shared
+  120-char ceiling across three differently-shaped fields).
+- Provider error messages were being swallowed behind a generic translated string at every layer
+  (server action → page). The provider's actual message (a 402 "add a payment method", a 404
+  "model no longer available", a validation error) now renders under the generic banner.
+- Every slow action (generate, regenerate, generate image, publish, sync metrics, approve, request
+  revision, the three verify-then-save Settings forms) now shows a real pending state: button
+  swaps label + spinner + disables, plus an indeterminate progress bar with a live seconds counter
+  — was previously fully inert for the 7-20s a real call takes, which invited double-submits.
+  New shared components: `apps/web/src/components/ui/{pending-bar,submit-button}.tsx`.
+- Instagram: a **Disconnect** button now exists (Settings kept no way to replace a token before
+  this); a `delete_provider_secret` RPC was added so disconnecting also removes the Vault secret,
+  not just the row; every Graph API call path now detects an auth failure (Meta reports expiry,
+  revocation, and app removal identically as `OAuthException 190`) and marks the account `EXPIRED`
+  rather than continuing to claim it's connected; a **Read profile** action pulls the account's
+  bio/recent captions into brand context for generation (new `sync-instagram-profile` function),
+  since Brand Brain alone was too thin and the model was guessing from the brand name.
+- `brands.app_url` is new (Settings, validated three times — DB check constraint, server action,
+  Edge Function — against `javascript:`/`data:` before it enters a prompt) — captions now end with
+  it verbatim when set, and are told explicitly not to invent a link when it isn't.
+- Caption structure and the image "designer's brief" were rewritten following Google's own
+  prompt-design guidance (few-shot example, headings as delimiters, hook/value/close shape,
+  emoji constrained to line starts) after live output showed dense unstructured paragraphs and
+  photographs where graphic-design posters were wanted. A design-led layout may now also carry a
+  photograph inside it (subject/region/blend/type-legibility all specified), preferred over a bare
+  photo when the asset library is empty.
 
 ## Next Action
 
-Nothing is scoped and unbuilt. The two live paths are:
+Nothing is scoped and unbuilt in the numbered-milestone sense. Live paths:
 
-1. Work through `memory-bank/userActionsNeeded.md` (Gemini key, Meta app + credentials, native
-   mobile testing) and then actually exercise the AI/publishing loop for the first time with real
-   calls — fix whatever a real Gemini/Meta response surfaces that the never-tested code got wrong.
-2. Bring `apps/mobile` up to parity with everything web gained tonight.
+1. Keep exercising the AI/publishing loop for real and fixing whatever the next live call exposes
+   — the pattern above (audit row → real error → prompt/validation/UI fix) is the working method,
+   not a one-time cleanup.
+2. Check whether `apps/mobile`'s generate/image/connect calls need the same fixes the daytime
+   session made on web (same Edge Functions, so the backend fixes apply automatically, but any
+   web-only UI change — pending states, error detail surfacing, the app_url field, Disconnect,
+   Read profile — has no mobile equivalent yet).
+3. Work through whatever remains in `memory-bank/userActionsNeeded.md`.
 
 ## What Exists Now
 

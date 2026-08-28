@@ -375,8 +375,14 @@ export const IMAGE_PROMPT_GUARDRAIL = `Output requirements for this asset:
   an artefact a designer would hand over, not an illustration of a sentence.
 - Render any specified text exactly as written, correctly spelled, with real
   typographic hierarchy. If no text was specified, render none.
-- Keep a clear margin on all four edges. Nothing meaningful may touch or be
-  cropped by the frame edge.
+- The artwork fills the entire frame, edge to edge. It is the asset itself, not a
+  photograph of one: no paper border, no mat, no picture frame, no drop shadow,
+  no desk or wall behind it, no device mockup containing it, no rounded corners.
+  A cream border around a dark poster wastes a third of the canvas and reads as a
+  mockup on a feed.
+- Keep a clear margin between the artwork's own content and the edge. Nothing
+  meaningful may touch or be cropped by the frame edge — that margin is interior
+  breathing room, not a border drawn around the design.
 - Hold one clear focal point. Leave out any supporting element that would clutter
   the frame; empty space is part of the design.
 - Where a photograph sits inside the layout, it must be integrated — masked,

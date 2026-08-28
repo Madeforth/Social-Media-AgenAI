@@ -283,6 +283,7 @@ export interface Dictionary {
         formSubmit: string;
         connectedBanner: string;
         errorBanner: string;
+        disconnect: string;
         tokenExpired: string;
         syncProfile: string;
         syncProfileHint: string;

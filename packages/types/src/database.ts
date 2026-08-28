@@ -861,6 +861,10 @@ export type Database = {
           monthly_used: number
         }[]
       }
+      delete_provider_secret: {
+        Args: { p_secret_id: string }
+        Returns: undefined
+      }
       read_provider_secret: { Args: { p_secret_id: string }; Returns: string }
       store_provider_secret: {
         Args: { p_name: string; p_secret: string }

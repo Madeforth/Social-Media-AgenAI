@@ -8,6 +8,7 @@ import { SubmitButton } from '@/components/ui/submit-button';
 import {
   addAiProvider,
   connectInstagram,
+  disconnectInstagram,
   syncInstagramProfile,
   deleteAiProvider,
   createOrganizationAndBrand,
@@ -132,15 +133,31 @@ export default async function SettingsPage({ params, searchParams }: PageParams)
                     {igCopy.connected(socialAccount.account_name)}
                   </p>
                 </div>
-                <form action={syncInstagramProfile} className="flex flex-col items-end gap-2">
-                  <input type="hidden" name="locale" value={locale} />
-                  <SubmitButton
-                    label={igCopy.syncProfile}
-                    pendingLabel={dictionary.pending.syncButton}
-                    variant="secondary"
-                    size="sm"
-                  />
-                </form>
+                <div className="flex items-center gap-2">
+                  <form action={syncInstagramProfile}>
+                    <input type="hidden" name="locale" value={locale} />
+                    <SubmitButton
+                      label={igCopy.syncProfile}
+                      pendingLabel={dictionary.pending.syncButton}
+                      variant="secondary"
+                      size="sm"
+                    />
+                  </form>
+                  {/*
+                    Without this there is no way to replace a token. The connect
+                    form only appears when no account exists, so an expired
+                    connection was permanent.
+                  */}
+                  <form action={disconnectInstagram}>
+                    <input type="hidden" name="locale" value={locale} />
+                    <SubmitButton
+                      label={igCopy.disconnect}
+                      pendingLabel={dictionary.pending.saveButton}
+                      variant="ghost"
+                      size="sm"
+                    />
+                  </form>
+                </div>
               </div>
 
               <p className="text-xs text-text-muted">{igCopy.syncProfileHint}</p>

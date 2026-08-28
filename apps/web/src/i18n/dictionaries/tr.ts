@@ -367,6 +367,7 @@ export const tr: Dictionary = {
         formSubmit: 'Bağla',
         connectedBanner: 'Instagram hesabı bağlandı.',
         errorBanner: 'Token doğrulanamadı veya kaydedilemedi. Hesap ID ve tokenı kontrol et.',
+        disconnect: 'Bağlantıyı kes',
         tokenExpired:
           'Bu erişim tokenı dolmuş; hem yayınlama hem okuma başarısız oluyor. Yeni bir uzun ömürlü sayfa tokenı ile yeniden bağlan. Kısa ömürlü kullanıcı tokenından türetilen sayfa tokenı saatler içinde ölür — önce kullanıcı tokenını uzat, sayfa tokenını ondan al.',
         syncProfile: 'Profili oku',

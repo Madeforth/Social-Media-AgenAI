@@ -582,6 +582,48 @@ export async function setConnectionModels(formData: FormData): Promise<void> {
   providerRedirect(locale, errorCode);
 }
 
+/** Removes the connected Instagram account and the credential stored with it. */
+export async function disconnectInstagram(formData: FormData): Promise<void> {
+  const locale = targetLocale(formData);
+  const brand = await getCurrentBrand();
+  if (!brand) redirect(`/${locale}/settings`);
+
+  const supabase = await getServerSupabase();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session) redirect(`/${locale}/sign-in`);
+
+  let errorMessage: string | null = null;
+
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/disconnect-instagram`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ brand_id: brand.id }),
+      },
+    );
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => null)) as { error?: unknown } | null;
+      errorMessage = (typeof payload?.error === 'string' ? payload.error : 'failed').slice(0, 300);
+    }
+  } catch {
+    errorMessage = 'network';
+  }
+
+  revalidatePath(`/${locale}/settings`);
+  redirect(
+    errorMessage
+      ? `/${locale}/settings?igError=${encodeURIComponent(errorMessage)}`
+      : `/${locale}/settings`,
+  );
+}
+
 /**
  * Pulls the connected account's bio and recent captions in as brand context.
  *

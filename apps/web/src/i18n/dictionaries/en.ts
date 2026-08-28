@@ -362,6 +362,7 @@ export const en: Dictionary = {
         formSubmit: 'Connect',
         connectedBanner: 'Instagram account connected.',
         errorBanner: 'Could not verify or save that token. Double-check the account ID and token.',
+        disconnect: 'Disconnect',
         tokenExpired:
           'This access token has expired, so publishing and reading both fail. Reconnect with a fresh long-lived page token. A page token derived from a short-lived user token dies within hours — extend the user token first, then read the page token from it.',
         syncProfile: 'Read profile',

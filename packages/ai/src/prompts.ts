@@ -39,7 +39,11 @@ supplied data.
 3. Never claim the brand is the best, the first, the only or the safest.
 4. If a forbidden claim list is supplied, none of those phrases may appear in
    any copy field, in any wording, in any language.
-5. When the brand record is largely empty, say less rather than filling the gap.
+5. Never return a bare photograph. Every image is a designed composition: either
+   typography and graphic structure alone, or a photograph placed inside that
+   structure. A photograph with nothing designed on it is not an acceptable
+   output whatever the visual_format suggests.
+6. When the brand record is largely empty, say less rather than filling the gap.
    A short, true, well-made post beats a detailed invented one. Set a qa_note
    saying which brand facts were missing.
 
@@ -62,9 +66,8 @@ Work in this order, and let each step constrain the next.
    right when there is real data in the brand record to visualize; otherwise it
    becomes an invented chart, which breaks constraint 1.
 
-   Design and photography are not an either/or. Most formats can carry a
-   photographic element inside a designed layout, and that hybrid is usually
-   stronger than either alone — see "The photographic element" below.
+   The format decides what the photograph inside the layout shows, not whether
+   there is a layout. Every output is designed; see the image brief rules below.
 4. Check the last posts for repetition — same pillar, same opening structure,
    same visual idea. Vary composition while keeping brand DNA.
 
@@ -89,6 +92,8 @@ Formatting rules:
 - Emoji only at the start of a value line, one per line, six to eight in the
   whole caption. This brand is premium: emoji are punctuation, not decoration.
 - No hashtags inside the caption. They belong in the hashtags field.
+- Every entry in the hashtags field starts with "#". A bare word is not a
+  hashtag.
 - Total 80 to 150 words unless the language directive says otherwise.
 
 ## Worked example
@@ -113,96 +118,84 @@ brief for a designer, not as a description of the caption. Order matters — the
 image model reads sequentially, so the first sentence sets what kind of artefact
 this is.
 
-Choose the brief type from the visual_format you selected. Getting this wrong is
-the single most common failure: a design brief written in photography vocabulary
-comes back as a stock photo.
+Every brief is a design brief. There is no photography-only path.
 
-## Design-led formats
+A composition may be entirely typographic, or it may carry a photograph inside a
+designed layout. Those are the two allowed outcomes. A bare photograph with
+nothing designed on top of it is not one of them, whatever the visual_format
+says. CINEMATIC_LIFESTYLE, RIDER_COMMUNITY and SEASONAL describe what the
+photograph in the layout shows; they never mean "return a photograph".
 
-For EDITORIAL_TYPOGRAPHY, MANIFESTO, TEASER_LAUNCH, ACHIEVEMENT_BADGE,
-DATA_VISUALIZATION, EDUCATIONAL_CAROUSEL and PRODUCT_UI, write a GRAPHIC DESIGN
-brief. Open with the words "A designed social media poster" so the model does not
-default to photography. Then specify, as flowing sentences:
+Open every brief with the words "A designed social media poster" so the model
+does not default to photography, then specify:
 
-1. CANVAS and grid. Vertical 4:5. Say how the frame divides — for example a left
-   column carrying type and a right column carrying the subject, or a full-bleed
-   ground with the type stacked in the upper third.
-2. TYPOGRAPHY, with the exact strings to render. Give the headline verbatim in
-   quotes and say how it is set: typeface character (condensed grotesque,
-   geometric sans, editorial serif), weight, uppercase or sentence case,
-   tracking, how many lines it breaks across, and its size relative to the frame.
-   Add a kicker or eyebrow line and a footer line if the layout wants them, again
-   with exact strings. Never ask for a paragraph of body copy in the image — the
-   caption carries that.
+1. CANVAS and grid. Vertical 4:5. Say how the frame divides — a left column of
+   type beside a right column carrying the subject, an upper type band above a
+   full-bleed photographic lower band, or a full-bleed ground with the type
+   stacked in the upper third.
+2. TYPOGRAPHY, with the exact strings to render. Never optional. Give the
+   headline verbatim in quotes and say how it is set: typeface character
+   (condensed grotesque, geometric sans, editorial serif), weight, uppercase or
+   sentence case, tracking, how many lines it breaks across, and its size
+   relative to the frame. Add a kicker or eyebrow line and a footer line if the
+   layout wants them, again with exact strings. Never ask for a paragraph of body
+   copy in the image — the caption carries that.
 
    State the colour of every text element and the value it sits against. Left
-   unsaid, the model will pick a tone close to its background and the headline
-   comes back barely legible — near-white type on a dark ground, or near-black on
-   a light one, never mid-grey on mid-grey.
+   unsaid, the model picks a tone close to its background and the headline comes
+   back barely legible — near-white type on a dark ground, near-black on a light
+   one, never mid-grey on mid-grey.
 3. COLOR. Name the actual palette from the brand's visual rules, as a ground
-   colour plus one accent used sparingly. Say what the accent is allowed to
-   touch.
-4. STRUCTURE. Thin rules, a small index or numbering system, a corner lockup,
-   a subtle grid or topographic line texture — the details that make a layout
-   read as designed rather than generated. Name where each sits.
+   colour plus one accent used sparingly. Say what the accent may touch.
+4. STRUCTURE. Thin rules, a small index, a corner lockup, a subtle grid or
+   topographic texture — the details that make a layout read as designed rather
+   than generated. Name where each sits.
 5. GROUND treatment. Matte dark surface, fine grain, a soft gradient falloff,
    layered depth. Say it plainly.
 6. MOOD in one clause.
 
 ### The photographic element
 
-A designed poster is not obliged to be type and geometry alone, and the strongest
-work usually is not. Decide, per concept, whether the layout needs a photographic
-element inside it — then say so explicitly, because the model will not add one on
-its own.
+Most layouts are stronger with one, and the community, lifestyle and seasonal
+formats effectively require one. Decide per concept and say so explicitly — the
+model will not add one on its own.
 
 Reach for one when the message is about riding, the rider, the road, the gear or
 the product in its real setting. Leave it out when the message is a stated
-position, a launch teaser with nothing to show yet, or a pure typographic
-statement — a photograph added to those only dilutes them.
+position, a launch teaser with nothing to show yet, or a purely typographic
+statement.
 
-When the layout takes one, specify all four of these or the model will paste in a
+When the layout takes one, specify all four of these or the model pastes in a
 stock shot:
 
 - SUBJECT and crop. What is in frame and how tight — a rider leaning through a
   bend shot from behind, a fuel tank and glove at close range, a road unwinding
-  into dusk. Name the moment, not the category.
+  into dusk. Name the moment, not the category, and give the light source and its
+  direction.
 - PLACEMENT. Which region of the 4:5 frame it occupies and how much: a full-bleed
   lower half, a hard-edged panel in the right column, a circular cut-out, a
-  silhouette bleeding off the bottom edge.
+  silhouette bleeding off the bottom edge. It never fills the whole frame — the
+  typography needs somewhere to live.
 - BLEND. How it meets the designed ground: a gradient falloff into the ground
   colour, a duotone in the brand palette, a hard geometric mask, a multiply blend
-  under the grid texture. This is the step that makes it read as one composition
-  rather than a photo with text dropped on top.
+  under the grid texture. This is what makes it read as one composition rather
+  than a photo with text dropped on top.
 - TYPE RELATIONSHIP. Where the headline sits against it and how it stays legible
   — over the darkest region, above the horizon, or clear of the subject entirely.
 
 Two limits on what may be photographed.
 
 Any screen in the image — a phone, a display, an instrument cluster — must be off,
-blank, or turned away, unless the brand's asset library actually holds a product
+blank or turned away, unless the brand's asset library actually holds a product
 screenshot you were told about. A device showing invented app interface breaks
-the first hard constraint no matter how good the layout is. When a real
-screenshot exists, place it as supplied and say so; never redraw it.
+the first hard constraint however good the layout is. When a real screenshot
+exists, place it as supplied and never redraw it.
 
 Nothing in the photograph may assert a fact the brand record does not state. No
 readable badge, no visible metric, no branded garment the brand does not make.
 
 If no screenshot exists and the concept still wants a device, show the phone dark
-and reflective in the rider's hand, or leave the device out and let typography
-carry it.
-
-## Photographic formats
-
-For CINEMATIC_LIFESTYLE, RIDER_COMMUNITY and SEASONAL, write a PHOTOGRAPHY
-brief: subject and what it is doing, setting and where the frame stays empty,
-one named light source and its direction, palette, lens and depth of field, then
-mood. Say explicitly which third of the frame is negative space, because a
-headline may be set there.
-
-Prefer a design-led format over a photographic one when the brand's asset library
-is empty. A generated photograph of a person the brand has never worked with is
-weaker than a typographic poster that is entirely the brand's own.
+and reflective in the rider's hand, or leave it out and let typography carry it.
 
 ### Composition must be complete
 
@@ -211,19 +204,18 @@ corner and two-thirds of the frame empty. That is not minimalism, it is an
 unfinished layout.
 
 Every brief must place something deliberate in each band of the frame — upper,
-middle and lower. Empty space is allowed and often right, but it has to be stated
-as a decision ("the lower half stays open, holding only the footer lockup against
-the grain") rather than left unmentioned.
+middle and lower. Empty space is allowed and often right, but state it as a
+decision ("the lower half stays open, holding only the footer lockup against the
+grain") rather than leaving it unmentioned.
 
 Name a real accent colour and say what it touches, even when the brand record has
-no visual rules. Falling back to grey-on-grey is what produces a dead poster.
+no visual rules. Grey-on-grey is what produces a dead poster.
 
-A design-led layout must carry at least one substantial non-typographic element —
-a photographic band, a strong colour block, a geometric system with real presence,
-or a texture that is actually visible. Type centred on flat ground with nothing
-else in the frame is not a minimal poster, it is an unfinished one, and it is the
-default a model falls into when the brand record is thin. Say what that element
-is and how much of the frame it holds.
+A layout must carry at least one substantial non-typographic element — a
+photographic band, a strong colour block, a geometric system with real presence,
+or a visible texture. Type on flat ground is not a minimal poster, it is an
+unfinished one, and it is where a model lands when the brand record is thin. Say
+what that element is and how much of the frame it holds.
 
 Never invent a meaningless code, serial or label to fill a corner. An index mark
 is only allowed if it means something — a step number in a series, a date. A
@@ -243,12 +235,12 @@ Set the headline "RITIM, HIZDAN ONCE GELIR." in a very heavy condensed grotesque
 uppercase, tight tracking, broken across three stacked lines, filling the upper
 left and running to roughly two-thirds of the frame width. Type is warm off-white
 at near-full opacity, sitting on the darkest part of the ground so it holds at
-thumbnail size. Beneath it, a kicker line "TEMPO ONCE, HIZ SONRA." in small
+thumbnail size. Beneath it a kicker line "TEMPO ONCE, HIZ SONRA." in small
 letter-spaced uppercase, warm grey.
 
-Ground is a matte near-black charcoal with fine film grain and a soft vignette.
-The single accent is a saturated amber, used only for a short horizontal rule
-under the kicker and one small dot on the horizon line.
+Ground is matte near-black charcoal with fine film grain and a soft vignette. The
+single accent is a saturated amber, used only for a short horizontal rule under
+the kicker and one small dot on the horizon line.
 
 Lower band: a rider seen from behind on an empty mountain road at first light,
 wide and small in frame, the road curving away to the right. It bleeds off the
@@ -269,7 +261,8 @@ Note what that brief does: it fills all three bands, names one accent and what i
 may touch, states the type colour and the value behind it, blends the photograph
 into the ground rather than pasting it, and forbids inventing any other text.
 
-## Both kinds end the same way
+
+### Every brief ends the same way
 
 Close the brief with what must not appear. Always exclude: gibberish or
 misspelled text, watermarks, logos you were not given, stock-photo staging, and
@@ -300,9 +293,11 @@ Check, in order of severity:
 6. Structure. Hook, value and close present; one emoji per value line; exactly
    one call to action; no hashtags in the caption body.
 7. Repetition against the recent posts — pillar, opening structure, visual idea.
-8. Image brief. Does generation_prompt lead with a subject, name a light source,
-   name a palette and state what must not appear? Does it ask for a chart
-   without data to plot?
+8. Image brief. Does generation_prompt describe a designed composition rather
+   than a bare photograph? Does it name the exact strings to render, their
+   colour and the value behind them, a palette and one accent, and what must not
+   appear? Does it ask for a chart without data to plot? A brief that would
+   return a photograph with no typography on it is a fail.
 9. Strategic justification. Does the concept serve the stated objective.
 
 Return a pass or fail verdict plus concrete fixes. Do not soften a failure, and
@@ -331,6 +326,9 @@ export const IMAGE_PROMPT_GUARDRAIL = `Output requirements for this asset:
   breathing room, not a border drawn around the design.
 - Hold one clear focal point. Leave out any supporting element that would clutter
   the frame; empty space is part of the design.
+- This is a designed composition, never a bare photograph. Typography and graphic
+  structure are always present; a photograph, when the brief calls for one, sits
+  inside that structure rather than replacing it.
 - Where a photograph sits inside the layout, it must be integrated — masked,
   graded or faded into the ground so the result reads as one designed artefact,
   never as a stock photo with type dropped on top of it.

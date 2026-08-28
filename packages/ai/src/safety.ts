@@ -252,10 +252,20 @@ export function validateContentProposal(value: unknown): ValidationResult<Conten
         failures.push({ field: `hashtags[${index}]`, problem: 'expected a string' });
         continue;
       }
-      const tag = stripInvisible(entry).trim();
+      const raw = stripInvisible(entry).trim();
+      // A bare word is the model forgetting the `#`, not a response that cannot
+      // be trusted — every character of it is already a legal hashtag body. It
+      // is repaired, for the same reason an over-long string is: rejecting a
+      // complete proposal over one missing character throws away a usable post
+      // and buys another call that will probably repeat the slip. Anything the
+      // `#` cannot rescue — spaces, punctuation, an empty string — still fails.
+      const tag = raw.startsWith('#') ? raw : `#${raw}`;
       if (!/^#[\p{L}\p{N}_]+$/u.test(tag)) {
-        failures.push({ field: `hashtags[${index}]`, problem: `"${tag}" is not a hashtag` });
+        failures.push({ field: `hashtags[${index}]`, problem: `"${raw}" is not a hashtag` });
         continue;
+      }
+      if (tag !== raw) {
+        adjustments.push({ field: `hashtags[${index}]`, problem: 'was missing its "#"' });
       }
       if (tag.length > OUTPUT_LIMITS.hashtagLength) {
         adjustments.push({ field: `hashtags[${index}]`, problem: 'was too long, dropped' });

@@ -53,9 +53,9 @@ export default async function CreatePage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ mode?: string; error?: string }>;
+  searchParams: Promise<{ mode?: string; error?: string; detail?: string }>;
 }) {
-  const [{ mode, error }, { locale }, guidelines] = await Promise.all([
+  const [{ mode, error, detail }, { locale }, guidelines] = await Promise.all([
     searchParams,
     params,
     getBrandGuidelines(),
@@ -76,9 +76,14 @@ export default async function CreatePage({
       <PageHeader title={copy.title} description={copy.description} />
 
       {errorMessage ? (
-        <p className="rounded-md border border-red-900/50 bg-red-950/30 px-4 py-3 text-sm text-red-300">
-          {errorMessage}
-        </p>
+        <div className="rounded-md border border-red-900/50 bg-red-950/30 px-4 py-3">
+          <p className="text-sm text-red-300">{errorMessage}</p>
+          {/* What the provider or the validator actually said. A generic sentence
+              on its own has hidden the real cause four times now. */}
+          {detail ? (
+            <p className="mt-2 break-words font-mono text-xs text-red-400/80">{detail}</p>
+          ) : null}
+        </div>
       ) : null}
 
       <div className="grid gap-3 sm:grid-cols-2">

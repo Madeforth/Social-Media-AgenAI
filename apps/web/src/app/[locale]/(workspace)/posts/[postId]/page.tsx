@@ -32,7 +32,12 @@ export const maxDuration = 60;
 
 interface PageParams {
   params: Promise<{ locale: string; postId: string }>;
-  searchParams: Promise<{ imageError?: string; genError?: string; publishError?: string }>;
+  searchParams: Promise<{
+    imageError?: string;
+    genError?: string;
+    publishError?: string;
+    detail?: string;
+  }>;
 }
 
 export async function generateMetadata({ params }: PageParams) {
@@ -69,7 +74,7 @@ function Field({
 
 export default async function PostDetailPage({ params, searchParams }: PageParams) {
   const { locale: requestedLocale, postId } = await params;
-  const { imageError, genError, publishError } = await searchParams;
+  const { imageError, genError, publishError, detail } = await searchParams;
   const [post, i18n] = await Promise.all([getPost(postId), getI18n(requestedLocale)]);
 
   if (!post) {
@@ -171,15 +176,21 @@ export default async function PostDetailPage({ params, searchParams }: PageParam
       </header>
 
       {imageErrorMessage ? (
-        <p className="rounded-md border border-red-900/50 bg-red-950/30 px-4 py-3 text-sm text-red-300">
-          {imageErrorMessage}
-        </p>
+        <div className="rounded-md border border-red-900/50 bg-red-950/30 px-4 py-3">
+          <p className="text-sm text-red-300">{imageErrorMessage}</p>
+          {detail ? (
+            <p className="mt-2 break-words font-mono text-xs text-red-400/80">{detail}</p>
+          ) : null}
+        </div>
       ) : null}
 
       {genErrorMessage ? (
-        <p className="rounded-md border border-red-900/50 bg-red-950/30 px-4 py-3 text-sm text-red-300">
-          {genErrorMessage}
-        </p>
+        <div className="rounded-md border border-red-900/50 bg-red-950/30 px-4 py-3">
+          <p className="text-sm text-red-300">{genErrorMessage}</p>
+          {detail ? (
+            <p className="mt-2 break-words font-mono text-xs text-red-400/80">{detail}</p>
+          ) : null}
+        </div>
       ) : null}
 
       {publishError ? (

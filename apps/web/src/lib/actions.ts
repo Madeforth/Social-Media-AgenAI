@@ -193,6 +193,49 @@ export async function uploadBrandAsset(formData: FormData): Promise<void> {
   revalidatePath(`/${locale}/assets`);
 }
 
+/** Long enough to carry a real diagnosis, short enough for a query string. */
+const ERROR_DETAIL_LIMIT = 300;
+
+/**
+ * What the Edge Function actually said, for printing under the translated
+ * sentence.
+ *
+ * Four separate diagnoses have now been hidden behind a generic "generation
+ * failed": a model retired without warning, a field four characters over its
+ * limit, a provider asking for a payment method, and a hashtag returned without
+ * its "#". Each cost a round of guessing that the response body would have
+ * ended immediately. The error code still chooses the translated line; this is
+ * the evidence underneath it.
+ */
+function errorDetail(result: { error?: unknown; failures?: unknown }): string | null {
+  const parts: string[] = [];
+  if (typeof result.error === 'string' && result.error.length > 0) parts.push(result.error);
+  if (Array.isArray(result.failures) && result.failures.length > 0) {
+    parts.push(
+      result.failures
+        .map((failure) => {
+          const { field, problem } = (failure ?? {}) as { field?: string; problem?: string };
+          return [field, problem].filter(Boolean).join(': ');
+        })
+        .filter((entry) => entry.length > 0)
+        .join('; '),
+    );
+  }
+  const detail = parts
+    .filter((part) => part.length > 0)
+    .join(' — ')
+    .trim();
+  if (detail.length === 0) return null;
+  return detail.length > ERROR_DETAIL_LIMIT ? `${detail.slice(0, ERROR_DETAIL_LIMIT - 1)}…` : detail;
+}
+
+/** A redirect target carrying the error code and, when there is one, its detail. */
+function errorQuery(key: string, code: string, detail: string | null): string {
+  const query = new URLSearchParams({ [key]: code });
+  if (detail) query.set('detail', detail);
+  return query.toString();
+}
+
 /**
  * Calls the `generate-post` Edge Function (docs/SECURITY.md's Milestone 6 gate)
  * with the caller's own access token, so the function re-verifies authorization
@@ -217,6 +260,7 @@ export async function generatePost(formData: FormData): Promise<void> {
 
   let postId: string | null = null;
   let errorCode = 'failed';
+  let detail: string | null = null;
 
   try {
     const response = await fetch(
@@ -236,13 +280,17 @@ export async function generatePost(formData: FormData): Promise<void> {
         }),
       },
     );
-    const result = (await response.json()) as { post_id?: string; error?: string };
+    const result = (await response.json()) as {
+      post_id?: string;
+      error?: string;
+      failures?: unknown;
+    };
     if (response.ok && result.post_id) {
       postId = result.post_id;
-    } else if (response.status === 429) {
-      errorCode = 'quota';
-    } else if (response.status === 503) {
-      errorCode = 'not_configured';
+    } else {
+      if (response.status === 429) errorCode = 'quota';
+      else if (response.status === 503) errorCode = 'not_configured';
+      detail = errorDetail(result);
     }
   } catch {
     errorCode = 'network';
@@ -262,7 +310,7 @@ export async function generatePost(formData: FormData): Promise<void> {
     redirect(`/${locale}/posts/${postId}`);
   }
 
-  redirect(`/${locale}/create?error=${errorCode}`);
+  redirect(`/${locale}/create?${errorQuery('error', errorCode, detail)}`);
 }
 
 /** Calls the `generate-image` Edge Function for a post's current version. */
@@ -278,6 +326,7 @@ export async function generateImage(formData: FormData): Promise<void> {
   if (!session) redirect(`/${locale}/sign-in`);
 
   let errorCode: string | null = null;
+  let detail: string | null = null;
 
   try {
     const response = await fetch(
@@ -294,6 +343,7 @@ export async function generateImage(formData: FormData): Promise<void> {
     if (!response.ok) {
       errorCode =
         response.status === 429 ? 'quota' : response.status === 503 ? 'not_configured' : 'failed';
+      detail = errorDetail(await response.json().catch(() => ({})));
     }
   } catch {
     errorCode = 'network';
@@ -301,7 +351,9 @@ export async function generateImage(formData: FormData): Promise<void> {
 
   revalidatePath(`/${locale}/posts/${postId}`);
   redirect(
-    errorCode ? `/${locale}/posts/${postId}?imageError=${errorCode}` : `/${locale}/posts/${postId}`,
+    errorCode
+      ? `/${locale}/posts/${postId}?${errorQuery('imageError', errorCode, detail)}`
+      : `/${locale}/posts/${postId}`,
   );
 }
 
@@ -336,6 +388,7 @@ export async function regeneratePost(formData: FormData): Promise<void> {
 
   const brief = String(formData.get('brief') ?? '').trim();
   let errorCode: string | null = null;
+  let detail: string | null = null;
 
   try {
     const response = await fetch(
@@ -352,6 +405,7 @@ export async function regeneratePost(formData: FormData): Promise<void> {
     if (!response.ok) {
       errorCode =
         response.status === 429 ? 'quota' : response.status === 503 ? 'not_configured' : 'failed';
+      detail = errorDetail(await response.json().catch(() => ({})));
     }
   } catch {
     errorCode = 'network';
@@ -360,7 +414,9 @@ export async function regeneratePost(formData: FormData): Promise<void> {
   revalidatePath(`/${locale}/posts/${postId}`);
   revalidatePath(`/${locale}/library`, 'layout');
   redirect(
-    errorCode ? `/${locale}/posts/${postId}?genError=${errorCode}` : `/${locale}/posts/${postId}`,
+    errorCode
+      ? `/${locale}/posts/${postId}?${errorQuery('genError', errorCode, detail)}`
+      : `/${locale}/posts/${postId}`,
   );
 }
 

@@ -498,17 +498,25 @@ async function callAiProviders(
         body: JSON.stringify({ brand_id: brand.id, ...body }),
       },
     );
-    return response.ok ? null : 'failed';
+    if (response.ok) return null;
+
+    // Surface what the provider actually said. A generic "could not save" has
+    // cost real time three times over: a retired model id, a validation limit
+    // four characters short, and an Ideogram key that authenticates fine but has
+    // no credits behind it. The specific sentence is the whole diagnosis.
+    const payload = (await response.json().catch(() => null)) as { error?: unknown } | null;
+    const message = typeof payload?.error === 'string' ? payload.error : 'failed';
+    return message.slice(0, 300);
   } catch {
     return 'network';
   }
 }
 
-function providerRedirect(locale: string, errorCode: string | null): never {
+function providerRedirect(locale: string, errorMessage: string | null): never {
   revalidatePath(`/${locale}/settings`);
   redirect(
-    errorCode
-      ? `/${locale}/settings?providerError=${errorCode}`
+    errorMessage
+      ? `/${locale}/settings?providerError=${encodeURIComponent(errorMessage)}`
       : `/${locale}/settings?providerSaved=1`,
   );
 }

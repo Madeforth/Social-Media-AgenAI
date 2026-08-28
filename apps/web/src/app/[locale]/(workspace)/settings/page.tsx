@@ -149,9 +149,18 @@ export default async function SettingsPage({ params, searchParams }: PageParams)
             </p>
           ) : null}
           {providerError ? (
-            <p className="mx-5 mt-4 rounded-md border border-red-900/50 bg-red-950/30 px-3 py-2 text-xs text-red-300">
-              {aiCopy.errorBanner}
-            </p>
+            <div className="mx-5 mt-4 rounded-md border border-red-900/50 bg-red-950/30 px-3 py-2">
+              <p className="text-xs text-red-300">{aiCopy.errorBanner}</p>
+              {/*
+                The provider's own sentence, not a paraphrase. "Add a payment
+                method and credits to use this API key" is the entire answer;
+                a generic failure message sends someone hunting for a bug that
+                is not in this codebase.
+              */}
+              {providerError !== 'failed' && providerError !== 'network' ? (
+                <p className="mt-1 break-words text-xs text-red-200/80">{providerError}</p>
+              ) : null}
+            </div>
           ) : null}
 
           <div className="flex flex-col gap-5 px-5 py-4">

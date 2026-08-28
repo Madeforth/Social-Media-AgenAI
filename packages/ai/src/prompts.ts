@@ -61,6 +61,10 @@ Work in this order, and let each step constrain the next.
    option among ten and must not be the default. A data visualization is only
    right when there is real data in the brand record to visualize; otherwise it
    becomes an invented chart, which breaks constraint 1.
+
+   Design and photography are not an either/or. Most formats can carry a
+   photographic element inside a designed layout, and that hybrid is usually
+   stronger than either alone — see "The photographic element" below.
 4. Check the last posts for repetition — same pillar, same opening structure,
    same visual idea. Vary composition while keeping brand DNA.
 
@@ -130,6 +134,11 @@ default to photography. Then specify, as flowing sentences:
    Add a kicker or eyebrow line and a footer line if the layout wants them, again
    with exact strings. Never ask for a paragraph of body copy in the image — the
    caption carries that.
+
+   State the colour of every text element and the value it sits against. Left
+   unsaid, the model will pick a tone close to its background and the headline
+   comes back barely legible — near-white type on a dark ground, or near-black on
+   a light one, never mid-grey on mid-grey.
 3. COLOR. Name the actual palette from the brand's visual rules, as a ground
    colour plus one accent used sparingly. Say what the accent is allowed to
    touch.
@@ -140,11 +149,48 @@ default to photography. Then specify, as flowing sentences:
    layered depth. Say it plainly.
 6. MOOD in one clause.
 
-Only ask for a device mockup when the brand's asset library actually contains a
-product screenshot you were told about. Without one the model would invent an
-interface, which breaks the first hard constraint. If no screenshot exists, build
-the composition from typography, colour and abstract geometry instead — that is
-what a launch teaser looks like before the product is shown.
+### The photographic element
+
+A designed poster is not obliged to be type and geometry alone, and the strongest
+work usually is not. Decide, per concept, whether the layout needs a photographic
+element inside it — then say so explicitly, because the model will not add one on
+its own.
+
+Reach for one when the message is about riding, the rider, the road, the gear or
+the product in its real setting. Leave it out when the message is a stated
+position, a launch teaser with nothing to show yet, or a pure typographic
+statement — a photograph added to those only dilutes them.
+
+When the layout takes one, specify all four of these or the model will paste in a
+stock shot:
+
+- SUBJECT and crop. What is in frame and how tight — a rider leaning through a
+  bend shot from behind, a fuel tank and glove at close range, a road unwinding
+  into dusk. Name the moment, not the category.
+- PLACEMENT. Which region of the 4:5 frame it occupies and how much: a full-bleed
+  lower half, a hard-edged panel in the right column, a circular cut-out, a
+  silhouette bleeding off the bottom edge.
+- BLEND. How it meets the designed ground: a gradient falloff into the ground
+  colour, a duotone in the brand palette, a hard geometric mask, a multiply blend
+  under the grid texture. This is the step that makes it read as one composition
+  rather than a photo with text dropped on top.
+- TYPE RELATIONSHIP. Where the headline sits against it and how it stays legible
+  — over the darkest region, above the horizon, or clear of the subject entirely.
+
+Two limits on what may be photographed.
+
+Any screen in the image — a phone, a display, an instrument cluster — must be off,
+blank, or turned away, unless the brand's asset library actually holds a product
+screenshot you were told about. A device showing invented app interface breaks
+the first hard constraint no matter how good the layout is. When a real
+screenshot exists, place it as supplied and say so; never redraw it.
+
+Nothing in the photograph may assert a fact the brand record does not state. No
+readable badge, no visible metric, no branded garment the brand does not make.
+
+If no screenshot exists and the concept still wants a device, show the phone dark
+and reflective in the rider's hand, or leave the device out and let typography
+carry it.
 
 ## Photographic formats
 
@@ -214,6 +260,9 @@ export const IMAGE_PROMPT_GUARDRAIL = `Output requirements for this asset:
   cropped by the frame edge.
 - Hold one clear focal point. Leave out any supporting element that would clutter
   the frame; empty space is part of the design.
+- Where a photograph sits inside the layout, it must be integrated — masked,
+  graded or faded into the ground so the result reads as one designed artefact,
+  never as a stock photo with type dropped on top of it.
 
 Never render: lorem ipsum, misspelled or gibberish text, invented user interface
 chrome, fabricated numbers, charts without stated data, watermarks, stock-photo

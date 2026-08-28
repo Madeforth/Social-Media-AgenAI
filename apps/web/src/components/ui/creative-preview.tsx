@@ -64,11 +64,17 @@ export function CreativePreview({
           className,
         )}
       >
+        {/*
+          Contained rather than covered. Generated images are 4:5 and fit the
+          frame exactly, but anything produced before the aspect ratio was pinned
+          — or by a model that ignores it — would otherwise be silently cropped,
+          and a reviewer approving a post needs to see the whole asset.
+        */}
         {/* eslint-disable-next-line @next/next/no-img-element -- signed Supabase Storage URL, not a Next image domain */}
         <img
           src={imageUrl}
           alt={headline || labels.creativePreview.emptyLabel}
-          className="h-full w-full object-cover"
+          className="h-full w-full object-contain"
         />
       </div>
     );

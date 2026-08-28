@@ -183,19 +183,37 @@ Deno.serve(async (req) => {
   }
 
   // 6. Call Gemini, persist the image, then update the audit row with the outcome.
-  let imageBytes: Uint8Array;
-  try {
-    const response = await fetch(
+  //
+  // The aspect ratio is not optional. Without imageConfig the model picks its
+  // own — measured at 1408x768, landscape — which then sits cropped inside a
+  // 4:5 portrait preview and is the wrong shape for an Instagram feed post.
+  // 4:5 measured back as 928x1152 at 1K and 1856x2304 at 2K.
+  //
+  // imageSize is attempted at 2K and retried without it on failure: the
+  // flash-lite image models only support 1K, and an organization is free to
+  // select one of those in Settings.
+  const callGemini = (config: Record<string, unknown>) =>
+    fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${imageModel}:generateContent?key=${geminiApiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ role: 'user', parts: [{ text: imagePrompt }] }],
-          generationConfig: { responseModalities: ['IMAGE'] },
+          generationConfig: {
+            responseModalities: ['IMAGE'],
+            imageConfig: { aspectRatio: '4:5', ...config },
+          },
         }),
       },
     );
+
+  let imageBytes: Uint8Array;
+  try {
+    let response = await callGemini({ imageSize: '2K' });
+    if (!response.ok) {
+      response = await callGemini({});
+    }
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(`Gemini request failed: ${response.status} ${errorText.slice(0, 500)}`);

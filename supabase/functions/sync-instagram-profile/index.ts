@@ -15,6 +15,8 @@
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
+import { isMetaAuthFailure, markSocialAccountExpired } from '../_shared/ai.ts';
+
 const GRAPH_API_VERSION = 'v21.0';
 
 /** Enough recent posts to show voice and catch repetition, without flooding the prompt. */
@@ -103,9 +105,13 @@ Deno.serve(async (req) => {
       );
     }
   } catch (error) {
-    return json(502, {
-      error: `Could not read the profile: ${error instanceof Error ? error.message : 'unknown error'}`,
-    });
+    const message = error instanceof Error ? error.message : 'unknown error';
+    // A dead token has to change the stored state, or the panel keeps saying
+    // "connected" while nothing works.
+    if (isMetaAuthFailure(message)) {
+      await markSocialAccountExpired(serviceClient, account.id);
+    }
+    return json(502, { error: `Could not read the profile: ${message}` });
   }
 
   // 2. Recent posts. Captions are the useful part — they are how this brand
@@ -122,9 +128,11 @@ Deno.serve(async (req) => {
     }
     media = Array.isArray(payload.data) ? payload.data : [];
   } catch (error) {
-    return json(502, {
-      error: `Could not read recent posts: ${error instanceof Error ? error.message : 'unknown error'}`,
-    });
+    const message = error instanceof Error ? error.message : 'unknown error';
+    if (isMetaAuthFailure(message)) {
+      await markSocialAccountExpired(serviceClient, account.id);
+    }
+    return json(502, { error: `Could not read recent posts: ${message}` });
   }
 
   const toInt = (value: unknown) => (typeof value === 'number' ? value : null);

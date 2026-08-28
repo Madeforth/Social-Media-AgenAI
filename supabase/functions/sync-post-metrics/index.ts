@@ -4,6 +4,8 @@
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
+import { isMetaAuthFailure, markSocialAccountExpired } from '../_shared/ai.ts';
+
 const GRAPH_API_VERSION = 'v21.0';
 const METRICS = ['impressions', 'reach', 'likes', 'comments', 'saved', 'shares'] as const;
 
@@ -110,6 +112,10 @@ Deno.serve(async (req) => {
 
     return json(200, { post_id: postId, metrics: values });
   } catch (error) {
-    return json(502, { error: error instanceof Error ? error.message : 'unknown metrics error' });
+    const message = error instanceof Error ? error.message : 'unknown metrics error';
+    if (isMetaAuthFailure(message)) {
+      await markSocialAccountExpired(serviceClient, account.id);
+    }
+    return json(502, { error: message });
   }
 });

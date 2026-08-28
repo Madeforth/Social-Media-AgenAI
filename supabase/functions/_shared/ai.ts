@@ -1003,3 +1003,39 @@ export async function generateImageBytes(
   if (typeof base64 !== 'string') throw new Error('Gemini response had no image data');
   return base64ToBytes(base64);
 }
+
+/**
+ * Whether a Graph API failure means the stored token is dead.
+ *
+ * Meta reports every auth problem as OAuthException with code 190 — expiry,
+ * revocation, a password change, the app being removed. The message differs; the
+ * code does not.
+ */
+export function isMetaAuthFailure(message: string): boolean {
+  return (
+    /error validating access token/i.test(message) ||
+    /session has expired/i.test(message) ||
+    /"code":\s*190/.test(message) ||
+    (/access token/i.test(message) && /expired|invalid|revoked/i.test(message))
+  );
+}
+
+/**
+ * Marks a connected account as EXPIRED so the interface stops claiming it works.
+ *
+ * `token_expires_at` is written optimistically at connect time as now plus sixty
+ * days, because Meta does not report the real expiry on the token it hands back.
+ * A page token derived from a short-lived user token dies within hours while
+ * that column still reads two months out — which is exactly what happened, and
+ * the settings panel went on saying "connected" the whole time. The only
+ * reliable signal is a call actually failing, so that is what records it.
+ */
+export async function markSocialAccountExpired(
+  client: any,
+  socialAccountId: string,
+): Promise<void> {
+  await client
+    .from('social_accounts')
+    .update({ status: 'EXPIRED', token_expires_at: new Date().toISOString() })
+    .eq('id', socialAccountId);
+}

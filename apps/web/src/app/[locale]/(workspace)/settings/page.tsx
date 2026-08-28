@@ -123,7 +123,7 @@ export default async function SettingsPage({ params, searchParams }: PageParams)
               ) : null}
             </div>
           ) : null}
-          {socialAccount?.status === 'CONNECTED' ? (
+          {socialAccount ? (
             <div className="flex flex-col gap-3 px-5 py-4">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="min-w-0">
@@ -144,6 +144,12 @@ export default async function SettingsPage({ params, searchParams }: PageParams)
               </div>
 
               <p className="text-xs text-text-muted">{igCopy.syncProfileHint}</p>
+
+              {socialAccount.status !== 'CONNECTED' ? (
+                <p className="rounded-md border border-orange-900/50 bg-orange-950/30 px-3 py-2 text-xs text-orange-200">
+                  {igCopy.tokenExpired}
+                </p>
+              ) : null}
 
               {socialAccount.profile_synced_at ? (
                 <p className="text-xs text-text-secondary">

@@ -7,6 +7,8 @@
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
+import { isMetaAuthFailure, markSocialAccountExpired } from '../_shared/ai.ts';
+
 const WRITE_ROLES = new Set(['OWNER', 'ADMIN', 'EDITOR']);
 const GRAPH_API_VERSION = 'v21.0';
 const SIGNED_URL_TTL_SECONDS = 3600;
@@ -223,6 +225,12 @@ Deno.serve(async (req) => {
     return json(200, { post_id: postId, instagram_post_id: publishPayload.id });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'unknown publishing error';
+    // A dead token is the one failure the owner can act on, so record it as
+    // state rather than leaving the account reading "connected" while every
+    // publish fails.
+    if (isMetaAuthFailure(message)) {
+      await markSocialAccountExpired(serviceClient, account.id);
+    }
     await recordFailure(message);
     return json(502, { error: message });
   }

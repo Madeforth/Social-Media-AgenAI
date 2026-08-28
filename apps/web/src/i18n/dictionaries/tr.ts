@@ -384,6 +384,9 @@ export const tr: Dictionary = {
         noneYet: 'Henüz bağlı sağlayıcı yok. Üretim için en az bir tane gerekiyor.',
         limitReached: 'Beş bağlantı üst sınır. Yenisini eklemek için birini kaldır.',
         renderingSpeed: 'Render hızı',
+        textModel: 'Metin modeli',
+        imageModel: 'Görsel modeli',
+        useDefault: 'Varsayılan',
         routingDescription:
           'Hangi bağlantının hangi işi yapacağı. Otomatik bırakılırsa ilk Gemini bağlantısı hem yazar hem çizer.',
         textJob: 'Metin ve strateji',

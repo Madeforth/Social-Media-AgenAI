@@ -298,6 +298,9 @@ export interface Dictionary {
         noneYet: string;
         limitReached: string;
         renderingSpeed: string;
+        textModel: string;
+        imageModel: string;
+        useDefault: string;
         routingDescription: string;
         textJob: string;
         textJobHint: string;

@@ -118,9 +118,41 @@ async function callAiProviders<T>(body: Record<string, unknown>): Promise<T | nu
   }
 }
 
+export interface AiConnectionWithModels extends AiConnection {
+  /** What this specific key can reach. Empty when the lookup failed. */
+  available: { text: string[]; image: string[] };
+}
+
+export interface AiProviderStateWithModels extends Omit<AiProviderState, 'connections'> {
+  connections: AiConnectionWithModels[];
+}
+
 /** Every AI connection this organization holds, and which one does which job. */
 export async function getAiProviderState(): Promise<AiProviderState | null> {
   return callAiProviders<AiProviderState>({ action: 'list' });
+}
+
+/**
+ * The same, with each connection's reachable models attached.
+ *
+ * Listed live per connection rather than from a constant, because Google retires
+ * model ids without warning — `gemini-2.5-pro` went to 404 mid-flight — and a
+ * dropdown built from a stale list offers a model that fails on use. One lookup
+ * per connection, run in parallel; a connection whose lookup fails still renders
+ * with its saved choice intact.
+ */
+export async function getAiProviderStateWithModels(): Promise<AiProviderStateWithModels | null> {
+  const state = await getAiProviderState();
+  if (!state) return null;
+
+  const connections = await Promise.all(
+    state.connections.map(async (connection) => ({
+      ...connection,
+      available: (await getConnectionModels(connection.id)) ?? { text: [], image: [] },
+    })),
+  );
+
+  return { ...state, connections };
 }
 
 /**

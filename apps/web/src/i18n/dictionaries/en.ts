@@ -379,6 +379,9 @@ export const en: Dictionary = {
         noneYet: 'No providers connected yet. Generation needs at least one.',
         limitReached: 'Five connections is the maximum. Remove one to add another.',
         renderingSpeed: 'Rendering speed',
+        textModel: 'Text model',
+        imageModel: 'Image model',
+        useDefault: 'Default',
         routingDescription:
           'Which connection does which job. Left automatic, the first Gemini connection writes and draws.',
         textJob: 'Text and strategy',

@@ -567,8 +567,15 @@ export async function setConnectionModels(formData: FormData): Promise<void> {
     {
       action: 'set_models',
       connection_id: String(formData.get('connectionId') ?? ''),
-      text_model: String(formData.get('textModel') ?? '').trim(),
-      image_model: String(formData.get('imageModel') ?? '').trim(),
+      // Sent only when the form actually carried the field, so an Ideogram row
+      // never clears a text model it does not have. An empty string is a real
+      // value here: it means "back to the default".
+      ...(formData.has('textModel')
+        ? { text_model: String(formData.get('textModel') ?? '').trim() }
+        : {}),
+      ...(formData.has('imageModel')
+        ? { image_model: String(formData.get('imageModel') ?? '').trim() }
+        : {}),
     },
     locale,
   );

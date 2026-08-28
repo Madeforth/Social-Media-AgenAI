@@ -16,7 +16,7 @@ import {
   updateBrand,
 } from '@/lib/actions';
 import { getCurrentUser } from '@/lib/auth';
-import { getCurrentBrand, getAiProviderState, getSocialAccount } from '@/lib/data';
+import { getAiProviderStateWithModels, getCurrentBrand, getSocialAccount } from '@/lib/data';
 import { getI18n } from '@/i18n/get-dictionary';
 
 interface PageParams {
@@ -62,7 +62,7 @@ export default async function SettingsPage({ params, searchParams }: PageParams)
     getCurrentBrand(),
     getCurrentUser(),
     getSocialAccount(),
-    getAiProviderState(),
+    getAiProviderStateWithModels(),
     getI18n(locale),
   ]);
   const copy = dictionary.settings;
@@ -174,7 +174,7 @@ export default async function SettingsPage({ params, searchParams }: PageParams)
                 {aiState.connections.map((connection) => (
                   <li
                     key={connection.id}
-                    className="flex flex-wrap items-end justify-between gap-3 rounded-md border border-border-subtle bg-surface-raised px-3 py-3"
+                    className="flex flex-col gap-3 rounded-md border border-border-subtle bg-surface-raised px-3 py-3"
                   >
                     <div className="min-w-0">
                       <p className="text-sm text-text-primary">{connection.label}</p>
@@ -185,11 +185,11 @@ export default async function SettingsPage({ params, searchParams }: PageParams)
                           : ''}
                       </p>
                     </div>
-                    <div className="flex items-end gap-2">
-                      {connection.provider === 'IDEOGRAM' ? (
-                        <form action={setConnectionModels} className="flex items-end gap-2">
-                          <input type="hidden" name="locale" value={locale} />
-                          <input type="hidden" name="connectionId" value={connection.id} />
+                    <div className="flex flex-wrap items-end gap-2">
+                      <form action={setConnectionModels} className="flex flex-wrap items-end gap-2">
+                        <input type="hidden" name="locale" value={locale} />
+                        <input type="hidden" name="connectionId" value={connection.id} />
+                        {connection.provider === 'IDEOGRAM' ? (
                           <FieldLabel label={aiCopy.renderingSpeed}>
                             <Select
                               name="imageModel"
@@ -202,14 +202,41 @@ export default async function SettingsPage({ params, searchParams }: PageParams)
                               ))}
                             </Select>
                           </FieldLabel>
-                          <SubmitButton
-                            label={aiCopy.save}
-                            pendingLabel={dictionary.pending.saveButton}
-                            variant="secondary"
-                            size="sm"
-                          />
-                        </form>
-                      ) : null}
+                        ) : (
+                          <>
+                            <FieldLabel label={aiCopy.textModel}>
+                              <Select name="textModel" defaultValue={connection.text_model ?? ''}>
+                                <option value="">
+                                  {`${aiCopy.useDefault} (${aiState.defaults.text_model})`}
+                                </option>
+                                {connection.available.text.map((model) => (
+                                  <option key={model} value={model}>
+                                    {model}
+                                  </option>
+                                ))}
+                              </Select>
+                            </FieldLabel>
+                            <FieldLabel label={aiCopy.imageModel}>
+                              <Select name="imageModel" defaultValue={connection.image_model ?? ''}>
+                                <option value="">
+                                  {`${aiCopy.useDefault} (${aiState.defaults.image_model})`}
+                                </option>
+                                {connection.available.image.map((model) => (
+                                  <option key={model} value={model}>
+                                    {model}
+                                  </option>
+                                ))}
+                              </Select>
+                            </FieldLabel>
+                          </>
+                        )}
+                        <SubmitButton
+                          label={aiCopy.save}
+                          pendingLabel={dictionary.pending.saveButton}
+                          variant="secondary"
+                          size="sm"
+                        />
+                      </form>
                       <form action={deleteAiProvider}>
                         <input type="hidden" name="locale" value={locale} />
                         <input type="hidden" name="connectionId" value={connection.id} />

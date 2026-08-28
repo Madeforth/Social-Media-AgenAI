@@ -323,20 +323,32 @@ Deno.serve(async (req) => {
       return json(403, { error: 'only an organization owner or admin can change the model' });
     }
 
-    const update: Record<string, string> = {};
-    const textModel = String(body.text_model ?? '').trim();
-    const imageModel = String(body.image_model ?? '').trim();
+    // A field the form did not submit is left alone; a field submitted empty
+    // means "go back to the default", which has to clear the column rather than
+    // be treated as a missing value. Choosing Default for both is a legitimate
+    // save, not an error.
+    const update: Record<string, string | null> = {};
 
-    if (textModel) {
-      if (row.provider !== 'GEMINI') return json(400, { error: 'this provider has no text model' });
-      update.text_model = textModel;
+    if ('text_model' in body) {
+      const textModel = String(body.text_model ?? '').trim();
+      if (textModel && row.provider !== 'GEMINI') {
+        return json(400, { error: 'this provider has no text model' });
+      }
+      update.text_model = textModel || null;
     }
-    if (imageModel) {
-      if (row.provider === 'IDEOGRAM' && !IDEOGRAM_RENDERING_SPEEDS.includes(imageModel)) {
+
+    if ('image_model' in body) {
+      const imageModel = String(body.image_model ?? '').trim();
+      if (
+        imageModel &&
+        row.provider === 'IDEOGRAM' &&
+        !IDEOGRAM_RENDERING_SPEEDS.includes(imageModel)
+      ) {
         return json(400, { error: 'unknown Ideogram rendering speed' });
       }
-      update.image_model = imageModel;
+      update.image_model = imageModel || null;
     }
+
     if (Object.keys(update).length === 0) {
       return json(400, { error: 'text_model or image_model is required' });
     }

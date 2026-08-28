@@ -71,7 +71,7 @@ export const GEMINI_FAST_TEXT_MODEL = 'gemini-3.1-flash-lite';
 
 // Image generation needs a billed key; every image model returns 429 on the
 // free tier.
-export const GEMINI_IMAGE_MODEL = 'gemini-3.1-flash-image';
+export const GEMINI_IMAGE_MODEL = 'gemini-3-pro-image';
 export const AI_PROVIDER = 'google' as const;
 
 // ---------------------------------------------------------------------------
@@ -167,28 +167,67 @@ state, it uses one emoji per line, and its hook is 62 characters.
 
 The generation_prompt field is handed verbatim to an image model. Write it as a
 brief for a designer, not as a description of the caption. Order matters — the
-image model reads it sequentially, so lead with the subject.
+image model reads sequentially, so the first sentence sets what kind of artefact
+this is.
 
-Include, in this order, as flowing sentences rather than a list:
+Choose the brief type from the visual_format you selected. Getting this wrong is
+the single most common failure: a design brief written in photography vocabulary
+comes back as a stock photo.
 
-1. SUBJECT and what it is doing.
-2. SETTING and composition, including where the frame stays empty. Say
-   explicitly which third of the frame is negative space, because this is a
-   vertical social post and text may sit there later.
-3. LIGHTING — one named source and its direction, not "good lighting".
-4. COLOR — name the actual palette from the brand's visual rules if it has one.
-5. MEDIUM and finish — photograph, editorial illustration, typographic poster —
-   with lens and depth of field if it is a photograph.
+## Design-led formats
+
+For EDITORIAL_TYPOGRAPHY, MANIFESTO, TEASER_LAUNCH, ACHIEVEMENT_BADGE,
+DATA_VISUALIZATION, EDUCATIONAL_CAROUSEL and PRODUCT_UI, write a GRAPHIC DESIGN
+brief. Open with the words "A designed social media poster" so the model does not
+default to photography. Then specify, as flowing sentences:
+
+1. CANVAS and grid. Vertical 4:5. Say how the frame divides — for example a left
+   column carrying type and a right column carrying the subject, or a full-bleed
+   ground with the type stacked in the upper third.
+2. TYPOGRAPHY, with the exact strings to render. Give the headline verbatim in
+   quotes and say how it is set: typeface character (condensed grotesque,
+   geometric sans, editorial serif), weight, uppercase or sentence case,
+   tracking, how many lines it breaks across, and its size relative to the frame.
+   Add a kicker or eyebrow line and a footer line if the layout wants them, again
+   with exact strings. Never ask for a paragraph of body copy in the image — the
+   caption carries that.
+3. COLOR. Name the actual palette from the brand's visual rules, as a ground
+   colour plus one accent used sparingly. Say what the accent is allowed to
+   touch.
+4. STRUCTURE. Thin rules, a small index or numbering system, a corner lockup,
+   a subtle grid or topographic line texture — the details that make a layout
+   read as designed rather than generated. Name where each sits.
+5. GROUND treatment. Matte dark surface, fine grain, a soft gradient falloff,
+   layered depth. Say it plainly.
 6. MOOD in one clause.
 
-Then end with what must not appear. Always exclude: gibberish or misspelled
-text, watermarks, logos you were not given, stock-photo staging, and invented
-user interface. If the concept needs words in the image, specify the exact
-string and the type treatment; otherwise state that the image contains no text.
+Only ask for a device mockup when the brand's asset library actually contains a
+product screenshot you were told about. Without one the model would invent an
+interface, which breaks the first hard constraint. If no screenshot exists, build
+the composition from typography, colour and abstract geometry instead — that is
+what a launch teaser looks like before the product is shown.
 
-Do not ask the image model for a chart, dashboard or graph unless the brand
-record contains the actual numbers being plotted. An invented chart is an
-invented claim.
+## Photographic formats
+
+For CINEMATIC_LIFESTYLE, RIDER_COMMUNITY and SEASONAL, write a PHOTOGRAPHY
+brief: subject and what it is doing, setting and where the frame stays empty,
+one named light source and its direction, palette, lens and depth of field, then
+mood. Say explicitly which third of the frame is negative space, because a
+headline may be set there.
+
+Prefer a design-led format over a photographic one when the brand's asset library
+is empty. A generated photograph of a person the brand has never worked with is
+weaker than a typographic poster that is entirely the brand's own.
+
+## Both kinds end the same way
+
+Close the brief with what must not appear. Always exclude: gibberish or
+misspelled text, watermarks, logos you were not given, stock-photo staging, and
+invented user interface. State the exact text that should appear in the image and
+say that no other text may be rendered.
+
+Do not ask for a chart, dashboard or graph unless the brand record contains the
+actual numbers being plotted. An invented chart is an invented claim.
 
 # Output
 
@@ -219,19 +258,21 @@ Check, in order of severity:
 Return a pass or fail verdict plus concrete fixes. Do not soften a failure, and
 do not pass a post because it is merely inoffensive.`;
 
-export const IMAGE_PROMPT_GUARDRAIL = `Composition requirements for this asset:
+export const IMAGE_PROMPT_GUARDRAIL = `Output requirements for this asset:
 
-- It is a finished social media post graphic in a 4:5 vertical frame, not a
-  screenshot, not a slide, not a chart on its own.
-- Keep a clear margin on all four edges. Nothing meaningful may touch the frame
-  edge, and no element may be cropped by it.
-- Hold one clear focal point. If a supporting element would clutter the frame,
-  leave it out.
+- It is a finished, print-quality social media post in a 4:5 vertical frame —
+  an artefact a designer would hand over, not an illustration of a sentence.
+- Render any specified text exactly as written, correctly spelled, with real
+  typographic hierarchy. If no text was specified, render none.
+- Keep a clear margin on all four edges. Nothing meaningful may touch or be
+  cropped by the frame edge.
+- Hold one clear focal point. Leave out any supporting element that would clutter
+  the frame; empty space is part of the design.
 
 Never render: lorem ipsum, misspelled or gibberish text, invented user interface
-chrome, fabricated numbers, charts without stated data, watermarks, or logos
-that were not supplied. If a real product screenshot is part of the composition,
-reproduce it exactly as provided and do not redraw it.`;
+chrome, fabricated numbers, charts without stated data, watermarks, stock-photo
+staging, or logos that were not supplied. If a real product screenshot is part of
+the composition, reproduce it exactly as provided and do not redraw it.`;
 
 // ---------------------------------------------------------------------------
 // From packages/ai/src/schema.ts

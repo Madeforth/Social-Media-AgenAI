@@ -17,10 +17,15 @@ export const GEMINI_TEXT_MODEL = 'gemini-3.6-flash';
 export const GEMINI_FAST_TEXT_MODEL = 'gemini-3.1-flash-lite';
 
 /**
- * Image generation needs a billed key. Every image model returns 429
- * "You exceeded your current quota" on the free tier, so this default is the
- * one to use once billing is enabled rather than one known to work today.
+ * Image generation needs a billed key — every image model returns 429 on the
+ * free tier. With billing on, all four measured working.
+ *
+ * The pro model is the default because the product's output is designed posters
+ * with rendered typography, and that is what it is built for; the flash image
+ * models are markedly weaker at legible text and layout. It is slower —
+ * measured at 17s against 9s for flash — which is why the choice is exposed in
+ * Settings rather than hardcoded.
  */
-export const GEMINI_IMAGE_MODEL = 'gemini-3.1-flash-image';
+export const GEMINI_IMAGE_MODEL = 'gemini-3-pro-image';
 
 export const AI_PROVIDER = 'google' as const;

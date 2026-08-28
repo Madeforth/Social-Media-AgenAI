@@ -297,6 +297,17 @@ Deno.serve(async (req) => {
   }
 
   const proposal = validation.value;
+
+  // Over-length fields are trimmed rather than rejected, so a reviewer has to be
+  // able to see that something was cut. They go into qa_notes, which the post
+  // detail screen shows, and into the audit row below.
+  const adjustments = validation.adjustments;
+  if (adjustments.length > 0) {
+    proposal.qa_notes = [
+      ...proposal.qa_notes,
+      ...adjustments.map((a) => `${a.field} ${a.problem}`),
+    ];
+  }
   // Guarantee the operator's own selections rather than merely hoping the
   // model followed the directive above — both are already known-good values.
   if (forcedContentPillar) proposal.content_pillar = forcedContentPillar;
@@ -311,7 +322,7 @@ Deno.serve(async (req) => {
   await serviceClient
     .from('ai_generations')
     .update({
-      output_json: { proposal, forbidden_hits: forbiddenHits },
+      output_json: { proposal, forbidden_hits: forbiddenHits, adjustments },
       duration_ms: Date.now() - startedAt,
     })
     .eq('id', generationRow.id);

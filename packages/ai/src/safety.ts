@@ -122,6 +122,10 @@ export const OUTPUT_LIMITS = {
   /** Instagram's own caption ceiling. */
   caption: 2_200,
   cta: 150,
+  /** A sentence about what should change for the reader, not a label. */
+  objective: 240,
+  /** A pillar name, so short by nature. */
+  contentPillar: 60,
   conceptTitle: 120,
   rationale: 1_000,
   creativeDirection: 2_000,
@@ -137,8 +141,23 @@ export interface ValidationFailure {
   problem: string;
 }
 
+/**
+ * A field that was repaired rather than rejected — recorded so the audit row and
+ * the reviewer can see what the model overran.
+ */
+export type ValidationAdjustment = ValidationFailure;
+
 export type ValidationResult<T> =
-  { ok: true; value: T } | { ok: false; failures: ValidationFailure[] };
+  | { ok: true; value: T; adjustments: ValidationAdjustment[] }
+  | { ok: false; failures: ValidationFailure[] };
+
+/** Trims to the last word boundary before `max`, so a cut never lands mid-word. */
+function truncateAtWord(input: string, max: number): string {
+  if (input.length <= max) return input;
+  const cut = input.slice(0, max);
+  const lastSpace = cut.lastIndexOf(' ');
+  return (lastSpace > max * 0.6 ? cut.slice(0, lastSpace) : cut).trimEnd();
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -150,9 +169,23 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  * Structured output makes the shape likely, not guaranteed: a model can be
  * steered off-schema, and a response can arrive truncated. Nothing downstream
  * should have to wonder whether `hashtags` is an array.
+ *
+ * Two classes of problem, deliberately handled differently.
+ *
+ * A wrong type, a missing required field, an unknown visual format or a hashtag
+ * that is not a hashtag is a failure: the response cannot be trusted and the
+ * caller should say so.
+ *
+ * A string that runs past its limit is not. It is repaired by trimming to a word
+ * boundary and recorded as an adjustment. Rejecting the whole proposal because
+ * one field was four characters long — which is exactly what happened in
+ * production — throws away a complete, usable post and spends another call
+ * against the organization's quota, and every field here is reviewed by a human
+ * before anything is published anyway.
  */
 export function validateContentProposal(value: unknown): ValidationResult<ContentProposal> {
   const failures: ValidationFailure[] = [];
+  const adjustments: ValidationAdjustment[] = [];
 
   if (!isRecord(value)) {
     return { ok: false, failures: [{ field: '.', problem: 'response is not an object' }] };
@@ -169,13 +202,17 @@ export function validateContentProposal(value: unknown): ValidationResult<Conten
       failures.push({ field, problem: 'is empty' });
     }
     if (clean.length > max) {
-      failures.push({ field, problem: `is ${clean.length} characters, over the ${max} limit` });
+      adjustments.push({
+        field,
+        problem: `was ${clean.length} characters, trimmed to the ${max} limit`,
+      });
+      return truncateAtWord(clean, max);
     }
     return clean;
   };
 
-  const objective = text('objective', OUTPUT_LIMITS.conceptTitle);
-  const content_pillar = text('content_pillar', OUTPUT_LIMITS.conceptTitle);
+  const objective = text('objective', OUTPUT_LIMITS.objective);
+  const content_pillar = text('content_pillar', OUTPUT_LIMITS.contentPillar);
   const concept_title = text('concept_title', OUTPUT_LIMITS.conceptTitle);
   const rationale = text('rationale', OUTPUT_LIMITS.rationale, false);
   const headline = text('headline', OUTPUT_LIMITS.headline);
@@ -205,12 +242,12 @@ export function validateContentProposal(value: unknown): ValidationResult<Conten
     failures.push({ field: 'hashtags', problem: 'expected an array' });
   } else {
     if (rawHashtags.length > OUTPUT_LIMITS.hashtagCount) {
-      failures.push({
+      adjustments.push({
         field: 'hashtags',
-        problem: `has ${rawHashtags.length} entries, over the ${OUTPUT_LIMITS.hashtagCount} limit`,
+        problem: `had ${rawHashtags.length} entries, kept the first ${OUTPUT_LIMITS.hashtagCount}`,
       });
     }
-    for (const [index, entry] of rawHashtags.entries()) {
+    for (const [index, entry] of rawHashtags.slice(0, OUTPUT_LIMITS.hashtagCount).entries()) {
       if (typeof entry !== 'string') {
         failures.push({ field: `hashtags[${index}]`, problem: 'expected a string' });
         continue;
@@ -221,7 +258,7 @@ export function validateContentProposal(value: unknown): ValidationResult<Conten
         continue;
       }
       if (tag.length > OUTPUT_LIMITS.hashtagLength) {
-        failures.push({ field: `hashtags[${index}]`, problem: 'is too long' });
+        adjustments.push({ field: `hashtags[${index}]`, problem: 'was too long, dropped' });
         continue;
       }
       hashtags.push(tag);
@@ -263,6 +300,7 @@ export function validateContentProposal(value: unknown): ValidationResult<Conten
 
   return {
     ok: true,
+    adjustments,
     value: {
       objective,
       content_pillar,

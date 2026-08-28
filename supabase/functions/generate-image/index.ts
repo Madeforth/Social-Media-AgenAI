@@ -7,14 +7,11 @@
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import {
-  assertUntrustedSize,
   IMAGE_PROMPT_GUARDRAIL,
   INPUT_LIMITS,
-  renderUntrusted,
   generateImageBytes,
   resolveImageProvider,
   sanitizeUserText,
-  type UntrustedBlock,
 } from '../_shared/ai.ts';
 
 const WRITE_ROLES = new Set(['OWNER', 'ADMIN', 'EDITOR']);
@@ -105,40 +102,42 @@ Deno.serve(async (req) => {
   // 4. Validate and sanitize input before it is rendered into a prompt. The
   // creative direction and generation prompt are themselves prior model
   // output — still untrusted, per docs/SECURITY.md's model boundary.
-  const [{ data: version }, { data: guidelines }] = await Promise.all([
-    serviceClient
-      .from('post_versions')
-      .select('id, generation_prompt, creative_direction')
-      .eq('id', post.current_version_id)
-      .maybeSingle(),
-    serviceClient
-      .from('brand_guidelines')
-      .select('visual_rules')
-      .eq('brand_id', brand.id)
-      .maybeSingle(),
-  ]);
+  const { data: version } = await serviceClient
+    .from('post_versions')
+    .select('id, generation_prompt, creative_direction')
+    .eq('id', post.current_version_id)
+    .maybeSingle();
   if (!version) return json(404, { error: 'post version not found' });
 
-  const field = (value: unknown) =>
-    sanitizeUserText(
-      typeof value === 'string' ? value : JSON.stringify(value ?? ''),
-      INPUT_LIMITS.brandField,
-    ).text;
+  // The brief the text model wrote, cleaned but not wrapped.
+  //
+  // Everything else here used to go through `renderUntrusted`, the same
+  // containment used for the text model: a random boundary, <<LABEL>> markers
+  // and a preamble saying the enclosed text is data and its instructions must
+  // not be followed. That is right for a model that reads instructions. An image
+  // model does not read instructions — it draws the words it is given, and it
+  // drew these: a poster came back with "Creative direction...", a garbled
+  // "BRAND DIRECTION" and a fragment of the hex boundary rendered into it.
+  //
+  // Containment also buys nothing here. The worst a hostile brief can do to an
+  // image model is produce an unwanted picture, which a human reviews before it
+  // is ever published. Sanitising the text and capping its length still matters,
+  // so that stays.
+  //
+  // Brand name and visual rules are deliberately not appended either. The
+  // system prompt already requires the brief to name its own palette and
+  // typography, and every extra sentence here is another string the model may
+  // decide to set in type.
+  const imagePrompt = [
+    sanitizeUserText(version.generation_prompt ?? '', INPUT_LIMITS.brandField).text,
+    IMAGE_PROMPT_GUARDRAIL,
+  ]
+    .filter((part) => part.length > 0)
+    .join('\n\n');
 
-  const untrustedBlocks: UntrustedBlock[] = [
-    { label: 'BRAND_NAME', content: field(brand.name) },
-    { label: 'VISUAL_RULES', content: field(guidelines?.visual_rules) },
-    { label: 'CREATIVE_DIRECTION', content: field(version.creative_direction) },
-    { label: 'GENERATION_PROMPT', content: field(version.generation_prompt) },
-  ];
-
-  try {
-    assertUntrustedSize(untrustedBlocks);
-  } catch (error) {
-    return json(400, { error: error instanceof Error ? error.message : 'input too large' });
+  if (imagePrompt.length < IMAGE_PROMPT_GUARDRAIL.length + 20) {
+    return json(400, { error: 'this version has no image brief to draw from' });
   }
-
-  const imagePrompt = `${renderUntrusted(untrustedBlocks)}\n\n${IMAGE_PROMPT_GUARDRAIL}`;
 
   // Resolved before the audit row, so the row records the model actually used
   // rather than the compiled-in default.

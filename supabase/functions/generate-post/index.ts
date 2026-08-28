@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
 
   const { data: brand } = await userClient
     .from('brands')
-    .select('id, organization_id, name, app_url')
+    .select('id, organization_id, name, description, app_url')
     .eq('id', brandId)
     .maybeSingle();
   if (!brand) return json(404, { error: 'brand not found' });
@@ -159,6 +159,10 @@ Deno.serve(async (req) => {
 
   const untrustedBlocks: UntrustedBlock[] = [
     { label: 'BRAND_NAME', content: field(brand.name) },
+    // The one line most owners actually fill in. It was missing from this list,
+    // so a brand described as a motorcycle riders' hub had nothing in the prompt
+    // saying "motorcycle" — and the generated image showed a bicycle.
+    { label: 'BRAND_DESCRIPTION', content: field(brand.description) },
     { label: 'MISSION', content: field(guidelines?.mission) },
     { label: 'VISION', content: field(guidelines?.vision) },
     { label: 'POSITIONING', content: field(guidelines?.positioning) },

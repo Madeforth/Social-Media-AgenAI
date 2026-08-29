@@ -180,7 +180,11 @@ export default async function PostDetailPage({ params, searchParams }: PageParam
       </header>
 
       {creativeRun?.inProgress ? (
-        <GenerationPoller message={copy.imageGenerating} elapsedSuffix={dictionary.pending.elapsedSuffix} />
+        <GenerationPoller
+          message={copy.imageGenerating}
+          stuckMessage={copy.imageGeneratingStuck}
+          elapsedSuffix={dictionary.pending.elapsedSuffix}
+        />
       ) : null}
 
       {imageErrorMessage ? (

@@ -209,6 +209,7 @@ export const tr: Dictionary = {
       failed: 'Görsel oluşturma başarısız oldu. Tekrar dene.',
     },
     imageGenerating: 'Görsel oluşturuluyor — bu bir dakika kadar sürebilir, sayfa otomatik güncellenecek.',
+    imageGeneratingStuck: 'Beklenenden uzun sürdü. Sayfayı yenile; hâlâ sonuç yoksa tekrar dene.',
     genErrors: {
       quota: 'Bu markanın yapay zeka üretim kotası doldu — daha sonra tekrar dene.',
       not_configured: 'Gemini bu projede henüz yapılandırılmadı.',

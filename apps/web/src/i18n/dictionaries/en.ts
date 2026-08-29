@@ -207,6 +207,7 @@ export const en: Dictionary = {
       failed: 'Image generation failed. Try again.',
     },
     imageGenerating: 'Generating the image — this can take about a minute, the page will update automatically.',
+    imageGeneratingStuck: 'This is taking longer than expected. Reload the page; if there is still no result, try again.',
     genErrors: {
       quota: 'This brand has used its AI generation allowance for now — try again later.',
       not_configured: 'Gemini is not configured on this project yet.',

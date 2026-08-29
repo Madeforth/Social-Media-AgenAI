@@ -381,7 +381,39 @@ interface ProcessCreativeEngineV2Args {
   generationRowId: string | null;
 }
 
-async function processCreativeEngineV2({
+/**
+ * Safety net around the whole background pipeline. A real run got stuck at
+ * status=RENDERING forever, past even Supabase's own background-task budget
+ * (150s free / 400s paid), with no failure ever recorded — something inside
+ * the candidate loop hung rather than erroring, and once the platform kills
+ * the function there is nothing left to write the failure. This races the
+ * real work against a deadline comfortably under the free-tier budget, so a
+ * hang anywhere becomes a caught, recorded FAILED status instead of an
+ * eternal spinner.
+ */
+async function processCreativeEngineV2(args: ProcessCreativeEngineV2Args): Promise<void> {
+  const deadlineMs = 130_000;
+  let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<never>((_, reject) => {
+    timeoutHandle = setTimeout(
+      () => reject(new Error('Generation exceeded the background time budget (130s).')),
+      deadlineMs,
+    );
+  });
+  try {
+    await Promise.race([processCreativeEngineV2Body(args), deadline]);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'creative engine v2 failed';
+    await args.serviceClient
+      .from('creative_runs')
+      .update({ status: 'FAILED', failure_json: { message }, completed_at: new Date().toISOString() })
+      .eq('id', args.runId);
+  } finally {
+    if (timeoutHandle !== undefined) clearTimeout(timeoutHandle);
+  }
+}
+
+async function processCreativeEngineV2Body({
   serviceClient, post, brand, version, request, creativeProfile, logoAsset, textProvider, imageProvider, runId, generationRowId,
 }: ProcessCreativeEngineV2Args): Promise<void> {
   const runRow = { id: runId };
@@ -438,10 +470,17 @@ async function processCreativeEngineV2({
         assets: { backgroundUrl: sceneSigned.signedUrl, logoUrl: logoSigned.signedUrl, logoId: logoAsset.id },
       });
       const signature = await signRenderBody(renderSecret, timestamp, renderBody);
+      // A real run got stuck at status=RENDERING forever with no error
+      // recorded — this fetch had no timeout of its own, so if the
+      // compositor round trip ever hangs instead of erroring, the whole
+      // background task hangs with it until Supabase's own budget kills the
+      // function, at which point nothing is left to write the failure.
+      // Bounded here so a hang becomes a caught, recorded error instead.
       const renderResponse = await fetch(renderUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-creative-timestamp': timestamp, 'x-creative-signature': signature },
         body: renderBody,
+        signal: AbortSignal.timeout(50_000),
       });
       if (!renderResponse.ok) throw new Error(`compositor failed: ${renderResponse.status} ${(await renderResponse.text()).slice(0, 300)}`);
       const finalBytes = new Uint8Array(await renderResponse.arrayBuffer());

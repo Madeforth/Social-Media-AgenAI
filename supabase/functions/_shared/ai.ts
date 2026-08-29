@@ -232,6 +232,19 @@ the product in its real setting. Leave it out when the message is a stated
 position, a launch teaser with nothing to show yet, or a purely typographic
 statement.
 
+When the message is about an app feature rather than a physical riding moment —
+document storage, reminders, scanning, tracking, a dashboard, anything the
+software does — the photograph must show that feature actually happening: the
+phone in the rider's hand with the relevant screen, or the moment of using it,
+not a physical object chosen because it rhymes with the topic. A leather
+document case and a key illustrate "documents" the way a stock photo illustrates
+a stock-photo keyword; they do not show scanned files living on a phone, and a
+copy claiming documents belong "in your pocket, not scattered" is directly
+undercut by a photograph of a physical case, which is itself a place to scatter
+them. If there is no real screenshot to place and a phone shot would be empty or
+invented, leave the photograph out entirely and let typography carry the
+feature — a wrong physical prop is worse than no photograph.
+
 When the layout takes one, weave all four of these into the same descriptive
 prose or the model pastes in a stock shot: what is actually in frame and how
 tight the crop is — a rider leaning through a bend shot from behind, a fuel
@@ -447,7 +460,10 @@ Check, in order of severity:
    Is any quoted string longer than a short headline (fails — long strings
    render unreliably)? Does it default to a centred radial glow, a smooth
    unnamed gradient, a glassy bevel, or dead-centre symmetry instead of naming
-   a specific off-centre alternative?
+   a specific off-centre alternative? If the copy is about an app feature
+   (storage, reminders, scanning, tracking), does the photograph actually show
+   that feature on a phone, or is it a physical prop chosen only because it
+   thematically rhymes with the topic — fail the latter even when well-composed.
 9. Strategic justification. Does the concept serve the stated objective.
 
 Return a pass or fail verdict plus concrete fixes. Do not soften a failure, and

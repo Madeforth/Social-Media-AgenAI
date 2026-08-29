@@ -574,26 +574,58 @@ async function processCreativeEngineV2Body({
     }
   }
 
-  await serviceClient
-    .from('ai_generations')
-    .update({ output_json: { run_id: runRow.id, candidates, selected: selected?.candidateId ?? null }, duration_ms: Date.now() - startedAt })
-    .eq('id', generationRow?.id ?? '');
+  // Candidates were seen completing successfully (real PASS verdicts, real
+  // stored images) while the run itself stayed stuck at RENDERING forever —
+  // the finalization step below never visibly ran or errored. Broken into
+  // individually-caught, breadcrumbed steps so the next run either finishes
+  // or leaves a precise record of which specific write never returned,
+  // instead of a second silent hang indistinguishable from the first.
+  if (generationRow?.id) {
+    try {
+      await withTimeout(
+        serviceClient
+          .from('ai_generations')
+          .update({ output_json: { run_id: runRow.id, candidates, selected: selected?.candidateId ?? null }, duration_ms: Date.now() - startedAt })
+          .eq('id', generationRow.id),
+        15_000, 'ai_generations finalize update',
+      );
+    } catch {
+      // Non-critical audit write; do not let it block marking the run's real outcome.
+    }
+  }
 
   if (!selected) {
-    await serviceClient.from('creative_runs').update({ status: 'REVIEW_REQUIRED', completed_at: new Date().toISOString() }).eq('id', runRow.id);
+    await withTimeout(
+      serviceClient.from('creative_runs').update({ status: 'REVIEW_REQUIRED', completed_at: new Date().toISOString() }).eq('id', runRow.id),
+      15_000, 'creative_runs REVIEW_REQUIRED update',
+    );
     return;
   }
 
-  await Promise.all([
-    serviceClient.from('creative_runs').update({
-      status: 'PASSED', selected_candidate_id: selected.candidateId, completed_at: new Date().toISOString(),
-    }).eq('id', runRow.id),
+  await withTimeout(
+    serviceClient.from('creative_runs').update({ status: 'REVIEWING' }).eq('id', runRow.id),
+    15_000, 'creative_runs REVIEWING breadcrumb',
+  );
+
+  await withTimeout(
     serviceClient.from('creative_candidates').update({ selected: true }).eq('run_id', runRow.id).eq('id', selected.candidateId),
+    15_000, 'creative_candidates selected update',
+  );
+
+  await withTimeout(
     serviceClient.from('post_versions').update({
       image_storage_path: selected.finalStoragePath, creative_plan: plan,
       generation_manifest: selected.manifest, visual_qa: selected.manifest.qa,
     }).eq('id', version.id),
-  ]);
+    15_000, 'post_versions finalize update',
+  );
+
+  await withTimeout(
+    serviceClient.from('creative_runs').update({
+      status: 'PASSED', selected_candidate_id: selected.candidateId, completed_at: new Date().toISOString(),
+    }).eq('id', runRow.id),
+    15_000, 'creative_runs PASSED update',
+  );
 }
 
 function truncateForImage(value: string, maxLength: number): string {

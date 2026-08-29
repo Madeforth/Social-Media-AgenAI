@@ -63,11 +63,19 @@ function negotiateLocale(request: NextRequest): Locale {
  * matching nonce and everything else inline is refused by the browser.
  */
 export async function proxy(request: NextRequest) {
+  const { pathname, search } = request.nextUrl;
+
+  // API routes are server-to-server, never a browser page, and authenticate
+  // themselves (the creative-render route verifies an HMAC signature) — the
+  // site's shared Basic Auth credential is for gating human access to pages,
+  // and the locale/session logic below doesn't apply to them either.
+  if (pathname.startsWith('/api/')) {
+    return NextResponse.next();
+  }
+
   if (!isAuthorizedBySiteBasicAuth(request)) {
     return siteBasicAuthChallenge();
   }
-
-  const { pathname, search } = request.nextUrl;
 
   // The OAuth callback is deliberately outside `[locale]` — it's a machine
   // redirect target, not a screen, and never needs a locale prefix or an

@@ -330,14 +330,29 @@ label next to it — these are the exact tell of a generic AI poster: shapes
 drawn because the model knows the category "dashboard-style graphic," not
 because they carry anything. Either give the device real content — a number in
 the ring (a stat, a step, a percentage — invent nothing; use a brand fact or
-drop the ring), a short label or icon in each grid cell, a word beside the dot
-— or do not draw it at all. A brief with three empty panels across the bottom
-third is not a minimal grid, it is unfinished work with lines drawn over it.
+drop the ring) — or do not draw it at all. A brief with three empty panels
+across the bottom third is not a minimal grid, it is unfinished work with
+lines drawn over it.
 
-The result should read as full and considered, the way the reference product
-UI does — real numbers in its rings, real labels on every card, nothing
-placed as pure decoration — never as a sparse template with one headline and
-a lot of empty dark space around it.
+Multi-cell devices are where fabrication happens most, because "give each cell
+real content" is easy to satisfy by inventing one — a reference number, a file
+code, a percentage nobody supplied. That is a fabricated fact exactly like an
+invented capability, and this model also renders that many small strings
+inaccurately, so the failure compounds: made-up codes that are also misspelled.
+When there is no real per-item fact — no real document type, stat or date for
+each cell — the cell carries an icon or a single glyph with no text at all, or
+the whole device is dropped. Never ask for a serial, reference number, ID or
+status string ("SYSTEM ACTIVE", "ONLINE", a percentage, a case number) unless
+that exact value is a stated brand fact — an invented status is a fabricated
+product claim, the same failure as an invented capability, not a harmless
+decorative touch. A named document *type* the brand's content is actually
+about — "insurance," "registration" — is fine as a cell label; a code or number
+attached to it is not.
+
+The result should read as full and considered without every cell carrying
+invented specifics — a grid can hold real labels with no numbers, or icons with
+no text at all, and still read as designed. Full and considered is not the same
+as densely filled with fabricated detail.
 
 ### A worked image brief
 
@@ -428,6 +443,10 @@ Check, in order of severity:
    (storage, reminders, scanning, tracking), does the photograph actually show
    that feature on a phone, or is it a physical prop chosen only because it
    thematically rhymes with the topic — fail the latter even when well-composed.
+   Does any grid cell, card or badge carry an invented reference number, code,
+   percentage or status string ("SYSTEM ACTIVE") that is not a stated brand
+   fact — fail this the same as an invented capability, whether or not it is
+   spelled correctly.
 9. Strategic justification. Does the concept serve the stated objective.
 
 Return a pass or fail verdict plus concrete fixes. Do not soften a failure, and

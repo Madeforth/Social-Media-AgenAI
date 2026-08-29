@@ -59,10 +59,12 @@ export function validatePlanPolicy(plan: CreativePlan, request: CreativeRequest)
     if (scene.includes(word)) failures.push(`Scene asks the image provider to render banned content: ${word}`);
   }
 
-  const negative = plan.sceneNegativePrompt.toLowerCase();
-  for (const required of REQUIRED_SCENE_NEGATIVES) {
-    if (!negative.includes(required)) failures.push(`Negative prompt is missing: ${required}`);
-  }
+  // REQUIRED_SCENE_NEGATIVES is enforced by construction in `ideogram.ts`
+  // (`withRequiredNegatives`), not gated here: failing the plan whenever
+  // Gemini phrases its negative prompt differently than these exact
+  // substrings ("no UI" instead of "user interface") rejected working plans
+  // for wording, not substance. The negative prompt actually sent to the
+  // image provider always has every required term appended in code.
 
   if (plan.layoutRecipe === 'feature-device-right' && !request.assetIds.productUi) {
     failures.push('feature-device-right requires a real PRODUCT_UI asset.');

@@ -157,10 +157,10 @@ export function validatePlanPolicy(plan: CreativePlan, request: CreativeRequest)
   for (const word of SCENE_BANNED_TEXT) {
     if (scene.includes(word)) failures.push(`Scene asks the image provider to render banned content: ${word}`);
   }
-  const negative = plan.sceneNegativePrompt.toLowerCase();
-  for (const required of REQUIRED_SCENE_NEGATIVES) {
-    if (!negative.includes(required)) failures.push(`Negative prompt is missing: ${required}`);
-  }
+  // REQUIRED_SCENE_NEGATIVES is enforced by construction in
+  // `withRequiredNegatives` below, not gated here — failing the plan
+  // whenever Gemini phrased its negative prompt differently than these exact
+  // substrings rejected working plans for wording, not substance.
   if (plan.layoutRecipe === 'feature-device-right' && !request.assetIds.productUi) {
     failures.push('feature-device-right requires a real PRODUCT_UI asset.');
   }
@@ -584,6 +584,18 @@ export function scenePolicySuffix(): string {
   ].join(' ');
 }
 
+/**
+ * Guarantees the negative prompt actually sent to the provider covers every
+ * required term, regardless of how Gemini phrased its own negative prompt —
+ * substance is enforced here, not trusted from the model's output.
+ */
+export function withRequiredNegatives(negativePrompt: string): string {
+  const lower = negativePrompt.toLowerCase();
+  const missing = REQUIRED_SCENE_NEGATIVES.filter((term) => !lower.includes(term));
+  if (missing.length === 0) return negativePrompt;
+  return [negativePrompt, ...missing].filter(Boolean).join(', ');
+}
+
 export async function generateScene(plan: CreativePlan, options: IdeogramOptions): Promise<Uint8Array> {
   const form = new FormData();
   const speed = options.renderingSpeed === 'BALANCED' && options.apiVersion === 'v4' ? 'DEFAULT' : options.renderingSpeed;
@@ -607,7 +619,7 @@ export async function generateScene(plan: CreativePlan, options: IdeogramOptions
       scenePolicySuffix(),
     ].join('\n');
     form.append('prompt', prompt);
-    form.append('negative_prompt', plan.sceneNegativePrompt);
+    form.append('negative_prompt', withRequiredNegatives(plan.sceneNegativePrompt));
     form.append('aspect_ratio', options.aspectRatio);
     form.append('rendering_speed', speed);
     form.append('magic_prompt', 'OFF');

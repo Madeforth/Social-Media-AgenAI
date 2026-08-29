@@ -1,5 +1,7 @@
 import type { CreativePlan, PlatformFormat, ResolvedAsset } from '@apex/types';
 
+import { REQUIRED_SCENE_NEGATIVES } from './gates';
+
 /**
  * Ideogram is the scene department, not the whole graphic designer: it paints
  * a text-free background/photograph, and the deterministic compositor layers
@@ -75,6 +77,20 @@ function addV3References(form: FormData, refs: ResolvedAsset[]) {
   }
 }
 
+/**
+ * Guarantees the negative prompt actually sent to the provider covers every
+ * required term, regardless of how Gemini happened to phrase its own
+ * negative prompt — the policy gate stopped rejecting plans over wording
+ * ("no UI" vs "user interface") and this is what makes that safe: the
+ * substance is enforced here, not trusted from the model's output.
+ */
+export function withRequiredNegatives(negativePrompt: string): string {
+  const lower = negativePrompt.toLowerCase();
+  const missing = REQUIRED_SCENE_NEGATIVES.filter((term) => !lower.includes(term));
+  if (missing.length === 0) return negativePrompt;
+  return [negativePrompt, ...missing].filter(Boolean).join(', ');
+}
+
 export function scenePolicySuffix(): string {
   return [
     'No visible text, letters, numbers, signage, label, logo, wordmark, watermark or user interface.',
@@ -106,7 +122,7 @@ export async function generateScene(plan: CreativePlan, options: IdeogramOptions
       scenePolicySuffix(),
     ].join('\n');
     form.append('prompt', prompt);
-    form.append('negative_prompt', plan.sceneNegativePrompt);
+    form.append('negative_prompt', withRequiredNegatives(plan.sceneNegativePrompt));
     form.append('aspect_ratio', options.aspectRatio);
     form.append('rendering_speed', speed);
     form.append('magic_prompt', 'OFF');

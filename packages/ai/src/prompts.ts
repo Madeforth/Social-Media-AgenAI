@@ -26,6 +26,17 @@
  * brief tends to produce a bulleted brief, and Nano Banana reads a bulleted
  * brief as a checklist of disconnected shapes rather than one described scene.
  *
+ * Two further additions came from a second research pass across community
+ * prompt libraries (github.com/dahaltn, YouMind-OpenLab, ImgEdify, antifragile0
+ * — "awesome-nano-banana(-pro)-prompts"; no usable Reddit-sourced material
+ * turned up in that pass): keep any quoted on-image string short, since this
+ * model's text-rendering accuracy degrades past roughly eight words and long
+ * strings are what produce misspellings even when the wording is correct; and
+ * name a specific alternative to the model's default look — centred radial
+ * glow, smooth unnamed gradient, glassy bevel, dead-centre symmetry — since an
+ * unguided brief reaches for those by default and they are what make an image
+ * read as generated rather than designed.
+ *
  * Keep `supabase/functions/_shared/ai.ts` in step with this file — the Edge
  * Function bundler cannot import across packages, so that file is a deliberate
  * copy.
@@ -248,6 +259,33 @@ sentences, not a checklist to output as a list and not a set to exhaust at
 once — a brief padded with five unrelated textures is as unfinished as one
 with none.
 
+### Keep the rendered strings short
+
+Text accuracy falls as a rendered string gets longer — this model sets four or
+five words reliably and starts dropping or garbling letters past roughly eight.
+Never write a headline as one long sentence; break the actual idea into a short
+line, or two to three short stacked lines, the way a poster headline is
+actually set, and keep any kicker or footer to a handful of words. If the copy
+naturally runs long, that is a signal to cut it for the image, not a reason to
+ask the model to set a paragraph — the caption already carries the full thought.
+
+### Avoid the tells of a generic AI poster
+
+Past the empty-decoration failure above, a second failure mode is a layout
+that is technically full but still reads as generated rather than designed —
+name the specific alternative in the same sentence rather than leaving the
+model to default. A perfectly centred radial glow behind the subject is the
+single most common tell; if light falls on the ground, say from which side and
+let it fall unevenly. A smooth blue-to-purple or teal-to-magenta gradient with
+no texture on it is another; the ground vocabulary above exists so there is
+always a real material or grain instead. An evenly bevelled, glassy sheen on
+every shape reads as a default 3D render, not a designed surface — call for a
+flat fill or a matte finish unless glass or metal is the actual described
+material. And perfect bilateral symmetry, with the subject dead-centre and
+everything mirrored left to right, is what an unguided model reaches for by
+default — place the weight deliberately off-centre, the way the worked
+example below puts the headline in the upper left rather than centred.
+
 ### Composition must be complete
 
 A brief that names a headline and nothing else produces a poster with type in one
@@ -370,6 +408,10 @@ Check, in order of severity:
    a palette and one accent, and what must not appear? Does every structural
    device it describes — a ring, a grid, a badge — carry stated content, or is
    one drawn empty as decoration? Does it ask for a chart without data to plot?
+   Is any quoted string longer than a short headline (fails — long strings
+   render unreliably)? Does it default to a centred radial glow, a smooth
+   unnamed gradient, a glassy bevel, or dead-centre symmetry instead of naming
+   a specific off-centre alternative?
 9. Strategic justification. Does the concept serve the stated objective.
 
 Return a pass or fail verdict plus concrete fixes. Do not soften a failure, and

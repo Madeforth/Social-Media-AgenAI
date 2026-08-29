@@ -311,8 +311,17 @@ async function runCreativeEngineV2(
     lockedCopy: {
       eyebrow: '',
       headline: version.headline,
-      body: version.supporting_copy ?? '',
-      cta: version.cta ?? '',
+      // The compositor's body box has real but finite room and throws
+      // rather than silently clip an overflow — the caption carries the
+      // full supporting copy regardless, so a defensive word-boundary
+      // truncation here only affects what fits in the image.
+      body: truncateForImage(version.supporting_copy ?? '', 90),
+      // The stored `cta` is a full caption call-to-action sentence ("Save
+      // this post for your next garage day."), not a short button label —
+      // the compositor's CTA pill is sized for a handful of words. The
+      // caption already carries the full sentence, so the image simply
+      // omits the pill when there is nothing short enough to put in it.
+      cta: (version.cta ?? '').length <= 24 ? (version.cta ?? '') : '',
     },
     assetIds: { logo: logoAsset.id, styleReferences: [] },
     candidateCount: Math.min(4, Math.max(2, Number(Deno.env.get('CREATIVE_ENGINE_CANDIDATE_COUNT') ?? 2))),
@@ -465,6 +474,13 @@ async function runCreativeEngineV2(
   ]);
 
   return json(200, { post_id: post.id, storage_path: selected.finalStoragePath, run_id: runRow.id });
+}
+
+function truncateForImage(value: string, maxLength: number): string {
+  if (value.length <= maxLength) return value;
+  const cut = value.slice(0, maxLength);
+  const lastSpace = cut.lastIndexOf(' ');
+  return `${(lastSpace > 0 ? cut.slice(0, lastSpace) : cut).trimEnd()}…`;
 }
 
 async function sha256Hex(value: string): Promise<string> {

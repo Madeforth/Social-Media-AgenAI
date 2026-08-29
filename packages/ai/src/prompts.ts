@@ -12,6 +12,20 @@
  * characters because that is all that shows before "more", one CTA rather than
  * several, and specific beats generic.
  *
+ * The image-brief section was rewritten after a generation that was structurally
+ * complete but visually sparse and generic — following a real regression, not a
+ * guess. Google's own documentation for this model family is explicit that
+ * "describe the scene, don't just list keywords" and that narrative paragraphs
+ * consistently outperform disconnected bullet/keyword lists, because the model
+ * is a language model reasoning about a described scene, not a slot-filling
+ * template engine (developers.googleblog.com/how-to-prompt-gemini-2-5-flash-image-
+ * generation-for-the-best-results/; cloud.google.com/blog/products/ai-machine-
+ * learning/ultimate-prompting-guide-for-nano-banana). The instructions below are
+ * written as prose for that reason: a model tends to echo the shape of the
+ * instructions it was given, so a bulleted spec sheet telling it to write a
+ * brief tends to produce a bulleted brief, and Nano Banana reads a bulleted
+ * brief as a checklist of disconnected shapes rather than one described scene.
+ *
  * Keep `supabase/functions/_shared/ai.ts` in step with this file — the Edge
  * Function bundler cannot import across packages, so that file is a deliberate
  * copy.
@@ -114,45 +128,51 @@ state, it uses one emoji per line, and its hook is 62 characters.
 # The image prompt you must write
 
 The generation_prompt field is handed verbatim to an image model. Write it as a
-brief for a designer, not as a description of the caption. Order matters — the
-image model reads sequentially, so the first sentence sets what kind of artefact
-this is.
+single continuous piece of prose — real sentences that describe one finished
+scene, the way a creative director would talk a designer through a reference
+image, never a bulleted or numbered list of specs. This is not a style
+preference: this exact model reads a list of fragments as disconnected
+instructions to satisfy independently, which is what produces a poster that is
+technically complete and visually dead — a headline here, an unrelated ring
+there, a grid nobody asked to feel like anything. A described scene, read start
+to finish, is what produces one coherent image. The worked example below is
+written the way your own output must be written — read it for shape as much as
+content.
 
-Every brief is a design brief. There is no photography-only path.
+Order matters within that prose — the model reads sequentially, so the first
+sentence sets what kind of artefact this is. Open with "A designed social media
+poster" so it does not default to photography.
 
-A composition may be entirely typographic, or it may carry a photograph inside a
-designed layout. Those are the two allowed outcomes. A bare photograph with
-nothing designed on top of it is not one of them, whatever the visual_format
-says. CINEMATIC_LIFESTYLE, RIDER_COMMUNITY and SEASONAL describe what the
-photograph in the layout shows; they never mean "return a photograph".
+Every brief is a design brief. There is no photography-only path. A composition
+may be entirely typographic, or it may carry a photograph inside a designed
+layout — those are the two allowed outcomes. A bare photograph with nothing
+designed on top of it is neither, whatever the visual_format says.
+CINEMATIC_LIFESTYLE, RIDER_COMMUNITY and SEASONAL describe what the photograph
+in the layout shows; they never mean "return a photograph".
 
-Open every brief with the words "A designed social media poster" so the model
-does not default to photography, then specify:
+Within that prose, work through what the scene actually contains, in the order
+a viewer's eye would meet it. Describe the canvas and how the vertical 4:5
+frame divides — a left column of type beside a right column carrying the
+subject, an upper type band above a full-bleed photographic lower band, or a
+full-bleed ground with the type stacked in the upper third. Then describe the
+typography as part of that scene, not as a separate spec: give the headline
+verbatim in quotes, inside a sentence that also says how it is set — typeface
+character, weight, case, tracking, how many lines it breaks across, its size
+relative to the frame, and — never left to inference — its exact colour and the
+value it sits against, because unsaid, the model reaches for a tone close to
+its own background and the headline comes back barely legible. Add a kicker or
+footer line the same way, in the same sentence flow, with its own exact string
+if the layout wants one. Never ask for a paragraph of body copy in the image —
+the caption carries that.
 
-1. CANVAS and grid. Vertical 4:5. Say how the frame divides — a left column of
-   type beside a right column carrying the subject, an upper type band above a
-   full-bleed photographic lower band, or a full-bleed ground with the type
-   stacked in the upper third.
-2. TYPOGRAPHY, with the exact strings to render. Never optional. Give the
-   headline verbatim in quotes and say how it is set: typeface character
-   (condensed grotesque, geometric sans, editorial serif), weight, uppercase or
-   sentence case, tracking, how many lines it breaks across, and its size
-   relative to the frame. Add a kicker or eyebrow line and a footer line if the
-   layout wants them, again with exact strings. Never ask for a paragraph of body
-   copy in the image — the caption carries that.
-
-   State the colour of every text element and the value it sits against. Left
-   unsaid, the model picks a tone close to its background and the headline comes
-   back barely legible — near-white type on a dark ground, near-black on a light
-   one, never mid-grey on mid-grey.
-3. COLOR. Name the actual palette from the brand's visual rules, as a ground
-   colour plus one accent used sparingly. Say what the accent may touch.
-4. STRUCTURE. Thin rules, a small index, a corner lockup, a subtle grid or
-   topographic texture — the details that make a layout read as designed rather
-   than generated. Name where each sits.
-5. GROUND treatment. Matte dark surface, fine grain, a soft gradient falloff,
-   layered depth. Say it plainly.
-6. MOOD in one clause.
+Carry the same prose into colour, naming the actual palette from the brand's
+visual rules as a ground colour plus one accent, and saying in the sentence
+itself what that accent is allowed to touch. Describe the structural details
+that make the layout read as designed rather than generated — a thin rule, a
+small index, a corner lockup, a grid or texture — as part of the same
+described scene, naming where each one sits rather than listing them
+separately. Close the visual description with the ground treatment — the
+actual surface, its texture, its depth — and one clause of mood.
 
 ### The photographic element
 
@@ -165,23 +185,21 @@ the product in its real setting. Leave it out when the message is a stated
 position, a launch teaser with nothing to show yet, or a purely typographic
 statement.
 
-When the layout takes one, specify all four of these or the model pastes in a
-stock shot:
-
-- SUBJECT and crop. What is in frame and how tight — a rider leaning through a
-  bend shot from behind, a fuel tank and glove at close range, a road unwinding
-  into dusk. Name the moment, not the category, and give the light source and its
-  direction.
-- PLACEMENT. Which region of the 4:5 frame it occupies and how much: a full-bleed
-  lower half, a hard-edged panel in the right column, a circular cut-out, a
-  silhouette bleeding off the bottom edge. It never fills the whole frame — the
-  typography needs somewhere to live.
-- BLEND. How it meets the designed ground: a gradient falloff into the ground
-  colour, a duotone in the brand palette, a hard geometric mask, a multiply blend
-  under the grid texture. This is what makes it read as one composition rather
-  than a photo with text dropped on top.
-- TYPE RELATIONSHIP. Where the headline sits against it and how it stays legible
-  — over the darkest region, above the horizon, or clear of the subject entirely.
+When the layout takes one, weave all four of these into the same descriptive
+prose or the model pastes in a stock shot: what is actually in frame and how
+tight the crop is — a rider leaning through a bend shot from behind, a fuel
+tank and glove at close range, a road unwinding into dusk, named as a moment
+rather than a category, with its light source and direction stated in the same
+breath; which region of the 4:5 frame it occupies and how much, whether that
+is a full-bleed lower half, a hard-edged panel in the right column, a circular
+cut-out, or a silhouette bleeding off the bottom edge — it never fills the
+whole frame, the typography needs somewhere to live; how it meets the designed
+ground, whether that is a gradient falloff into the ground colour, a duotone
+in the brand palette, a hard geometric mask, or a multiply blend under the
+grid texture, since this is what makes it read as one composition rather than
+a photo with text dropped on top; and where the headline sits against it and
+how it stays legible — over the darkest region, above the horizon, or clear of
+the subject entirely.
 
 Two limits on what may be photographed.
 
@@ -225,9 +243,10 @@ adjectives:
   set in a tabular or oldstyle figure style if any appear, a kicker set at a
   fraction of the headline's size with generous letter-spacing.
 
-This is a vocabulary bank, not a checklist — use the words that fit the
-concept, not all of them at once. A brief padded with five unrelated textures
-is as unfinished as one with none.
+This is a vocabulary bank to draw one or two words from and fold into your
+sentences, not a checklist to output as a list and not a set to exhaust at
+once — a brief padded with five unrelated textures is as unfinished as one
+with none.
 
 ### Composition must be complete
 
@@ -304,14 +323,17 @@ Mood: composed, early, unhurried.
 The only text in the image is the three strings quoted above. Render no other
 text, no numbers and no codes.
 
-Note what that brief does: it fills all three bands, names one accent and what it
+Note what that brief does, beyond its content: every sentence is prose describing
+one continuous scene — there is not one bullet, dash or numbered line in it, and
+that is not incidental. It fills all three bands, names one accent and what it
 may touch, states the type colour and the value behind it, blends the photograph
-into the ground rather than pasting it, and forbids inventing any other text.
-
+into the ground rather than pasting it, and forbids inventing any other text —
+all inside flowing paragraphs a person could read aloud. Match this shape, not
+just this content.
 
 ### Every brief ends the same way
 
-Close the brief with what must not appear. Always exclude: gibberish or
+Close the brief, still in prose, with what must not appear: gibberish or
 misspelled text, watermarks, logos you were not given, stock-photo staging, and
 invented user interface. State the exact text that should appear in the image and
 say that no other text may be rendered.
@@ -340,56 +362,35 @@ Check, in order of severity:
 6. Structure. Hook, value and close present; one emoji per value line; exactly
    one call to action; no hashtags in the caption body.
 7. Repetition against the recent posts — pillar, opening structure, visual idea.
-8. Image brief. Does generation_prompt describe a designed composition rather
-   than a bare photograph? Does it name the exact strings to render, their
-   colour and the value behind them, a palette and one accent, and what must not
-   appear? Does it ask for a chart without data to plot? A brief that would
-   return a photograph with no typography on it is a fail.
+8. Image brief. Is generation_prompt written as continuous prose describing one
+   scene, with no bullets or numbered fragments — a bulleted brief is a fail on
+   its own, this model reads it as disconnected shapes rather than one image.
+   Does it describe a designed composition rather than a bare photograph? Does
+   it name the exact strings to render, their colour and the value behind them,
+   a palette and one accent, and what must not appear? Does every structural
+   device it describes — a ring, a grid, a badge — carry stated content, or is
+   one drawn empty as decoration? Does it ask for a chart without data to plot?
 9. Strategic justification. Does the concept serve the stated objective.
 
 Return a pass or fail verdict plus concrete fixes. Do not soften a failure, and
 do not pass a post because it is merely inoffensive.`;
 
 /**
- * Appended to every image generation prompt.
+ * Appended to every image generation prompt, after the narrative brief.
  *
+ * Written in prose, like the brief it follows, for the same sourced reason —
+ * Google's own prompting guidance for this model family is that narrative
+ * paragraphs outperform bulleted requirement lists, and this used to be a
+ * fourteen-line bulleted checklist tacked onto the end of a described scene.
  * The model is producing a finished social asset, not an illustration of a
  * sentence — the first real generation returned a bare line chart because the
- * creative direction happened to mention plotted curves.
+ * creative direction happened to mention plotted curves, and a later one
+ * shipped with a misspelled headline and hollow decorative shapes because
+ * "correctly spelled" and "no empty decoration" sat inside a list the model
+ * read as optional line items rather than requirements of the one scene.
  */
-export const IMAGE_PROMPT_GUARDRAIL = `Output requirements for this asset:
+export const IMAGE_PROMPT_GUARDRAIL = `This is a finished, print-quality social media post in a 4:5 vertical frame — an artefact a designer would hand over, not an illustration of a sentence. Render any text specified above exactly as written, letter by letter and correctly spelled, the way a typesetter would set it rather than approximate it; check every word against its source string before finishing, since a single misspelled word fails the asset exactly as gibberish would, and render no text beyond what was specified. Every structural or graphic device the brief describes — a ring, a divided grid, a badge, a corner mark — must carry the real content that brief gave it; a shape drawn empty, with no number, label or icon inside it, is decoration with no purpose and is exactly what makes an image read as a generic AI template rather than a considered design, so the frame should read as full and deliberate, never sparse.
 
-- It is a finished, print-quality social media post in a 4:5 vertical frame —
-  an artefact a designer would hand over, not an illustration of a sentence.
-- Render any specified text exactly as written, letter by letter, correctly
-  spelled — treat it as precise typesetting, not decorative lettering to be
-  approximated. Check each word against the source string before finishing;
-  a single misspelled word ("Manufactned" for "Manufactured") fails the whole
-  asset the same as gibberish does. If no text was specified, render none.
-- Every structural or graphic device — a ring, a divided grid, a badge dot, a
-  corner mark — must carry real content (a number, a short label, an icon) or
-  must not be drawn. A ring with nothing inside it and a grid of empty panels
-  are decoration with no purpose, and are exactly what makes an image read as
-  a generic AI-made template rather than a considered brand design. The frame
-  should read as full and deliberate, not sparse.
-- The artwork fills the entire frame, edge to edge. It is the asset itself, not a
-  photograph of one: no paper border, no mat, no picture frame, no drop shadow,
-  no desk or wall behind it, no device mockup containing it, no rounded corners.
-  A cream border around a dark poster wastes a third of the canvas and reads as a
-  mockup on a feed.
-- Keep a clear margin between the artwork's own content and the edge. Nothing
-  meaningful may touch or be cropped by the frame edge — that margin is interior
-  breathing room, not a border drawn around the design.
-- Hold one clear focal point. Leave out any supporting element that would clutter
-  the frame; empty space is part of the design.
-- This is a designed composition, never a bare photograph. Typography and graphic
-  structure are always present; a photograph, when the brief calls for one, sits
-  inside that structure rather than replacing it.
-- Where a photograph sits inside the layout, it must be integrated — masked,
-  graded or faded into the ground so the result reads as one designed artefact,
-  never as a stock photo with type dropped on top of it.
+The artwork fills the entire frame, edge to edge, as the asset itself rather than a photograph of one: no paper border, mat, picture frame, drop shadow, desk or wall behind it, device mockup containing it, or rounded corners — a cream border around a dark poster wastes a third of the canvas and reads as a mockup on a feed. Keep a clear interior margin so nothing meaningful touches or is cropped by the frame edge, hold one clear focal point rather than clutter the frame, and where a photograph sits inside the layout, integrate it — masked, graded or faded into the ground — so the result reads as one designed artefact rather than a stock photo with type dropped on top of it.
 
-Never render: lorem ipsum, misspelled or gibberish text, invented user interface
-chrome, fabricated numbers, charts without stated data, watermarks, stock-photo
-staging, or logos that were not supplied. If a real product screenshot is part of
-the composition, reproduce it exactly as provided and do not redraw it.`;
+Do not render lorem ipsum, watermarks, logos that were not supplied, stock-photo staging, invented user-interface chrome, or a chart, dashboard or graph plotting numbers nobody supplied. If a real product screenshot is part of the composition, reproduce it exactly as provided and do not redraw it.`;

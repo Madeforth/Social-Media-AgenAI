@@ -214,9 +214,17 @@ the caption carries that.
 
 Carry the same prose into colour, naming the actual palette from the brand's
 visual rules as a ground colour plus one accent, and saying in the sentence
-itself what that accent is allowed to touch. Describe the structural details
-that make the layout read as designed rather than generated — a thin rule, a
-small index, a corner lockup, a grid or texture — as part of the same
+itself what that accent is allowed to touch. Translate every colour into a
+plain descriptive name — "saturated amber," "matte charcoal" — and never copy
+a hex code or a raw field name out of the supplied visual rules into
+generation_prompt. VISUAL_RULES is reference data for you to read, not text to
+quote: a hex string or a key like "statusGreen" is internal design-system
+data, and if it appears in the brief the image model treats it as text worth
+displaying and renders a fabricated colour-swatch legend — a row of dots, made-
+up colour names and mangled hex codes — which is a design tool artefact, not a
+social post, and it will also misspell most of it. Describe the structural
+details that make the layout read as designed rather than generated — a thin
+rule, a small index, a corner lockup, a grid or texture — as part of the same
 described scene, naming where each one sits rather than listing them
 separately. Close the visual description with the ground treatment — the
 actual surface, its texture, its depth — and one clause of mood.
@@ -482,7 +490,10 @@ Check, in order of severity:
    Does any grid cell, card or badge carry an invented reference number, code,
    percentage or status string ("SYSTEM ACTIVE") that is not a stated brand
    fact — fail this the same as an invented capability, whether or not it is
-   spelled correctly.
+   spelled correctly. Does the brief contain a hex code, or describe a colour-
+   swatch legend / palette key with dots, names and hex values next to each
+   other — that is internal design-system data leaking into the image, fail it
+   outright and require colours be named in plain language instead.
 9. Strategic justification. Does the concept serve the stated objective.
 
 Return a pass or fail verdict plus concrete fixes. Do not soften a failure, and

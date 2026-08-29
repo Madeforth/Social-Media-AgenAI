@@ -324,7 +324,13 @@ async function runCreativeEngineV2(
       cta: (version.cta ?? '').length <= 24 ? (version.cta ?? '') : '',
     },
     assetIds: { logo: logoAsset.id, styleReferences: [] },
-    candidateCount: Math.min(4, Math.max(2, Number(Deno.env.get('CREATIVE_ENGINE_CANDIDATE_COUNT') ?? 2))),
+    // Candidates run sequentially and each one takes real wall-clock time
+    // (scene generation, a signed compositor round trip, a vision critique),
+    // and the caller is a synchronous browser request capped at 60s by
+    // Vercel's function timeout — not a background job. Defaulting to 1
+    // keeps a single click inside that budget; raise this only once the
+    // generation flow is made asynchronous (submit-then-poll).
+    candidateCount: Math.min(4, Math.max(1, Number(Deno.env.get('CREATIVE_ENGINE_CANDIDATE_COUNT') ?? 1))),
   };
 
   const startedAt = Date.now();

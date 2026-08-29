@@ -78,7 +78,17 @@ function accentSvg(plan: CreativePlan, width: number, height: number) {
 
 async function fittedAsset(bytes: Uint8Array, box: Rect, contain = true) {
   return sharp(Buffer.from(bytes))
-    .resize(box.width, box.height, { fit: contain ? 'contain' : 'cover', withoutEnlargement: true })
+    .ensureAlpha()
+    .resize(box.width, box.height, {
+      fit: contain ? 'contain' : 'cover',
+      // Without an explicit background, sharp letterboxes a 'contain' resize
+      // with opaque black when the source has no alpha of its own — the
+      // exact "black bounding box around the logo" the visual critic flagged
+      // on a real run. Transparent padding lets the logo sit on the
+      // composited ground instead of inside a visible box.
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+      withoutEnlargement: true,
+    })
     .png()
     .toBuffer();
 }

@@ -49,3 +49,5 @@ coverage/
 
 # playwright-mcp scratch output
 .playwright-mcp/
+.vercel
+.env*

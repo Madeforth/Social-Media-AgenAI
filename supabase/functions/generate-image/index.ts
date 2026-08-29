@@ -5,6 +5,14 @@
 // Imports from ../_shared/ai.ts — see that file's header comment for why
 // this isn't a real cross-package import.
 
+// Supabase Edge Functions expose this global for work that should keep
+// running after the response is sent — exactly what Creative Engine V2
+// needs: the calling browser request is capped at 60s (Vercel Hobby's hard
+// ceiling, not configurable), but a single candidate's plan + scene +
+// compositor + vision critique routinely takes 60-100s+ on its own. Fast
+// setup returns a 202 immediately; everything else keeps running here.
+declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void };
+
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import {
   IMAGE_PROMPT_GUARDRAIL,
@@ -14,6 +22,7 @@ import {
   resolveImageProvider,
   resolveTextProvider,
   sanitizeUserText,
+  type ProviderConnection,
 } from '../_shared/ai.ts';
 import {
   CREATIVE_PLAN_SYSTEM_PROMPT,
@@ -324,16 +333,9 @@ async function runCreativeEngineV2(
       cta: (version.cta ?? '').length <= 24 ? (version.cta ?? '') : '',
     },
     assetIds: { logo: logoAsset.id, styleReferences: [] },
-    // Candidates run sequentially and each one takes real wall-clock time
-    // (scene generation, a signed compositor round trip, a vision critique),
-    // and the caller is a synchronous browser request capped at 60s by
-    // Vercel's function timeout — not a background job. Defaulting to 1
-    // keeps a single click inside that budget; raise this only once the
-    // generation flow is made asynchronous (submit-then-poll).
     candidateCount: Math.min(4, Math.max(1, Number(Deno.env.get('CREATIVE_ENGINE_CANDIDATE_COUNT') ?? 1))),
   };
 
-  const startedAt = Date.now();
   const { data: runRow, error: runInsertError } = await serviceClient
     .from('creative_runs')
     .insert({ brand_id: brand.id, post_id: post.id, post_version_id: version.id, status: 'GENERATING', request_json: request })
@@ -351,6 +353,41 @@ async function runCreativeEngineV2(
     .select('id')
     .single();
 
+  // Everything past this point is real, unavoidable wall-clock time
+  // (a Gemini planning call alone can take 45s+), so it runs after the
+  // response is sent rather than inside the browser's request budget.
+  EdgeRuntime.waitUntil(
+    processCreativeEngineV2({
+      serviceClient, post, brand, version, request, creativeProfile,
+      logoAsset, textProvider, imageProvider, runId: runRow.id,
+      generationRowId: generationRow?.id ?? null,
+    }),
+  );
+
+  return json(202, { post_id: post.id, run_id: runRow.id, status: 'GENERATING' });
+}
+
+interface ProcessCreativeEngineV2Args {
+  serviceClient: ReturnType<typeof createClient>;
+  post: { id: string; brand_id: string; current_version_id: string };
+  brand: { id: string; organization_id: string; name: string };
+  version: { id: string; headline: string; supporting_copy: string | null; cta: string | null };
+  request: CreativeRequest;
+  creativeProfile: unknown;
+  logoAsset: { id: string; storage_path: string };
+  textProvider: ProviderConnection;
+  imageProvider: ProviderConnection;
+  runId: string;
+  generationRowId: string | null;
+}
+
+async function processCreativeEngineV2({
+  serviceClient, post, brand, version, request, creativeProfile, logoAsset, textProvider, imageProvider, runId, generationRowId,
+}: ProcessCreativeEngineV2Args): Promise<void> {
+  const runRow = { id: runId };
+  const generationRow = generationRowId ? { id: generationRowId } : null;
+  const startedAt = Date.now();
+
   let plan: CreativePlan;
   try {
     plan = await createCreativePlan(request, {
@@ -360,7 +397,7 @@ async function runCreativeEngineV2(
   } catch (error) {
     const message = error instanceof Error ? error.message : 'creative plan failed';
     await serviceClient.from('creative_runs').update({ status: 'FAILED', failure_json: { message }, completed_at: new Date().toISOString() }).eq('id', runRow.id);
-    return json(502, { error: message });
+    return;
   }
   await serviceClient.from('creative_runs').update({ status: 'RENDERING', plan_json: plan }).eq('id', runRow.id);
 
@@ -368,13 +405,13 @@ async function runCreativeEngineV2(
   const renderSecret = Deno.env.get('CREATIVE_RENDER_SIGNING_SECRET');
   if (!renderUrl || !renderSecret) {
     await serviceClient.from('creative_runs').update({ status: 'FAILED', failure_json: { message: 'renderer not configured' } }).eq('id', runRow.id);
-    return json(503, { error: 'Creative Engine V2 renderer is not configured (CREATIVE_RENDER_URL / CREATIVE_RENDER_SIGNING_SECRET).' });
+    return;
   }
 
   const { data: logoSigned } = await serviceClient.storage.from('brand-assets').createSignedUrl(logoAsset.storage_path, 300);
   if (!logoSigned) {
     await serviceClient.from('creative_runs').update({ status: 'FAILED', failure_json: { message: 'could not sign the logo asset' } }).eq('id', runRow.id);
-    return json(500, { error: 'failed to prepare the logo asset' });
+    return;
   }
 
   const visionModel = Deno.env.get('GEMINI_VISION_MODEL') || textProvider.textModel || GEMINI_TEXT_MODEL;
@@ -461,11 +498,7 @@ async function runCreativeEngineV2(
 
   if (!selected) {
     await serviceClient.from('creative_runs').update({ status: 'REVIEW_REQUIRED', completed_at: new Date().toISOString() }).eq('id', runRow.id);
-    return json(422, {
-      error: 'No candidate cleared the visual quality gate — review required.',
-      run_id: runRow.id,
-      candidates,
-    });
+    return;
   }
 
   await Promise.all([
@@ -478,8 +511,6 @@ async function runCreativeEngineV2(
       generation_manifest: selected.manifest, visual_qa: selected.manifest.qa,
     }).eq('id', version.id),
   ]);
-
-  return json(200, { post_id: post.id, storage_path: selected.finalStoragePath, run_id: runRow.id });
 }
 
 function truncateForImage(value: string, maxLength: number): string {

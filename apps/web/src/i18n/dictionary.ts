@@ -158,6 +158,7 @@ export interface Dictionary {
     generateImage: string;
     regenerateImage: string;
     imageErrors: { quota: string; not_configured: string; network: string; failed: string };
+    imageGenerating: string;
     genErrors: { quota: string; not_configured: string; network: string; failed: string };
     revisionNoteLabel: string;
     revisionNotePlaceholder: string;

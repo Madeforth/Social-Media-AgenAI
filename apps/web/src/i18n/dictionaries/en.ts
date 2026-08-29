@@ -206,6 +206,7 @@ export const en: Dictionary = {
       network: 'Could not reach the generation service. Check your connection and try again.',
       failed: 'Image generation failed. Try again.',
     },
+    imageGenerating: 'Generating the image — this can take about a minute, the page will update automatically.',
     genErrors: {
       quota: 'This brand has used its AI generation allowance for now — try again later.',
       not_configured: 'Gemini is not configured on this project yet.',

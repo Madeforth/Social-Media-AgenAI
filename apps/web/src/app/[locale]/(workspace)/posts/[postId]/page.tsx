@@ -13,6 +13,7 @@ import { Button, ButtonLink } from '@/components/ui/button';
 import { Card, CardDivider, CardHeader } from '@/components/ui/card';
 import { CreativePreview } from '@/components/ui/creative-preview';
 import { StatusChip } from '@/components/ui/status-chip';
+import { GenerationPoller } from '@/components/ui/generation-poller';
 import { PendingBar } from '@/components/ui/pending-bar';
 import { SubmitButton } from '@/components/ui/submit-button';
 import { getI18n } from '@/i18n/get-dictionary';
@@ -25,7 +26,7 @@ import {
   schedulePost,
   syncMetrics,
 } from '@/lib/actions';
-import { getPost, getPostImageUrl } from '@/lib/data';
+import { getLatestCreativeRunStatus, getPost, getPostImageUrl } from '@/lib/data';
 import { formatDate, formatTime } from '@/lib/format';
 
 export const maxDuration = 60;
@@ -82,7 +83,10 @@ export default async function PostDetailPage({ params, searchParams }: PageParam
   }
   const { locale, dictionary } = i18n;
   const copy = dictionary.postDetail;
-  const imageUrl = await getPostImageUrl(post.version.image_storage_path);
+  const [imageUrl, creativeRun] = await Promise.all([
+    getPostImageUrl(post.version.image_storage_path),
+    getLatestCreativeRunStatus(post.version.id),
+  ]);
   const imageErrorMessage =
     imageError && imageError in copy.imageErrors
       ? copy.imageErrors[imageError as keyof typeof copy.imageErrors]
@@ -174,6 +178,10 @@ export default async function PostDetailPage({ params, searchParams }: PageParam
           ) : null}
         </div>
       </header>
+
+      {creativeRun?.inProgress ? (
+        <GenerationPoller message={copy.imageGenerating} elapsedSuffix={dictionary.pending.elapsedSuffix} />
+      ) : null}
 
       {imageErrorMessage ? (
         <div className="rounded-md border border-red-900/50 bg-red-950/30 px-4 py-3">

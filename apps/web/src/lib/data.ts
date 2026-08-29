@@ -229,6 +229,32 @@ export async function getPostImageUrl(storagePath: string | null): Promise<strin
   return data?.signedUrl ?? null;
 }
 
+const CREATIVE_RUN_IN_PROGRESS_STATUSES = new Set(['PLANNED', 'GENERATING', 'RENDERING', 'REVIEWING']);
+
+export interface CreativeRunStatus {
+  status: string;
+  inProgress: boolean;
+}
+
+/**
+ * Creative Engine V2 runs in the background (see generate-image's
+ * `EdgeRuntime.waitUntil` split) — the page that triggered it gets a fast
+ * redirect back with nothing to show yet, so this is what the pending
+ * banner polls to know when to stop.
+ */
+export async function getLatestCreativeRunStatus(postVersionId: string): Promise<CreativeRunStatus | null> {
+  const supabase = await getServerSupabase();
+  const { data } = await supabase
+    .from('creative_runs')
+    .select('status')
+    .eq('post_version_id', postVersionId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!data) return null;
+  return { status: data.status, inProgress: CREATIVE_RUN_IN_PROGRESS_STATUSES.has(data.status) };
+}
+
 export async function listBrandAssets(): Promise<BrandAsset[]> {
   const brand = await getCurrentBrand();
   if (!brand) return [];

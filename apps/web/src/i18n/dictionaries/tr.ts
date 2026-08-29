@@ -210,6 +210,7 @@ export const tr: Dictionary = {
     },
     imageGenerating: 'Görsel oluşturuluyor — bu bir dakika kadar sürebilir, sayfa otomatik güncellenecek.',
     imageGeneratingStuck: 'Beklenenden uzun sürdü. Sayfayı yenile; hâlâ sonuç yoksa tekrar dene.',
+    imageReviewRequired: 'Üretilen görsel kalite kontrolünü geçemedi. Tekrar dene.',
     genErrors: {
       quota: 'Bu markanın yapay zeka üretim kotası doldu — daha sonra tekrar dene.',
       not_configured: 'Gemini bu projede henüz yapılandırılmadı.',

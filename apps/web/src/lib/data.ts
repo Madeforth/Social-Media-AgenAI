@@ -234,25 +234,53 @@ const CREATIVE_RUN_IN_PROGRESS_STATUSES = new Set(['PLANNED', 'GENERATING', 'REN
 export interface CreativeRunStatus {
   status: string;
   inProgress: boolean;
+  /** True when the run finished without ever writing a usable image. */
+  needsAttention: boolean;
+  /** Best available human-readable reason, when needsAttention is true. */
+  reason: string | null;
 }
 
 /**
  * Creative Engine V2 runs in the background (see generate-image's
  * `EdgeRuntime.waitUntil` split) — the page that triggered it gets a fast
  * redirect back with nothing to show yet, so this is what the pending
- * banner polls to know when to stop.
+ * banner polls to know when to stop, and what surfaces a REVIEW_REQUIRED or
+ * FAILED outcome that the old synchronous error banner can no longer catch
+ * (there is no failing HTTP response for the page to read anymore — the
+ * request that triggered generation already got its fast 202 and moved on).
  */
 export async function getLatestCreativeRunStatus(postVersionId: string): Promise<CreativeRunStatus | null> {
   const supabase = await getServerSupabase();
-  const { data } = await supabase
+  const { data: run } = await supabase
     .from('creative_runs')
-    .select('status')
+    .select('id, status, failure_json')
     .eq('post_version_id', postVersionId)
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
-  if (!data) return null;
-  return { status: data.status, inProgress: CREATIVE_RUN_IN_PROGRESS_STATUSES.has(data.status) };
+  if (!run) return null;
+
+  const inProgress = CREATIVE_RUN_IN_PROGRESS_STATUSES.has(run.status);
+  const needsAttention = !inProgress && run.status !== 'PASSED';
+  let reason: string | null = null;
+  if (needsAttention) {
+    const failureMessage = (run.failure_json as { message?: string } | null)?.message;
+    if (failureMessage) {
+      reason = failureMessage;
+    } else {
+      const { data: candidate } = await supabase
+        .from('creative_candidates')
+        .select('deterministic_failures, visual_qa')
+        .eq('run_id', run.id)
+        .order('ordinal', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      const fixes = (candidate?.visual_qa as { fixes?: string[] } | null)?.fixes;
+      reason = fixes?.[0] ?? (candidate?.deterministic_failures as string[] | null)?.[0] ?? null;
+    }
+  }
+
+  return { status: run.status, inProgress, needsAttention, reason };
 }
 
 export async function listBrandAssets(): Promise<BrandAsset[]> {

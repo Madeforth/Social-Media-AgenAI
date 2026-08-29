@@ -187,6 +187,15 @@ export default async function PostDetailPage({ params, searchParams }: PageParam
         />
       ) : null}
 
+      {creativeRun?.needsAttention ? (
+        <div className="rounded-md border border-red-900/50 bg-red-950/30 px-4 py-3">
+          <p className="text-sm text-red-300">{copy.imageReviewRequired}</p>
+          {creativeRun.reason ? (
+            <p className="mt-2 break-words text-xs text-red-400/80">{creativeRun.reason}</p>
+          ) : null}
+        </div>
+      ) : null}
+
       {imageErrorMessage ? (
         <div className="rounded-md border border-red-900/50 bg-red-950/30 px-4 py-3">
           <p className="text-sm text-red-300">{imageErrorMessage}</p>

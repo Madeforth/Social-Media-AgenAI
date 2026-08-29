@@ -160,6 +160,7 @@ export interface Dictionary {
     imageErrors: { quota: string; not_configured: string; network: string; failed: string };
     imageGenerating: string;
     imageGeneratingStuck: string;
+    imageReviewRequired: string;
     genErrors: { quota: string; not_configured: string; network: string; failed: string };
     revisionNoteLabel: string;
     revisionNotePlaceholder: string;

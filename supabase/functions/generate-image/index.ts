@@ -13,6 +13,33 @@
 // setup returns a 202 immediately; everything else keeps running here.
 declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void };
 
+/**
+ * Races any promise against a plain timer, independent of whatever
+ * cancellation mechanism (if any) the promise itself supports.
+ *
+ * A real run got stuck at status=RENDERING past even a 130s outer deadline
+ * guard, and a live diagnostic proved `Promise.race` + `setTimeout` fires
+ * correctly inside `EdgeRuntime.waitUntil` even against a promise that never
+ * settles — so the outer guard should have worked. The one thing it can't
+ * help with: `AbortSignal`-based fetch timeouts rely on the runtime actually
+ * being able to interrupt the underlying connection, and a sufficiently
+ * stuck TCP-level hang is not guaranteed to honor that. Wrapping each
+ * external call individually means forward progress no longer depends on
+ * cancellation succeeding at all — only on this timer, which is proven to
+ * fire. The losing call may keep running as an abandoned promise; that's an
+ * acceptable one-off cost against a request that never lets the candidate
+ * loop, and the outer 130s guard, move on.
+ */
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
+    promise.then(
+      (value) => { clearTimeout(timer); resolve(value); },
+      (error) => { clearTimeout(timer); reject(error); },
+    );
+  });
+}
+
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import {
   IMAGE_PROMPT_GUARDRAIL,
@@ -392,7 +419,12 @@ interface ProcessCreativeEngineV2Args {
  * eternal spinner.
  */
 async function processCreativeEngineV2(args: ProcessCreativeEngineV2Args): Promise<void> {
-  const deadlineMs = 130_000;
+  // Individual per-call timeouts below sum to ~135s worst case for one
+  // candidate; 145s leaves a little margin under Supabase's confirmed
+  // 150s free-tier background-task budget (a live diagnostic completed a
+  // 120s+ background sequence successfully) while still landing before the
+  // platform's own harder kill.
+  const deadlineMs = 145_000;
   let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
   const deadline = new Promise<never>((_, reject) => {
     timeoutHandle = setTimeout(
@@ -422,10 +454,13 @@ async function processCreativeEngineV2Body({
 
   let plan: CreativePlan;
   try {
-    plan = await createCreativePlan(request, {
-      apiKey: textProvider.apiKey, model: textProvider.textModel,
-      systemPrompt: CREATIVE_PLAN_SYSTEM_PROMPT, brandContext: creativeProfile,
-    });
+    plan = await withTimeout(
+      createCreativePlan(request, {
+        apiKey: textProvider.apiKey, model: textProvider.textModel,
+        systemPrompt: CREATIVE_PLAN_SYSTEM_PROMPT, brandContext: creativeProfile,
+      }),
+      40_000, 'Gemini creative plan',
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : 'creative plan failed';
     await serviceClient.from('creative_runs').update({ status: 'FAILED', failure_json: { message }, completed_at: new Date().toISOString() }).eq('id', runRow.id);
@@ -453,11 +488,14 @@ async function processCreativeEngineV2Body({
   for (let ordinal = 1; ordinal <= request.candidateCount; ordinal++) {
     try {
       const seed = Math.floor(Math.random() * 2_147_483_647);
-      const scene = await generateScene(plan, {
-        apiKey: imageProvider.apiKey, apiVersion: 'v3',
-        renderingSpeed: (imageProvider.imageModel as 'TURBO' | 'DEFAULT' | 'QUALITY' | 'BALANCED') || 'BALANCED',
-        aspectRatio: aspectRatioFor(plan.format), seed,
-      });
+      const scene = await withTimeout(
+        generateScene(plan, {
+          apiKey: imageProvider.apiKey, apiVersion: 'v3',
+          renderingSpeed: (imageProvider.imageModel as 'TURBO' | 'DEFAULT' | 'QUALITY' | 'BALANCED') || 'BALANCED',
+          aspectRatio: aspectRatioFor(plan.format), seed,
+        }),
+        35_000, 'Ideogram scene generation',
+      );
       const scenePath = `creative-v2/${brand.id}/${runRow.id}/scene-${ordinal}.png`;
       await serviceClient.storage.from(CREATIVE_RUN_STORAGE_BUCKET).upload(scenePath, scene, { contentType: 'image/png', upsert: true });
       const { data: sceneSigned } = await serviceClient.storage.from(CREATIVE_RUN_STORAGE_BUCKET).createSignedUrl(scenePath, 300);
@@ -476,12 +514,15 @@ async function processCreativeEngineV2Body({
       // background task hangs with it until Supabase's own budget kills the
       // function, at which point nothing is left to write the failure.
       // Bounded here so a hang becomes a caught, recorded error instead.
-      const renderResponse = await fetch(renderUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-creative-timestamp': timestamp, 'x-creative-signature': signature },
-        body: renderBody,
-        signal: AbortSignal.timeout(50_000),
-      });
+      const renderResponse = await withTimeout(
+        fetch(renderUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-creative-timestamp': timestamp, 'x-creative-signature': signature },
+          body: renderBody,
+          signal: AbortSignal.timeout(30_000),
+        }),
+        35_000, 'compositor round trip',
+      );
       if (!renderResponse.ok) throw new Error(`compositor failed: ${renderResponse.status} ${(await renderResponse.text()).slice(0, 300)}`);
       const finalBytes = new Uint8Array(await renderResponse.arrayBuffer());
       const deterministicChecks = (renderResponse.headers.get('x-creative-checks') ?? '').split(',').filter(Boolean);
@@ -489,9 +530,12 @@ async function processCreativeEngineV2Body({
       const finalPath = `creative-v2/${brand.id}/${runRow.id}/final-${ordinal}.png`;
       await serviceClient.storage.from(CREATIVE_RUN_STORAGE_BUCKET).upload(finalPath, finalBytes, { contentType: 'image/png', upsert: true });
 
-      const qa = await critiqueFinalCreative(finalBytes, plan, deterministicChecks, {
-        apiKey: textProvider.apiKey, model: visionModel, systemPrompt: VISUAL_CRITIC_SYSTEM_PROMPT,
-      });
+      const qa = await withTimeout(
+        critiqueFinalCreative(finalBytes, plan, deterministicChecks, {
+          apiKey: textProvider.apiKey, model: visionModel, systemPrompt: VISUAL_CRITIC_SYSTEM_PROMPT,
+        }),
+        25_000, 'Gemini visual critic',
+      );
       const gate = passesVisualGate(qa);
 
       const manifest = {

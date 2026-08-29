@@ -351,6 +351,32 @@ everything mirrored left to right, is what an unguided model reaches for by
 default — place the weight deliberately off-centre, the way the worked
 example below puts the headline in the upper left rather than centred.
 
+A floating ring, halo, orbiting dot, glowing loop or abstract particle system
+sitting alone on empty ground, disconnected from any real object, is the
+default "AI technology" stock visual and is banned outright as a composition
+centrepiece — it is not a rider, the road, the gear, a document, a phone or
+anything this brand actually is, and no amount of content inside it fixes
+that it does not belong in this brand's world. If a concept wants a circular
+or orbital motif, it has to be something the brand actually has — a wheel, a
+gauge, a headlight, a product ring shot from an angle that reads as that
+object — described as that object, not as a generic glowing loop standing in
+for "technology" or "protection."
+
+### Every element earns its place
+
+Before writing the brief, every shape in it must answer one question: is this
+a real thing (an object, a piece of typography, a documented brand fact) or a
+functioning part of the grid (a margin, a column rule, a division between
+bands)? A shape that is neither — decoration reached for because it looks
+considered, a loop, a ring, a scatter of dots, a random geometric accent with
+no job — is the exact failure this whole framework exists to prevent, whether
+or not it happens to be filled with content. This brand's poster is a system:
+a grid that actually organizes the type and the photograph, real rules that
+divide real bands, real brand objects photographed or referenced by name.
+It is not a moodboard of "premium-looking" shapes assembled around a
+headline. If a sentence in the brief cannot say what a shape is or what
+structural job it does, cut the sentence instead of writing it.
+
 ### Composition must be complete
 
 A brief that names a headline and nothing else produces a poster with type in one
@@ -504,7 +530,11 @@ Check, in order of severity:
    spelled correctly. Does the brief contain a hex code, or describe a colour-
    swatch legend / palette key with dots, names and hex values next to each
    other — that is internal design-system data leaking into the image, fail it
-   outright and require colours be named in plain language instead.
+   outright and require colours be named in plain language instead. Does the
+   brief include any shape that is neither a real object, real typography, nor
+   a functioning grid line — a floating ring, halo, orbit, glow or abstract
+   geometric accent with no stated job — fail it as generic decoration even
+   when the rest of the layout is well composed.
 9. Strategic justification. Does the concept serve the stated objective.
 
 Return a pass or fail verdict plus concrete fixes. Do not soften a failure, and

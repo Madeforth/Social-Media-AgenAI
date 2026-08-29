@@ -281,6 +281,7 @@ export type Database = {
           content_pillars: Json
           copy_rules: Json | null
           created_at: string
+          creative_profile: Json
           forbidden_claims: Json
           id: string
           mission: string | null
@@ -296,6 +297,7 @@ export type Database = {
           content_pillars?: Json
           copy_rules?: Json | null
           created_at?: string
+          creative_profile?: Json
           forbidden_claims?: Json
           id?: string
           mission?: string | null
@@ -311,6 +313,7 @@ export type Database = {
           content_pillars?: Json
           copy_rules?: Json | null
           created_at?: string
+          creative_profile?: Json
           forbidden_claims?: Json
           id?: string
           mission?: string | null
@@ -412,6 +415,152 @@ export type Database = {
             columns: ["brand_id"]
             isOneToOne: false
             referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      creative_candidates: {
+        Row: {
+          api_version: string
+          brand_id: string
+          created_at: string
+          deterministic_failures: Json
+          final_storage_path: string | null
+          id: string
+          manifest_json: Json | null
+          ordinal: number
+          prompt_hash: string
+          provider: string
+          rendering_speed: string
+          run_id: string
+          scene_storage_path: string
+          seed: number | null
+          selected: boolean
+          visual_qa: Json | null
+        }
+        Insert: {
+          api_version: string
+          brand_id: string
+          created_at?: string
+          deterministic_failures?: Json
+          final_storage_path?: string | null
+          id?: string
+          manifest_json?: Json | null
+          ordinal: number
+          prompt_hash: string
+          provider: string
+          rendering_speed: string
+          run_id: string
+          scene_storage_path: string
+          seed?: number | null
+          selected?: boolean
+          visual_qa?: Json | null
+        }
+        Update: {
+          api_version?: string
+          brand_id?: string
+          created_at?: string
+          deterministic_failures?: Json
+          final_storage_path?: string | null
+          id?: string
+          manifest_json?: Json | null
+          ordinal?: number
+          prompt_hash?: string
+          provider?: string
+          rendering_speed?: string
+          run_id?: string
+          scene_storage_path?: string
+          seed?: number | null
+          selected?: boolean
+          visual_qa?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creative_candidates_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creative_candidates_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "creative_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      creative_runs: {
+        Row: {
+          brand_id: string
+          completed_at: string | null
+          created_at: string
+          failure_json: Json | null
+          id: string
+          plan_json: Json | null
+          post_id: string
+          post_version_id: string
+          request_json: Json
+          selected_candidate_id: string | null
+          started_at: string
+          status: string
+        }
+        Insert: {
+          brand_id: string
+          completed_at?: string | null
+          created_at?: string
+          failure_json?: Json | null
+          id?: string
+          plan_json?: Json | null
+          post_id: string
+          post_version_id: string
+          request_json: Json
+          selected_candidate_id?: string | null
+          started_at?: string
+          status?: string
+        }
+        Update: {
+          brand_id?: string
+          completed_at?: string | null
+          created_at?: string
+          failure_json?: Json | null
+          id?: string
+          plan_json?: Json | null
+          post_id?: string
+          post_version_id?: string
+          request_json?: Json
+          selected_candidate_id?: string | null
+          started_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creative_runs_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creative_runs_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creative_runs_post_version_id_fkey"
+            columns: ["post_version_id"]
+            isOneToOne: false
+            referencedRelation: "post_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creative_runs_selected_candidate_id_fkey"
+            columns: ["selected_candidate_id"]
+            isOneToOne: false
+            referencedRelation: "creative_candidates"
             referencedColumns: ["id"]
           },
         ]
@@ -599,7 +748,9 @@ export type Database = {
           created_at: string
           created_by: Database["public"]["Enums"]["post_version_author"]
           creative_direction: string
+          creative_plan: Json | null
           cta: string
+          generation_manifest: Json | null
           generation_prompt: string
           hashtags: Json
           headline: string
@@ -610,13 +761,16 @@ export type Database = {
           post_id: string
           supporting_copy: string
           version_number: number
+          visual_qa: Json | null
         }
         Insert: {
           caption?: string
           created_at?: string
           created_by?: Database["public"]["Enums"]["post_version_author"]
           creative_direction?: string
+          creative_plan?: Json | null
           cta?: string
+          generation_manifest?: Json | null
           generation_prompt?: string
           hashtags?: Json
           headline?: string
@@ -627,13 +781,16 @@ export type Database = {
           post_id: string
           supporting_copy?: string
           version_number: number
+          visual_qa?: Json | null
         }
         Update: {
           caption?: string
           created_at?: string
           created_by?: Database["public"]["Enums"]["post_version_author"]
           creative_direction?: string
+          creative_plan?: Json | null
           cta?: string
+          generation_manifest?: Json | null
           generation_prompt?: string
           hashtags?: Json
           headline?: string
@@ -644,6 +801,7 @@ export type Database = {
           post_id?: string
           supporting_copy?: string
           version_number?: number
+          visual_qa?: Json | null
         }
         Relationships: [
           {

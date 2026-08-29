@@ -4,3 +4,4 @@ export * from './brand';
 export * from './post';
 export * from './generation';
 export * from './publishing';
+export * from './creative';

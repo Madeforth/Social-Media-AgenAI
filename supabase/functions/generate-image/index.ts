@@ -9,12 +9,28 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import {
   IMAGE_PROMPT_GUARDRAIL,
   INPUT_LIMITS,
+  GEMINI_TEXT_MODEL,
   generateImageBytes,
   resolveImageProvider,
+  resolveTextProvider,
   sanitizeUserText,
 } from '../_shared/ai.ts';
+import {
+  CREATIVE_PLAN_SYSTEM_PROMPT,
+  VISUAL_CRITIC_SYSTEM_PROMPT,
+  aspectRatioFor,
+  createCreativePlan,
+  critiqueFinalCreative,
+  generateScene,
+  passesVisualGate,
+  signRenderBody,
+  type CreativePlan,
+  type CreativeRequest,
+} from '../_shared/creative-v2.ts';
 
 const WRITE_ROLES = new Set(['OWNER', 'ADMIN', 'EDITOR']);
+const CREATIVE_ENGINE_V2_FORMAT = 'instagram-portrait' as const;
+const CREATIVE_RUN_STORAGE_BUCKET = 'generated-images';
 
 function json(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), {
@@ -97,6 +113,13 @@ Deno.serve(async (req) => {
       monthly_used: allowance?.monthly_used,
       monthly_limit: allowance?.monthly_limit,
     });
+  }
+
+  // 3b. Creative Engine V2 — deterministic compositor path, behind a flag.
+  // Kept entirely separate from the V1 flow below: nothing past this branch
+  // runs when the flag is off, and V1 is untouched either way.
+  if (Deno.env.get('CREATIVE_ENGINE_V2_ENABLED') === 'true') {
+    return await runCreativeEngineV2(serviceClient, post, brand, postId);
   }
 
   // 4. Validate and sanitize input before it is rendered into a prompt. The
@@ -211,3 +234,240 @@ Deno.serve(async (req) => {
 
   return json(200, { post_id: post.id, storage_path: storagePath });
 });
+
+// ---------------------------------------------------------------------------
+// Creative Engine V2
+// ---------------------------------------------------------------------------
+//
+// Gemini plans (CreativePlan), Ideogram paints a text-free scene, the Node
+// compositor (`apps/web`'s `/api/internal/creative-render` route) draws the
+// real logo and exact copy with real fonts, Gemini Vision critiques the
+// finished composite, and only a candidate that clears every threshold is
+// ever written to `post_versions.image_storage_path`. See
+// `supabase/functions/_shared/creative-v2.ts` for the shared logic and
+// `docs/...` in the reference research package this was built from for the
+// full design rationale.
+
+async function runCreativeEngineV2(
+  serviceClient: ReturnType<typeof createClient>,
+  post: { id: string; brand_id: string; current_version_id: string },
+  brand: { id: string; organization_id: string; name: string },
+  postId: string,
+): Promise<Response> {
+  const { data: postRow } = await serviceClient
+    .from('posts')
+    .select('content_pillar, objective')
+    .eq('id', postId)
+    .maybeSingle();
+
+  const { data: version } = await serviceClient
+    .from('post_versions')
+    .select('id, headline, supporting_copy, cta')
+    .eq('id', post.current_version_id)
+    .maybeSingle();
+  if (!version) return json(404, { error: 'post version not found' });
+  if (!version.headline) return json(400, { error: 'this version has no headline to lock in as exact copy yet' });
+
+  const { data: guidelines } = await serviceClient
+    .from('brand_guidelines')
+    .select('creative_profile')
+    .eq('brand_id', brand.id)
+    .maybeSingle();
+  const creativeProfile = guidelines?.creative_profile;
+  if (!creativeProfile || Object.keys(creativeProfile).length === 0) {
+    return json(503, { error: 'Creative Engine V2 needs a creative_profile on this brand before it can plan a layout.' });
+  }
+
+  const { data: logoAsset } = await serviceClient
+    .from('brand_assets')
+    .select('id, storage_path')
+    .eq('brand_id', brand.id)
+    .eq('asset_type', 'LOGO')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!logoAsset) {
+    return json(503, { error: 'Creative Engine V2 needs a real LOGO brand asset before it can compose anything — add one in Brand Assets.' });
+  }
+
+  const textProvider = await resolveTextProvider(serviceClient, brand.organization_id);
+  if (!textProvider) return json(503, { error: 'No Gemini provider is connected — add one in Settings' });
+
+  const imageProvider = await resolveImageProvider(serviceClient, brand.organization_id);
+  if (!imageProvider || imageProvider.provider !== 'IDEOGRAM') {
+    return json(503, { error: 'Creative Engine V2 needs the image provider routed to Ideogram — check Settings.' });
+  }
+
+  const request: CreativeRequest = {
+    postId: post.id,
+    postVersionId: version.id,
+    brandId: brand.id,
+    objective: postRow?.objective ?? '',
+    audienceId: 'default',
+    contentPillarId: postRow?.content_pillar ?? 'default',
+    format: CREATIVE_ENGINE_V2_FORMAT,
+    language: 'tr',
+    factIdsAllowed: [],
+    lockedCopy: {
+      eyebrow: '',
+      headline: version.headline,
+      body: version.supporting_copy ?? '',
+      cta: version.cta ?? '',
+    },
+    assetIds: { logo: logoAsset.id, styleReferences: [] },
+    candidateCount: Math.min(4, Math.max(2, Number(Deno.env.get('CREATIVE_ENGINE_CANDIDATE_COUNT') ?? 2))),
+  };
+
+  const startedAt = Date.now();
+  const { data: runRow, error: runInsertError } = await serviceClient
+    .from('creative_runs')
+    .insert({ brand_id: brand.id, post_id: post.id, post_version_id: version.id, status: 'GENERATING', request_json: request })
+    .select('id')
+    .single();
+  if (runInsertError || !runRow) return json(500, { error: 'failed to open a creative run' });
+
+  const { data: generationRow } = await serviceClient
+    .from('ai_generations')
+    .insert({
+      brand_id: brand.id, post_id: post.id, generation_type: 'IMAGE',
+      provider: 'ideogram', model: imageProvider.imageModel,
+      input_json: { post_version_id: version.id, creative_run_id: runRow.id, engine: 'v2' },
+    })
+    .select('id')
+    .single();
+
+  let plan: CreativePlan;
+  try {
+    plan = await createCreativePlan(request, {
+      apiKey: textProvider.apiKey, model: textProvider.textModel,
+      systemPrompt: CREATIVE_PLAN_SYSTEM_PROMPT, brandContext: creativeProfile,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'creative plan failed';
+    await serviceClient.from('creative_runs').update({ status: 'FAILED', failure_json: { message }, completed_at: new Date().toISOString() }).eq('id', runRow.id);
+    return json(502, { error: message });
+  }
+  await serviceClient.from('creative_runs').update({ status: 'RENDERING', plan_json: plan }).eq('id', runRow.id);
+
+  const renderUrl = Deno.env.get('CREATIVE_RENDER_URL');
+  const renderSecret = Deno.env.get('CREATIVE_RENDER_SIGNING_SECRET');
+  if (!renderUrl || !renderSecret) {
+    await serviceClient.from('creative_runs').update({ status: 'FAILED', failure_json: { message: 'renderer not configured' } }).eq('id', runRow.id);
+    return json(503, { error: 'Creative Engine V2 renderer is not configured (CREATIVE_RENDER_URL / CREATIVE_RENDER_SIGNING_SECRET).' });
+  }
+
+  const { data: logoSigned } = await serviceClient.storage.from('brand-assets').createSignedUrl(logoAsset.storage_path, 300);
+  if (!logoSigned) {
+    await serviceClient.from('creative_runs').update({ status: 'FAILED', failure_json: { message: 'could not sign the logo asset' } }).eq('id', runRow.id);
+    return json(500, { error: 'failed to prepare the logo asset' });
+  }
+
+  const visionModel = Deno.env.get('GEMINI_VISION_MODEL') || textProvider.textModel || GEMINI_TEXT_MODEL;
+  const candidates: Array<{ id: string; passed: boolean; overall: number }> = [];
+  let selected: { candidateId: string; finalStoragePath: string; manifest: Record<string, unknown> } | null = null;
+
+  for (let ordinal = 1; ordinal <= request.candidateCount; ordinal++) {
+    try {
+      const seed = Math.floor(Math.random() * 2_147_483_647);
+      const scene = await generateScene(plan, {
+        apiKey: imageProvider.apiKey, apiVersion: 'v3',
+        renderingSpeed: (imageProvider.imageModel as 'TURBO' | 'DEFAULT' | 'QUALITY' | 'BALANCED') || 'BALANCED',
+        aspectRatio: aspectRatioFor(plan.format), seed,
+      });
+      const scenePath = `creative-v2/${brand.id}/${runRow.id}/scene-${ordinal}.png`;
+      await serviceClient.storage.from(CREATIVE_RUN_STORAGE_BUCKET).upload(scenePath, scene, { contentType: 'image/png', upsert: true });
+      const { data: sceneSigned } = await serviceClient.storage.from(CREATIVE_RUN_STORAGE_BUCKET).createSignedUrl(scenePath, 300);
+      if (!sceneSigned) throw new Error('could not sign the generated scene');
+
+      const timestamp = String(Date.now());
+      const candidateId = crypto.randomUUID();
+      const renderBody = JSON.stringify({
+        candidateId, plan,
+        assets: { backgroundUrl: sceneSigned.signedUrl, logoUrl: logoSigned.signedUrl, logoId: logoAsset.id },
+      });
+      const signature = await signRenderBody(renderSecret, timestamp, renderBody);
+      const renderResponse = await fetch(renderUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-creative-timestamp': timestamp, 'x-creative-signature': signature },
+        body: renderBody,
+      });
+      if (!renderResponse.ok) throw new Error(`compositor failed: ${renderResponse.status} ${(await renderResponse.text()).slice(0, 300)}`);
+      const finalBytes = new Uint8Array(await renderResponse.arrayBuffer());
+      const deterministicChecks = (renderResponse.headers.get('x-creative-checks') ?? '').split(',').filter(Boolean);
+
+      const finalPath = `creative-v2/${brand.id}/${runRow.id}/final-${ordinal}.png`;
+      await serviceClient.storage.from(CREATIVE_RUN_STORAGE_BUCKET).upload(finalPath, finalBytes, { contentType: 'image/png', upsert: true });
+
+      const qa = await critiqueFinalCreative(finalBytes, plan, deterministicChecks, {
+        apiKey: textProvider.apiKey, model: visionModel, systemPrompt: VISUAL_CRITIC_SYSTEM_PROMPT,
+      });
+      const gate = passesVisualGate(qa);
+
+      const manifest = {
+        schemaVersion: '2.0', runId: runRow.id, candidateId,
+        postId: post.id, postVersionId: version.id,
+        format: plan.format, layoutRecipe: plan.layoutRecipe,
+        exactCopy: plan.copy, factIdsUsed: plan.factIdsUsed, assetIds: request.assetIds,
+        provider: { name: 'ideogram', apiVersion: 'v3', renderingSpeed: imageProvider.imageModel, seed },
+        sceneStoragePath: scenePath, finalStoragePath: finalPath, qa,
+        createdAt: new Date().toISOString(),
+      };
+
+      await serviceClient.from('creative_candidates').insert({
+        run_id: runRow.id, brand_id: brand.id, ordinal,
+        scene_storage_path: scenePath, final_storage_path: finalPath,
+        provider: 'ideogram', api_version: 'v3', rendering_speed: imageProvider.imageModel,
+        seed, prompt_hash: await sha256Hex(JSON.stringify(plan.scene)),
+        manifest_json: manifest, visual_qa: qa, deterministic_failures: gate.failures,
+        selected: false,
+      });
+
+      candidates.push({ id: candidateId, passed: gate.ok, overall: qa.overall });
+      if (gate.ok && (!selected || qa.overall > (selected.manifest.qa as { overall: number }).overall)) {
+        selected = { candidateId, finalStoragePath: finalPath, manifest };
+      }
+    } catch (error) {
+      candidates.push({ id: `failed-${ordinal}`, passed: false, overall: 0 });
+      await serviceClient.from('creative_candidates').insert({
+        run_id: runRow.id, brand_id: brand.id, ordinal,
+        scene_storage_path: `creative-v2/${brand.id}/${runRow.id}/scene-${ordinal}-failed.png`,
+        provider: 'ideogram', api_version: 'v3', rendering_speed: imageProvider.imageModel,
+        prompt_hash: await sha256Hex(`${runRow.id}-${ordinal}-${Date.now()}`),
+        deterministic_failures: [error instanceof Error ? error.message : 'candidate generation failed'],
+        selected: false,
+      });
+    }
+  }
+
+  await serviceClient
+    .from('ai_generations')
+    .update({ output_json: { run_id: runRow.id, candidates, selected: selected?.candidateId ?? null }, duration_ms: Date.now() - startedAt })
+    .eq('id', generationRow?.id ?? '');
+
+  if (!selected) {
+    await serviceClient.from('creative_runs').update({ status: 'REVIEW_REQUIRED', completed_at: new Date().toISOString() }).eq('id', runRow.id);
+    return json(422, {
+      error: 'No candidate cleared the visual quality gate — review required.',
+      run_id: runRow.id,
+      candidates,
+    });
+  }
+
+  await Promise.all([
+    serviceClient.from('creative_runs').update({
+      status: 'PASSED', selected_candidate_id: selected.candidateId, completed_at: new Date().toISOString(),
+    }).eq('id', runRow.id),
+    serviceClient.from('creative_candidates').update({ selected: true }).eq('run_id', runRow.id).eq('id', selected.candidateId),
+    serviceClient.from('post_versions').update({
+      image_storage_path: selected.finalStoragePath, creative_plan: plan,
+      generation_manifest: selected.manifest, visual_qa: selected.manifest.qa,
+    }).eq('id', version.id),
+  ]);
+
+  return json(200, { post_id: post.id, storage_path: selected.finalStoragePath, run_id: runRow.id });
+}
+
+async function sha256Hex(value: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+}

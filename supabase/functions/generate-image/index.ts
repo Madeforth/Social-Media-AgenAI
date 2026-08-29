@@ -466,7 +466,10 @@ async function processCreativeEngineV2Body({
     await serviceClient.from('creative_runs').update({ status: 'FAILED', failure_json: { message }, completed_at: new Date().toISOString() }).eq('id', runRow.id);
     return;
   }
-  await serviceClient.from('creative_runs').update({ status: 'RENDERING', plan_json: plan }).eq('id', runRow.id);
+  {
+    const { error } = await serviceClient.from('creative_runs').update({ status: 'RENDERING', plan_json: plan }).eq('id', runRow.id);
+    if (error) throw new Error(`RENDERING update failed: ${error.message}`);
+  }
 
   const renderUrl = Deno.env.get('CREATIVE_RENDER_URL');
   const renderSecret = Deno.env.get('CREATIVE_RENDER_SIGNING_SECRET');
@@ -548,7 +551,17 @@ async function processCreativeEngineV2Body({
         createdAt: new Date().toISOString(),
       };
 
-      await serviceClient.from('creative_candidates').insert({
+      // `candidateId` is generated here (not left to the table's own
+      // default) because it's needed below to mark this candidate selected
+      // and to set creative_runs.selected_candidate_id — both of which
+      // reference creative_candidates.id by foreign key. Omitting `id` here
+      // was the actual root cause of every "stuck forever" run this session
+      // chased: the row got a different, database-generated id, so the
+      // later `selected_candidate_id` write always failed its FK constraint
+      // — silently, because supabase-js resolves query errors into `.error`
+      // rather than throwing, and nothing here checked for one.
+      const { error: candidateInsertError } = await serviceClient.from('creative_candidates').insert({
+        id: candidateId,
         run_id: runRow.id, brand_id: brand.id, ordinal,
         scene_storage_path: scenePath, final_storage_path: finalPath,
         provider: 'ideogram', api_version: 'v3', rendering_speed: imageProvider.imageModel,
@@ -556,6 +569,7 @@ async function processCreativeEngineV2Body({
         manifest_json: manifest, visual_qa: qa, deterministic_failures: gate.failures,
         selected: false,
       });
+      if (candidateInsertError) throw new Error(`candidate insert failed: ${candidateInsertError.message}`);
 
       candidates.push({ id: candidateId, passed: gate.ok, overall: qa.overall });
       if (gate.ok && (!selected || qa.overall > (selected.manifest.qa as { overall: number }).overall)) {
@@ -595,37 +609,51 @@ async function processCreativeEngineV2Body({
   }
 
   if (!selected) {
-    await withTimeout(
+    const { error } = await withTimeout(
       serviceClient.from('creative_runs').update({ status: 'REVIEW_REQUIRED', completed_at: new Date().toISOString() }).eq('id', runRow.id),
       15_000, 'creative_runs REVIEW_REQUIRED update',
     );
+    if (error) throw new Error(`REVIEW_REQUIRED update failed: ${error.message}`);
     return;
   }
 
-  await withTimeout(
+  // Every write below is error-checked, not just awaited — supabase-js
+  // resolves a query error into `.error` rather than throwing, so an
+  // unchecked `await` treats a failed write exactly like a successful one
+  // and silently moves on. That is what actually produced every "stuck
+  // forever" run this session chased down: the real bug was the missing
+  // `id: candidateId` on the candidate insert above (fixed), which made the
+  // PASSED write below fail its foreign-key constraint every time — and
+  // because nothing checked `.error`, the run just quietly stopped
+  // progressing at REVIEWING with no exception, no timeout, and no record.
+  const r1 = await withTimeout(
     serviceClient.from('creative_runs').update({ status: 'REVIEWING' }).eq('id', runRow.id),
     15_000, 'creative_runs REVIEWING breadcrumb',
   );
+  if (r1.error) throw new Error(`REVIEWING update failed: ${r1.error.message}`);
 
-  await withTimeout(
+  const r2 = await withTimeout(
     serviceClient.from('creative_candidates').update({ selected: true }).eq('run_id', runRow.id).eq('id', selected.candidateId),
     15_000, 'creative_candidates selected update',
   );
+  if (r2.error) throw new Error(`candidate selected update failed: ${r2.error.message}`);
 
-  await withTimeout(
+  const r3 = await withTimeout(
     serviceClient.from('post_versions').update({
       image_storage_path: selected.finalStoragePath, creative_plan: plan,
       generation_manifest: selected.manifest, visual_qa: selected.manifest.qa,
     }).eq('id', version.id),
     15_000, 'post_versions finalize update',
   );
+  if (r3.error) throw new Error(`post_versions update failed: ${r3.error.message}`);
 
-  await withTimeout(
+  const r4 = await withTimeout(
     serviceClient.from('creative_runs').update({
       status: 'PASSED', selected_candidate_id: selected.candidateId, completed_at: new Date().toISOString(),
     }).eq('id', runRow.id),
     15_000, 'creative_runs PASSED update',
   );
+  if (r4.error) throw new Error(`PASSED update failed: ${r4.error.message}`);
 }
 
 function truncateForImage(value: string, maxLength: number): string {

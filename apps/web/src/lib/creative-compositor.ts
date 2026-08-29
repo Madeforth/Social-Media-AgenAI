@@ -52,15 +52,34 @@ async function textLayer(
   throw new Error(`Text overflow: ${value.slice(0, 40)}`);
 }
 
-function shadeSvg(width: number, height: number, copySide: CreativePlan['sceneFocus']['copySafeSide']) {
+/**
+ * The image provider is told to leave the copy side low-detail, but nothing
+ * guarantees it actually does — a real run had the subject (a rider's glove
+ * and handlebar) bleed into the text column, and the old fixed gradient only
+ * reached 0.52 opacity by the edge of a typical safe area, not enough to
+ * save legibility when that happens. This is sized off the plan's own
+ * `copySafeAreaPercent` and stays near-opaque through most of that zone
+ * rather than tapering from the first pixel, so contrast under the text is
+ * guaranteed by the compositor rather than trusted from the scene.
+ */
+function shadeSvg(
+  width: number,
+  height: number,
+  copySide: CreativePlan['sceneFocus']['copySafeSide'],
+  copySafeAreaPercent: number,
+) {
   const leftToRight = copySide === 'left';
   const rightToLeft = copySide === 'right';
   const x1 = rightToLeft ? '100%' : '0%';
   const x2 = leftToRight ? '100%' : rightToLeft ? '0%' : '0%';
+  const safe = Math.min(0.7, Math.max(0.3, copySafeAreaPercent / 100));
+  const holdStop = (safe * 0.82).toFixed(3);
+  const edgeStop = safe.toFixed(3);
   return Buffer.from(`<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
     <defs><linearGradient id="g" x1="${x1}" y1="0" x2="${x2}" y2="0">
-      <stop offset="0" stop-color="#08131F" stop-opacity="0.92"/>
-      <stop offset="0.58" stop-color="#08131F" stop-opacity="0.52"/>
+      <stop offset="0" stop-color="#08131F" stop-opacity="0.97"/>
+      <stop offset="${holdStop}" stop-color="#08131F" stop-opacity="0.94"/>
+      <stop offset="${edgeStop}" stop-color="#08131F" stop-opacity="0.62"/>
       <stop offset="1" stop-color="#08131F" stop-opacity="0.08"/>
     </linearGradient></defs>
     <rect width="100%" height="100%" fill="url(#g)"/>
@@ -99,7 +118,13 @@ export async function composeCreative(input: RenderInput, fonts: FontFiles): Pro
   if (checks.length) throw new Error(`Template geometry failed: ${checks.join('; ')}`);
 
   const layers: OverlayOptions[] = [
-    { input: shadeSvg(g.canvas.width, g.canvas.height, input.plan.sceneFocus.copySafeSide), left: 0, top: 0 },
+    {
+      input: shadeSvg(
+        g.canvas.width, g.canvas.height,
+        input.plan.sceneFocus.copySafeSide, input.plan.sceneFocus.copySafeAreaPercent,
+      ),
+      left: 0, top: 0,
+    },
     { input: accentSvg(input.plan, g.canvas.width, g.canvas.height), left: 0, top: 0 },
   ];
 

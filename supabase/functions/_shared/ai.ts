@@ -258,6 +258,38 @@ readable badge, no visible metric, no branded garment the brand does not make.
 If no screenshot exists and the concept still wants a device, show the phone dark
 and reflective in the rider's hand, or leave it out and let typography carry it.
 
+### Reach for specific words, not general ones
+
+A brief that says "textured background" or "nice lighting" gives the model
+nothing to render — it falls back to whatever is statistically average, which
+is the flat, generic look this whole section exists to avoid. Every brief
+should read like a designer's spec sheet: name the actual material, the actual
+light, the actual technique. Draw from vocabulary like this rather than vague
+adjectives:
+
+- GROUND TEXTURE: brushed metal, fine film grain, matte concrete, frosted
+  glass, woven fabric weave, halftone dot pattern, topographic contour lines,
+  subtle paper grain, soft noise gradient.
+- LIGHT: single hard key light from camera-left, diffused overcast light, warm
+  tungsten practical, cool blue hour, rim light separating subject from ground,
+  golden-hour side light raking across texture.
+- BLEND between photograph and ground: gradient falloff, duotone mapped to the
+  accent colour, hard geometric mask (a diagonal or a circle, not just "faded
+  edges"), multiply blend under a grid or texture layer, grain matched between
+  photo and ground so the seam disappears.
+- SCALE, stated relative to the frame: "filling roughly the lower two-thirds,"
+  "a strip no taller than one-fifth of the frame," "the headline spans about
+  eighty percent of the frame width." A model given no scale picks its own,
+  usually too small or too centred.
+- TYPE TREATMENT beyond weight and case: optical kerning tightened on the
+  headline, a hairline rule the same width as the lowercase stroke, numerals
+  set in a tabular or oldstyle figure style if any appear, a kicker set at a
+  fraction of the headline's size with generous letter-spacing.
+
+This is a vocabulary bank, not a checklist — use the words that fit the
+concept, not all of them at once. A brief padded with five unrelated textures
+is as unfinished as one with none.
+
 ### Composition must be complete
 
 A brief that names a headline and nothing else produces a poster with type in one

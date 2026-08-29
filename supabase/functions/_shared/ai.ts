@@ -149,6 +149,14 @@ Structure every caption as hook, value, close.
 
 Formatting rules:
 
+- The caption field is one JSON string, and it must contain real newline
+  characters, not just conceptual line breaks — a blank line between hook,
+  value and close means two literal "\n\n" in the string, and each value line
+  starts on its own literal "\n". A caption returned as a single run-on
+  paragraph with no embedded newlines fails, however good the wording is —
+  this has happened before and is the single most common way this field
+  breaks. Write it the way you would type a text message with paragraph
+  breaks, not the way you would write flowing prose.
 - Blank line between hook, value and close so it breathes on a phone.
 - Emoji only at the start of a value line, one per line, six to eight in the
   whole caption. This brand is premium: emoji are punctuation, not decoration.
@@ -470,7 +478,10 @@ Check, in order of severity:
 5. Specificity. Would this caption read identically for a competitor? If yes it
    is generic and fails.
 6. Structure. Hook, value and close present; one emoji per value line; exactly
-   one call to action; no hashtags in the caption body.
+   one call to action; no hashtags in the caption body. Does the caption
+   string actually contain newline characters separating hook, each value
+   line and close, or did it come back as one run-on paragraph — a caption
+   with no embedded newlines is a fail on its own, whatever the wording says.
 7. Repetition against the recent posts — pillar, opening structure, visual idea.
 8. Image brief. Is generation_prompt written as continuous prose describing one
    scene, with no bullets or numbered fragments — a bulleted brief is a fail on

@@ -396,6 +396,39 @@ invented specifics — a grid can hold real labels with no numbers, or icons wit
 no text at all, and still read as designed. Full and considered is not the same
 as densely filled with fabricated detail.
 
+### An alternative ground treatment: directional colour instead of flat dark
+
+Flat near-black charcoal is not the only acceptable ground. A deep ground that
+shifts diagonally between two or three saturated brand-palette hues — blue
+bleeding into violet bleeding into magenta, dark at the corners and brightest
+along one diagonal sweep — reads as premium and considered the same way flat
+charcoal does, and is the right choice when the brand's palette actually has
+that range of colour to draw on rather than one accent. State the direction of
+the sweep and which hues sit where, the same way the ground treatment is
+always stated, rather than leaving "colourful gradient" unspecified.
+
+For a list-of-features concept specifically — several distinct capabilities
+being introduced together — a two-column list of short rows works: each row
+one small line-icon in its own accent colour, a short bold feature name beside
+it, then one or two lines of description beneath. A thin rule separates rows.
+This reads as a real product spec sheet rather than a poster with type
+floating on it, and it is the right structure specifically when the brand
+record or brief actually lists several distinct named things — do not invent
+feature names that are not in the supplied data to fill the pattern out.
+
+A single word or short phrase inside the headline may carry the accent colour
+— or the directional gradient itself — while the rest of the headline stays a
+plain light colour; state exactly which word and what colour or gradient it
+carries.
+
+None of this is a licence to draw a logo, wordmark or brand mark of any kind.
+A styled letterform, an icon standing in for the brand, or the brand name set
+as a designed lockup is exactly the "logo you were not given" the closing
+exclusions already forbid — the real logo is composited afterward by the
+product, never generated. Where a reference composition includes one, take
+only the ground, colour and layout system from it and leave the mark out
+entirely.
+
 ### A worked image brief
 
 For a brand with no visual rules recorded, headline "RITIM, HIZDAN ONCE GELIR.",
@@ -498,7 +531,9 @@ Check, in order of severity:
    brief include any shape that is neither a real object, real typography, nor
    a functioning grid line — a floating ring, halo, orbit, glow or abstract
    geometric accent with no stated job — fail it as generic decoration even
-   when the rest of the layout is well composed.
+   when the rest of the layout is well composed. Does it describe a logo,
+   wordmark, styled letterform or brand lockup to be drawn — fail this, the
+   real logo is composited by the product afterward and is never generated.
 9. Strategic justification. Does the concept serve the stated objective.
 
 Return a pass or fail verdict plus concrete fixes. Do not soften a failure, and

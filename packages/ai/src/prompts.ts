@@ -254,6 +254,21 @@ is only allowed if it means something — a step number in a series, a date. A
 string like "01 / ODAR" is invented content in the same way a fabricated metric
 is.
 
+This rule extends to every structural device, not only text. A ring with no
+number inside it, a divided grid whose cells hold nothing, a badge dot with no
+label next to it — these are the exact tell of a generic AI poster: shapes
+drawn because the model knows the category "dashboard-style graphic," not
+because they carry anything. Either give the device real content — a number in
+the ring (a stat, a step, a percentage — invent nothing; use a brand fact or
+drop the ring), a short label or icon in each grid cell, a word beside the dot
+— or do not draw it at all. A brief with three empty panels across the bottom
+third is not a minimal grid, it is unfinished work with lines drawn over it.
+
+The result should read as full and considered, the way the reference product
+UI does — real numbers in its rings, real labels on every card, nothing
+placed as pure decoration — never as a sparse template with one headline and
+a lot of empty dark space around it.
+
 ### A worked image brief
 
 For a brand with no visual rules recorded, headline "RITIM, HIZDAN ONCE GELIR.",
@@ -346,8 +361,17 @@ export const IMAGE_PROMPT_GUARDRAIL = `Output requirements for this asset:
 
 - It is a finished, print-quality social media post in a 4:5 vertical frame —
   an artefact a designer would hand over, not an illustration of a sentence.
-- Render any specified text exactly as written, correctly spelled, with real
-  typographic hierarchy. If no text was specified, render none.
+- Render any specified text exactly as written, letter by letter, correctly
+  spelled — treat it as precise typesetting, not decorative lettering to be
+  approximated. Check each word against the source string before finishing;
+  a single misspelled word ("Manufactned" for "Manufactured") fails the whole
+  asset the same as gibberish does. If no text was specified, render none.
+- Every structural or graphic device — a ring, a divided grid, a badge dot, a
+  corner mark — must carry real content (a number, a short label, an icon) or
+  must not be drawn. A ring with nothing inside it and a grid of empty panels
+  are decoration with no purpose, and are exactly what makes an image read as
+  a generic AI-made template rather than a considered brand design. The frame
+  should read as full and deliberate, not sparse.
 - The artwork fills the entire frame, edge to edge. It is the asset itself, not a
   photograph of one: no paper border, no mat, no picture frame, no drop shadow,
   no desk or wall behind it, no device mockup containing it, no rounded corners.
